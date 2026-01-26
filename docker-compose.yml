@@ -1,0 +1,30 @@
+# File: docker-compose.yml
+# Purpose: Local development entrypoint (Docker). Builds the Dockerfile image and runs `jekyll serve` with live reload.
+# How to run:
+#   docker compose up --build
+# Access:
+#   - Site: http://localhost:4000
+#   - LiveReload: http://localhost:35729
+# Related files:
+#   - Dockerfile (image definition)
+#   - entrypoint.sh (permission fix + runs Jekyll as non-root)
+#   - _config.yml (Jekyll configuration)
+# Safe edits:
+#   - OK: ports, environment, add volumes
+#   - Careful: container paths /srv/jekyll and /usr/local/bundle (breaks mounts or gem cache)
+
+name: urv-sdgs-jekyll-dashboard
+
+services:
+  jekyll:
+    build: .
+    image: urv-sdgs-jekyll-dashboard:local
+    ports:
+      - "4000:4000"
+      - "35729:35729"
+    volumes:
+      - .:/srv/jekyll
+      - bundle_cache:/usr/local/bundle
+
+volumes:
+  bundle_cache:

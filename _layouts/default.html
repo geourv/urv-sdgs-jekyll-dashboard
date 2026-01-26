@@ -1,0 +1,55 @@
+<!--
+File: _layouts/default.html
+Purpose: Main layout wrapper: includes head/topbar/sidebar/footer and yields page content.
+Related files:
+  - _includes/head.html
+  - _includes/topbar.html
+  - _includes/sidebar.html
+  - _includes/footer.html
+Safe edits:
+  - OK: Minor markup changes, add new include blocks
+  - Careful: Changing element ids/classes used by assets/js/site.js can break mobile menu and overlay
+-->
+
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: 'ca' }}">
+<head>
+  <title>{{ page.title | default: site.title }}</title>
+  {% include head.html %}
+  {% if page.head_styles %}
+    {% for href in page.head_styles %}
+      {% if href contains '://' or href contains '//' %}
+        <link rel="stylesheet" href="{{ href }}">
+      {% else %}
+        <link rel="stylesheet" href="{{ href | relative_url }}">
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% if page.head_scripts %}
+    {% for src in page.head_scripts %}
+      {% if src contains '://' or src contains '//' %}
+        <script src="{{ src }}"></script>
+      {% else %}
+        <script src="{{ src | relative_url }}"></script>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% if page.head_inline %}
+    {{ page.head_inline }}
+  {% endif %}
+</head>
+<body class="w3-light-grey">
+
+  {% include topbar.html %}
+  {% include sidebar.html %}
+
+  <div class="w3-main" style="margin-left:300px;margin-top:43px;">
+    {{ content }}
+    {% include footer.html %}
+  </div>
+
+  {% include back_to_top.html %}
+
+  <script src="{{ '/assets/js/site.js' | relative_url }}" defer></script>
+</body>
+</html>

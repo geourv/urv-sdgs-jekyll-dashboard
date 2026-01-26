@@ -1,0 +1,15 @@
+# File: .dockerignore
+# Purpose: Reduce Docker build context size (faster builds).
+# Related files:
+#   - Dockerfile
+# Safe edits:
+#   - OK: Add paths that should never be copied into the image
+#   - Careful: Do not ignore Gemfile/Gemfile.lock or required site source files
+
+_site
+.jekyll-cache
+.sass-cache
+.bundle
+vendor
+node_modules
+.git

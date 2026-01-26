@@ -1,0 +1,178 @@
+<!--
+File: _includes/sidebar.html
+Purpose: Navigation sidebar markup (links, dropdown groups, active item highlighting).
+Related files:
+  - assets/js/site.js
+  - assets/css/styles.css
+  - _layouts/default.html
+Safe edits:
+  - OK: Add/reorder links; change labels/icons
+  - Careful: Keep ids/classes (#mySidebar) and data-dropdown-id attributes used by site.js
+Notes:
+  - Active item is computed with Liquid based on page.url; dropdown open state may be persisted in sessionStorage.
+-->
+
+<!-- Sidebar Navigation -->
+{% assign current_url = page.url %}
+{%- comment -%}
+Robust active-link detection.
+
+Depending on how a site is served, a page URL may appear as:
+  - /pages/foo.html
+  - /pages/foo/
+
+We normalize by also building a "no .html" version.
+{%- endcomment -%}
+{% assign current_nohtml = current_url | remove: '.html' %}
+
+{%- comment -%}
+Dropdown group: include both variants (.html and trailing slash) to be safe.
+{%- endcomment -%}
+{% assign explore_urls = "/pages/wordcloud.html|/pages/wordcloud/|/pages/faculty-wordcloud.html|/pages/faculty-wordcloud/|/pages/degree-wordcloud.html|/pages/degree-wordcloud/|/pages/faculty-doughnut.html|/pages/faculty-doughnut/|/pages/degree-barchart.html|/pages/degree-barchart/|/pages/course-details.html|/pages/course-details/" | split: "|" %}
+{% assign explore_active = false %}
+{% if explore_urls contains current_url or explore_urls contains current_nohtml %}
+  {% assign explore_active = true %}
+{% endif %}
+
+<nav class="w3-sidebar w3-collapse w3-white" style="z-index:1001;width:300px;" id="mySidebar" aria-label="Navegació lateral"><br>
+
+  <div class="w3-container w3-row">
+    <div class="w3-col s4">
+      <img src="{{ '/assets/logos/edited/cat/cat_ods_logo_cut.png' | relative_url }}" class="w3-circle logo-img" style="width:72px" alt="Logotip ODS">
+    </div>
+    <div class="w3-col s8 w3-bar">
+      <span>Els ODS <br> als ensenyaments <br>de la URV</span>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="w3-bar-block">
+
+    {% assign is_home = false %}
+    {% if current_url == '/' or current_url == '/index.html' or current_nohtml == '/' %}
+      {% assign is_home = true %}
+    {% endif %}
+    <a href="{{ '/index.html' | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_home %} nav-active{% endif %}" aria-label="Inici"{% if is_home %} aria-current="page"{% endif %}>
+      <i class="fa fa-home fa-fw"></i> Inici
+    </a>
+
+    {% assign link = '/pages/what-sdg-are.html' %}
+    {% assign link_nohtml = link | remove: '.html' %}
+    {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+    {% assign is_active = false %}
+    {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+      {% assign is_active = true %}
+    {% endif %}
+    <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" aria-label="Què són els ODS"{% if is_active %} aria-current="page"{% endif %}>
+      <i class="fa fa-globe fa-fw"></i> Què són els ODS?
+    </a>
+
+    {% assign link = '/pages/why-monitoring-sdg.html' %}
+    {% assign link_nohtml = link | remove: '.html' %}
+    {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+    {% assign is_active = false %}
+    {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+      {% assign is_active = true %}
+    {% endif %}
+    <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" aria-label="Per què monitoritzar-los"{% if is_active %} aria-current="page"{% endif %}>
+      <i class="fa fa-signal fa-fw"></i> Per què monitoritzar-los?
+    </a>
+
+    {% assign link = '/pages/methods.html' %}
+    {% assign link_nohtml = link | remove: '.html' %}
+    {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+    {% assign is_active = false %}
+    {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+      {% assign is_active = true %}
+    {% endif %}
+    <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" aria-label="Què hem fet"{% if is_active %} aria-current="page"{% endif %}>
+      <i class="fa fa-cogs fa-fw"></i> Què hem fet?
+    </a>
+
+    <div class="w3-dropdown-clicker w3-bar-item w3-button w3-padding{% if explore_active %} nav-active{% endif %}" role="button" aria-haspopup="true" aria-expanded="{% if explore_active %}true{% else %}false{% endif %}" title="Explora resultats" data-dropdown-id="explore" data-default-open="{% if explore_active %}true{% else %}false{% endif %}">
+      <i class="fa fa-eye fa-fw"></i> Una primera ullada <i class="fa fa-caret-down w3-margin-left"></i>
+
+      <div class="w3-dropdown-content" role="menu" aria-label="Vistes d'exploració"{% if explore_active %} style="display:block"{% else %} style="display:none"{% endif %}>
+        {% assign link = '/pages/wordcloud.html' %}
+        {% assign link_nohtml = link | remove: '.html' %}
+        {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+        {% assign is_active = false %}
+        {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+          {% assign is_active = true %}
+        {% endif %}
+        <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
+          <span class="fa-stack" style="font-size:0.9em; vertical-align:middle; margin-right:6px" aria-hidden="true" title="Núvol de paraules">
+            <i class="fa fa-cloud fa-stack-2x"></i>
+            <i class="fa fa-font fa-stack-1x fa-inverse" style="font-size:0.9em; top:-1px;"></i>
+          </span>
+          Núvol de paraules
+        </a>
+
+        {% assign link = '/pages/faculty-doughnut.html' %}
+        {% assign link_nohtml = link | remove: '.html' %}
+        {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+        {% assign is_active = false %}
+        {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+          {% assign is_active = true %}
+        {% endif %}
+        <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
+          <span class="fa-stack" style="font-size:0.9em; vertical-align:middle; margin-right:6px" aria-hidden="true" title="Gràfic d'anell">
+            <i class="fa fa-circle fa-stack-2x" style="color:#000;"></i>
+            <i class="fa fa-circle fa-stack-1x" style="color:#fff; font-size:0.70em;"></i>
+          </span>
+          Gràfic d'anell
+        </a>
+
+        {% assign link = '/pages/degree-barchart.html' %}
+        {% assign link_nohtml = link | remove: '.html' %}
+        {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+        {% assign is_active = false %}
+        {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+          {% assign is_active = true %}
+        {% endif %}
+        <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
+          <i class="fa fa-bar-chart fa-fw" aria-hidden="true" title="Gràfic de barres" style="font-size:1.4em; line-height:1; vertical-align:middle; margin-right:6px;"></i>
+          Gràfic de barres
+        </a>
+
+        {% assign link = '/pages/course-details.html' %}
+        {% assign link_nohtml = link | remove: '.html' %}
+        {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+        {% assign is_active = false %}
+        {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+          {% assign is_active = true %}
+        {% endif %}
+        <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
+          <i class="fa fa-pencil fa-fw" aria-hidden="true" title="Detall per assignatura" style="font-size:1.4em; line-height:1; vertical-align:middle; margin-right:6px;"></i>
+          ODS per assignatura
+        </a>
+      </div>
+    </div>
+
+    <hr>
+
+    {% assign link = '/pages/data-code-resources.html' %}
+    {% assign link_nohtml = link | remove: '.html' %}
+    {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+    {% assign is_active = false %}
+    {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+      {% assign is_active = true %}
+    {% endif %}
+    <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" aria-label="Dades i codi"{% if is_active %} aria-current="page"{% endif %}>
+      <i class="fa fa-database fa-fw"></i> Dades, codi i recursos
+    </a>
+
+    {% assign link = '/pages/about.html' %}
+    {% assign link_nohtml = link | remove: '.html' %}
+    {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+    {% assign is_active = false %}
+    {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+      {% assign is_active = true %}
+    {% endif %}
+    <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" aria-label="Sobre aquesta web"{% if is_active %} aria-current="page"{% endif %}>
+      <i class="fa fa-info-circle fa-fw"></i> Sobre...
+    </a>
+
+  </div>
+</nav>

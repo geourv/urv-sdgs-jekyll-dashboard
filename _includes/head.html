@@ -1,0 +1,21 @@
+<!--
+File: _includes/head.html
+Purpose: Shared <head> content: metadata, CSS links, optional per-page head injections.
+Related files:
+  - _layouts/default.html
+  - assets/css/styles.css
+Safe edits:
+  - OK: Add meta tags or stylesheets
+  - Careful: Removing required CSS/JS links can break visualization pages
+-->
+
+<!-- common head include -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
+

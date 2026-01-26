@@ -1,0 +1,70 @@
+---
+# File: pages/data-code-resources.html
+# Purpose: Content page (data-code-resources) rendered with the default layout.
+# Related files:
+#   - _layouts/default.html
+#   - assets/css/styles.css
+#   - assets/js/site.js
+# Safe edits:
+#   - OK: Edit content and explanatory text; adjust chart config carefully
+#   - Careful: Avoid renaming ids used by inline scripts (charts/controls) unless you update the JS accordingly
+layout: default
+title: "Dades, codi i recursos"
+lang: ca
+---
+
+<!-- Header -->
+  <header class="w3-container" style="padding-top:22px">
+    <h5><b><i class="fa fa-database"></i> Dades, codi i recursos</b></h5>
+  </header>
+
+  <div class="w3-container">
+    <h1>Dades, codi i recursos</h1>
+    <p>Els principals resultats del treball no són tant unes conclusions analítiques tancades, 
+      sinó sobretot la metodologia desenvolupada i els recursos generats durant el projecte. 
+      D’una banda, s’ha dissenyat una metodologia sistemàtica per identificar, extreure i 
+      preparar les guies docents de la URV amb l’objectiu de poder-les analitzar mitjançant 
+      tècniques de mineria de text orientades als Objectius de Desenvolupament Sostenible (ODS). 
+      D’altra banda, el projecte posa a disposició de la comunitat un conjunt complet de recursos 
+      reutilitzables: el corpus de dades extret, els fitxers estructurats, el codi utilitzat per 
+      al web-scraping i el processament, i la documentació necessària per replicar o ampliar el procés. 
+      Aquests recursos constitueixen el valor central del treball, ja que faciliten tant la reproducció 
+      de l’estudi com l’aplicació de noves anàlisis sobre el mateix conjunt de dades.</p>
+    
+    <h2>Dades recopilades pel gratat web (web-scraping)</h2>
+    <p>Les dades del gratat web es publiquen periòdicament, cada cop que es repeteix el procés, al repositori Zenodo.
+      Consultar a la següent referència:
+    <p>Zaragozí, B., Saladié, Ò., & Salvat-Garcia, L. (2025).
+      Web-scraped corpus of URV teaching guides for SDG-oriented
+      text mining (0.y.z) [Data set]. Zenodo. <a href=https://doi.org/10.5281/zenodo.17652177 target="_blank">
+      https://doi.org/10.5281/zenodo.17652177</a>
+    </p>
+    </p>
+
+    <h2>Codi</h2>
+    <p>
+    El repositori <em>urv-sdgs-tracker</em> agrupa dos blocs principals: 
+    la part d’anàlisi —amb el codi i els scripts a <code>src/</code>, 
+    les dades raspades a <code>data/</code> i recursos auxiliars a 
+    <code>resources/</code> i <code>docker/</code>. El <code>README.md</code>
+     explica el flux de treball (extracció, traducció i processament) 
+     i la llicència es troba a <code>LICENSE</code>. Enllaç al repositori: 
+    <a href="https://github.com/geourv/urv-sdgs-tracker/tree/main" target="_blank" rel="noopener noreferrer">
+    https://github.com/geourv/urv-sdgs-tracker/tree/main
+    </a>
+    </p>
+
+
+    Els continguts de la pàgina estàtica generada per compartir els resultats
+    estan publicats al següent repositori:
+    <a href="https://github.com/geourv/urv-sdgs-dashboard/tree/main" target="_blank" rel="noopener noreferrer">
+    https://github.com/geourv/urv-sdgs-dashboard/tree/main
+    </a>
+    
+    <p> I la pàgina web publicada al següent enllaç:
+    <a href="https://geourv.github.io/urv-sdgs-dashboard/" target="_blank" rel="noopener noreferrer">
+    https://geourv.github.io/urv-sdgs-dashboard/
+    </a>
+    </p>
+
+  </div>

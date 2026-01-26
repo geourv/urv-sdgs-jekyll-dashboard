@@ -1,0 +1,587 @@
+/*
+File: assets/css/styles.css
+Purpose: Site-wide styles: layout, responsive rules, sidebar/overlay stacking, active menu highlighting.
+Related files:
+  - assets/js/site.js
+  - _includes/sidebar.html
+  - _layouts/default.html
+Safe edits:
+  - OK: Typography, spacing, colors, responsive widths
+  - Careful: z-index values for sidebar/overlay; breakpoints affecting mobile menu behavior
+*/
+
+/* ===== base typography ===== */
+html, body, h1, h2, h3, h4, h5 {
+    font-family: "Raleway", sans-serif;
+  }
+  
+  /* ===== layout: sidebar and main ===== */
+  .w3-main {
+    margin-left: 300px;
+    margin-top: 43px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  
+  .w3-sidebar {
+    width: 300px;
+    max-width: 80vw; /* prevent oversized sidebar on small screens */
+  }
+  
+  .w3-row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  /* quarter columns (cards grid on home) */
+  .w3-quarter { width: 25%; }
+  
+  /* ===== footer (copyright) ===== */
+  .copyright {
+    font-size: 14px;
+    color: #555;
+    padding: 8px 0;
+  }
+  .copyright a {
+    color: #0066cc;
+    text-decoration: none;
+  }
+  .copyright a:hover {
+    text-decoration: underline;
+  }
+  .copyright span {
+    margin: 0 5px;
+    color: #999;
+  }
+
+  /* ===== content links (main text) =====
+     Goal: make links in page content clearly distinguishable, without affecting
+     navigation items (sidebar/topbar). Navigation links are outside .w3-main
+     or use button-like classes.
+  */
+
+  .w3-main a:not(.w3-button):not(.w3-btn):not(.w3-bar-item) {
+    color: #0b6e99;                 /* blue-green */
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+  .w3-main a:not(.w3-button):not(.w3-btn):not(.w3-bar-item):visited {
+    color: #2b7a3d;                 /* muted green for visited */
+  }
+  .w3-main a:not(.w3-button):not(.w3-btn):not(.w3-bar-item):hover {
+    color: #095a7c;
+  }
+  .w3-main a:not(.w3-button):not(.w3-btn):not(.w3-bar-item):focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Footer links are more subtle than in-text links */
+  .copyright a,
+  .copyright a:visited {
+    color: #0066cc;
+    text-decoration: none;
+  }
+  .copyright a:hover { text-decoration: underline; }
+  
+  /* ===== charts (cards + responsive canvases) ===== */
+  .charts-wrapper {
+    width: 100%;
+    overflow: hidden;
+  }
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+  .chart-container {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .chart-container h3 {
+    margin-top: 0;
+    font-size: 1.2em;
+  }
+  .chart-container p {
+    margin-bottom: 15px;
+    color: #666;
+  }
+  .chart-wrapper {
+    position: relative;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 300px;
+  }
+  .chart-wrapper canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 300px;
+  }
+  
+  /* interactive (large) chart */
+  .interactive-chart-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  .interactive-chart-wrapper {
+    height: 500px;
+    margin-top: 20px;
+  }
+  
+  /* ===== sdg legend ===== */
+  .sdg-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+  .sdg-legend-item {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+    margin-bottom: 5px;
+    font-size: 0.8em;
+  }
+  .sdg-color {
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+    border-radius: 3px;
+  }
+  .sdg-code {
+    font-weight: bold;
+    margin-right: 5px;
+  }
+  
+  /* ===== selectors ===== */
+  .selector-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .selector-box {
+    width: 100%;
+    margin-bottom: 15px; /* full width by default; override in horizontal layouts */
+  }
+  .selector-box label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  
+  /* ===== degree info ===== */
+  .degree-info {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+  }
+  .degree-info p { margin: 5px 0; }
+  .degree-info strong { color: #333; }
+  
+  /* ===== courses table ===== */
+  .courses-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  .courses-table th, .courses-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  .courses-table th { background-color: #f2f2f2; }
+  .courses-table tr:nth-child(even) { background-color: #f9f9f9; }
+  
+  .course-row {
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  .course-row:hover { background-color: #f1f1f1 !important; }
+  
+  .course-details-row { background-color: #f8f9fa; }
+  .course-details-cell { padding: 0 !important; }
+  .course-details-cell .w3-container {
+    padding: 16px;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .course-sdg {
+    display: inline-block;
+    width: 15px; height: 15px;
+    border-radius: 3px;
+    margin-right: 3px;
+  }
+  
+  /* ===== course details panel ===== */
+  .course-details {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    min-height: 300px;
+  }
+  .course-details p { margin: 5px 0; }
+  /* Links inside course details use the global content link styling above. */
+  
+  /* ===== feature chips ===== */
+  .sdg-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .feature-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+  }
+  .feature-item {
+    background-color: #e6f3ff;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    display: inline-block;
+    margin: 2px;
+  }
+  
+  /* ===== dropdown (hover) ===== */
+  .w3-dropdown-content {
+    display: none;
+    position: relative;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 1;
+  }
+  .w3-dropdown-content a {
+    color: #000;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+  }
+  .w3-dropdown-content a:hover { background-color: #f1f1f1; }
+  .w3-dropdown-clicker:hover .w3-dropdown-content { display: block; }
+  
+  /* ===== filter tabs ===== */
+  .filter-container {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+  }
+  .filter-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .filter-tab {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    background: #e9e9e9;
+    transition: all 0.3s;
+    font-size: 0.9em;
+  }
+  .filter-tab:hover { background-color: #ddd; }
+  .filter-tab.active {
+    background-color: hsl(117, 74%, 34%);
+    color: #fff;
+  }
+  .filter-tab.active:hover { background-color: hsl(117, 74%, 34%); }
+  
+  /* symbols used between tabs */
+  .filter-symbol {
+    font-size: 2.5em;
+    color: #555;
+    margin: 0;
+    vertical-align: middle;
+  }
+  
+  /* ===== specific adjustments (home cards) ===== */
+  .w3-quarter img { width: 168.75px; } /* 25% smaller than original */
+  .w3-quarter h4 {
+    font-weight: bold;
+    margin: 10px 0;
+    text-align: left;
+  }
+  .w3-quarter p { margin-top: 10px; }
+  .w3-quarter .w3-container { text-align: left; }
+  
+  /* sidebar header block alignment */
+  .w3-sidebar .w3-col { margin-top: 10px; }
+  .w3-sidebar .w3-bar { text-align: left; margin-top: 10px; }
+  .w3-sidebar .w3-bar span { display: block; margin-top: 5px; }
+
+  /* active navigation item */
+  .w3-sidebar .nav-active {
+    font-weight: 700;
+    /* clear visual cue for current page */
+    border-left: 4px solid #1a73e8;
+    background-color: rgba(26, 115, 232, 0.12);
+  }
+  .w3-sidebar .nav-active:hover {
+    background-color: rgba(26, 115, 232, 0.18);
+  }
+  
+  /* ===== horizontal layout (degree view) ===== */
+  .horizontal-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  .horizontal-container h1 {
+    width: 100%;
+    text-align: left;
+  }
+  .horizontal-container .selector-container {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 40px;
+  }
+  .horizontal-container .selector-box {
+    flex: 1;
+    max-width: 300px;
+  }
+  .horizontal-container .degree-info {
+    width: 100%;
+    text-align: left;
+  }
+  .horizontal-container .degree-info p {
+    display: inline-block;
+    margin: 5px 10px;
+  }
+  
+  /* ===== responsive ===== */
+  @media screen and (max-width: 1000px) {
+    /* two columns for .w3-quarter at medium widths */
+    .w3-quarter { width: 50%; }
+  }
+  
+  @media screen and (max-width: 600px) {
+    /* collapse sidebar offset and reduce paddings */
+    .w3-main {
+      margin-left: 0;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+  
+    /* one column cards */
+    .w3-quarter,
+    .w3-col.m3,
+    .w3-col.m6,
+    .w3-col.m9 {
+      width: 100%;
+      padding: 0 !important;
+    }
+  
+    /* footer text sizing */
+    .copyright {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .copyright span {
+      display: inline-block;
+      margin: 0 3px;
+    }
+  
+    /* mobile: keep sidebar offcanvas-style (leave some backdrop visible) */
+    .w3-sidebar {
+      width: 300px;
+      max-width: 85vw;
+    }
+  
+    /* home logos slightly larger for readability on mobile */
+    .w3-quarter img { width: 253.125px; }
+  }
+
+  /* === mobile sidebar overlay layering ===
+     Goal: the overlay should darken the page content but NEVER sit above the sidebar,
+     so sidebar links remain clickable.
+  */
+  #mySidebar { z-index: 1001; }
+  #myOverlay { z-index: 1000; }
+  
+
+  /* layout: contenidor */
+.interactive-chart-container{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
+  }
+  
+  /* columnes en escriptori */
+  .left-col{
+    flex:0 0 30%;
+    min-width:300px;
+    padding-right:20px;
+  }
+  .right-col{
+    flex:1 1 70%;
+    min-width:420px;
+  }
+  
+  /* caixa del canvas amb altura fixa; la llegenda va a sota */
+  .chart-canvas-box{
+    position:relative;
+    height:500px;
+    margin-bottom:12px;
+  }
+  
+  /* llegenda en grid, amb topall d’alçada en escriptori */
+  .sdg-legend{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:8px 16px;
+    align-items:center;
+    max-height:140px;
+    overflow-y:auto;
+    padding-bottom:4px;
+  }
+  .sdg-legend-item{ font-size:0.85em; }
+  .sdg-color{ width:14px; height:14px; border-radius:3px; margin-right:6px; }
+  
+  /* controls: que ocupen ample complet si cal */
+  .selector-container{ gap:12px; }
+  .selector-box{ width:100%; }
+  .selector-box .w3-select{ width:100%; min-width:0; }
+  
+  /* pestanyes de filtre: millor stacking en mòbil */
+  .filter-tabs{ display:flex; flex-wrap:wrap; gap:10px; }
+  @media (max-width: 1000px){
+    .left-col, .right-col{
+      flex:1 0 100% !important;  /* mata qualsevol inline restant */
+      min-width:0;
+      padding-right:0;
+    }
+  }
+  @media (max-width: 600px){
+    .filter-tabs{ flex-direction:column; align-items:stretch; }
+    .filter-tab{ width:100%; text-align:center; }
+    .sdg-legend{ max-height:none; } /* que cresca en vertical en mòbil */
+  }
+  
+  /* --- chart area fixes --- */
+.chart-canvas-box{
+    position: relative;
+    height: 500px;       /* alçada del gràfic, canvia si cal */
+    margin-bottom: 12px;
+  }
+  
+  /* el canvas ha d'omplir la caixa anterior */
+  .chart-canvas-box canvas{
+    display: block;
+    width: 100% !important;
+    height: 100% !important;   /* <- clau perquè no es faça petit */
+  }
+  
+  /* --- legend: cap scroll i s'ajusta a l'ample --- */
+  .right-col .sdg-legend{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px 16px;
+    align-items: center;
+    margin-top: 12px;
+    max-height: none;      /* sense topall */
+    overflow: visible;     /* sense scroll */
+    padding-bottom: 4px;
+  }
+  .right-col .sdg-legend-item{
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85em;
+    line-height: 1.2;
+  }
+  .right-col .sdg-color{
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    margin-right: 6px;
+  }
+  
+  /* mòbil: columnes més estretes si cal */
+  @media (max-width: 600px){
+    .right-col .sdg-legend{
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+  }
+  
+
+/* ------------------------------------------------------------------------- */
+/* Back to top button                                                         */
+/* File: assets/css/styles.css                                                */
+/* Purpose: Style for the floating back-to-top button added in the default    */
+/*          layout.                                                           */
+/* Related files: _includes/back_to_top.html, assets/js/site.js               */
+/* Safe edits: tweak size/position; keep high contrast (white on black).      */
+/* ------------------------------------------------------------------------- */
+.back-to-top{
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: #111;
+  color: #fff;
+  display: none; /* shown by JS after scroll */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 850; /* below sidebar/overlay (1000+) */
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+.back-to-top svg{
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+.back-to-top:focus{
+  outline: 3px solid rgba(0,0,0,0.25);
+  outline-offset: 2px;
+}
+.back-to-top:hover{
+  filter: brightness(1.08);
+}
+
+/* Doughnut comparison grid (1 chart = full width, 2 charts = side-by-side) */
+.chart-grid{
+  display: grid;
+  gap: 16px;
+}
+.chart-grid.one{
+  grid-template-columns: 1fr;
+}
+.chart-grid.two{
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 900px){
+  .chart-grid.two{ grid-template-columns: 1fr; }
+}
+
+/* Make the doughnut chart larger when showing a single chart */
+.chart-grid.one .chart-wrapper{
+  max-width: 460px;
+}
+.chart-grid.one .chart-wrapper canvas{
+  max-height: 420px;
+}

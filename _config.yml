@@ -1,0 +1,26 @@
+# File: _config.yml
+# Purpose: Jekyll configuration (site metadata, baseurl, excludes, build options).
+# Related files:
+#   - .github/workflows/pages.yml
+#   - _layouts/default.html
+#   - assets/css/styles.css
+# Safe edits:
+#   - OK: Site title/description, collections, excludes
+#   - Careful: baseurl/url settings (can break links/assets on GitHub Pages)
+# Notes:
+#   - GitHub Pages workflow passes baseurl during build for Project Pages.
+
+title: Docència i ODS a la URV
+lang: ca
+# If you publish under a GitHub Pages project site, set baseurl to /<repo-name>
+baseurl: ""
+url: ""
+
+# Keep these folders as static assets
+include:
+  - pages
+  - data
+  - downloads
+
+# Disable future posts behaviour (no blog needed)
+plugins: []

@@ -1,0 +1,325 @@
+---
+# File: pages/wordcloud.html
+# Purpose: Unified word cloud view. Lets users pick a faculty/centre first, then optionally a degree/programme.
+# How to use:
+#   - Choose a faculty/centre.
+#   - Choose "Tots" (default) to see the faculty/centre word cloud, or pick an "Ensenyament" to see the programme word cloud.
+# Related files:
+#   - assets/js/site.js (sidebar UX / mobile)
+#   - assets/css/styles.css (layout + active link styles)
+#   - data/faculties_features_data*.json (faculty word frequencies)
+#   - data/degrees_features_data*.json (degree word frequencies)
+#   - data/degrees_sdg_data*.json (maps degrees -> faculties; used to build the degree selector)
+# Safe edits:
+#   - OK: change labels, reorder controls, adjust default faculty.
+#   - Careful: keep element ids used by the inline JS (#facultySelect, #degreeSelect, #wordcloud).
+layout: default
+title: "Núvol de paraules"
+head_scripts:
+  - https://cdn.jsdelivr.net/npm/wordcloud@1.1.1/src/wordcloud2.min.js
+---
+
+  <header class="w3-container" style="padding-top:22px">
+    <h5><b><i class="fa fa-eye"></i> Una primera ullada &gt; Núvol de paraules</b></h5>
+  </header>
+
+  <div class="w3-container">
+    <h1>Núvol de paraules</h1>
+    <p>Aquesta visualització mostra un núvol de paraules amb els termes 
+      relacionats amb els Objectius de Desenvolupament Sostenible (ODS) 
+      associats a cada Facultat i Escola de la Universitat Rovira i Virgili.
+      Permet filtrar per títol, descripció i continguts;  
+      competències i resultats d’aprenentatge; bibliografia; i per la guia docent completa</p>
+    <p>Els termes son dels conceptes detectats per un algoritme d'aprenentatge automàtic però, 
+      no necessàriament apareixen explicitats a les guies docents.</p>
+  </div>
+<!-- interactive section -->
+<div class="w3-container">
+  <div class="interactive-chart-container">
+
+    <!-- left column (controls) -->
+    <div class="left-col">
+      <strong>Selecciona una Facultat/Escola per veure els termes més freqüents associats als ODS.</strong>
+
+      <div class="selector-container" style="margin-top: 0.75rem;">
+        <div class="selector-box">
+          <select id="facultySelect" class="w3-select w3-border">
+            <option value="">-- Selecciona una Facultat/Escola --</option>
+          </select>
+        </div>
+      </div>
+
+      <strong style="display:block; margin-top: 1rem;">Ensenyament (opcional):</strong>
+
+      <div class="selector-container" style="margin-top: 0.75rem;">
+        <div class="selector-box">
+          <select id="degreeSelect" class="w3-select w3-border">
+            <option value="" selected disabled>Selecciona…</option>
+            <option value="ALL">Tots</option>
+          </select>
+        </div>
+      </div>
+
+      <strong style="display:block; margin-top: 1rem;">Filtres per contingut analitzat:</strong>
+
+      <!-- Filter Tabs -->
+      <div class="filter-container">
+        <div class="filter-tabs">
+          <div class="filter-tab" data-suffix="_descriptive">Títol, descripció i continguts</div>
+          <span class="filter-symbol">+</span>
+          <div class="filter-tab" data-suffix="_competencial">Competències i resultats d'aprenentatge</div>
+          <span class="filter-symbol">+</span>
+          <div class="filter-tab" data-suffix="_bibliographical">Bibliografia</div>
+          <span class="filter-symbol">=</span>
+          <div class="filter-tab active" data-suffix="">Guia docent completa</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right column (wordcloud area) -->
+    <div class="right-col">
+      <div class="wordcloud-wrapper">
+        <canvas id="wordcloud"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// File: inline script in pages/wordcloud.html
+// Purpose: Load faculty + degree word-frequency JSONs and render a unified word cloud with two-step selection.
+// Notes:
+//   - Uses degrees_sdg_data*.json only for degree->faculty mapping (it doesn't contain word frequencies).
+
+const facultySelect = document.getElementById("facultySelect");
+const degreeSelect = document.getElementById("degreeSelect");
+const canvas = document.getElementById("wordcloud");
+
+// Default faculty when there's no previous selection.
+const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
+
+let currentSuffix = ""; // "", "_descriptive", "_competencial", "_bibliographical"
+let facultiesFeatures = [];
+let degreesFeatures = [];
+let degreeToFaculty = new Map();
+
+let wordcloudInstance = null;
+
+function resizeCanvas() {
+  const container = document.querySelector('.wordcloud-wrapper');
+  const rect = container.getBoundingClientRect();
+  const width = Math.max(300, Math.floor(rect.width));
+  const height = Math.max(320, Math.floor(rect.height));
+  canvas.width = width;
+  canvas.height = height;
+  return { width, height };
+}
+
+function drawWordCloud(wordFreqDict) {
+  const entries = Object.entries(wordFreqDict || {});
+  const wordList = entries
+    .filter(([w, n]) => typeof w === 'string' && w.trim().length > 0 && typeof n === 'number' && n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 100);
+
+  const { width } = resizeCanvas();
+
+  if (wordcloudInstance) {
+    WordCloud.stop();
+  }
+
+  const maxFrequency = wordList.length ? Math.max(...wordList.map(w => w[1])) : 1;
+
+  wordcloudInstance = WordCloud(canvas, {
+    list: wordList,
+    gridSize: Math.round(width * 0.005),
+    weightFactor: function(size) {
+      return (Math.pow(size, 0.7) / maxFrequency) * (width / 6);
+    },
+    fontFamily: 'Arial',
+    color: 'random-dark',
+    backgroundColor: '#fff',
+    rotateRatio: 0,
+    drawOutOfBound: false,
+    shrinkToFit: true,
+    minSize: 10,
+    maxSize: 80,
+    shape: 'square',
+    ellipticity: 0.6,
+    clearCanvas: true,
+    wait: 10
+  });
+}
+
+function getFileNames(suffix) {
+  return {
+    faculties: `faculties_features_data${suffix}.json`,
+    degrees: `degrees_features_data${suffix}.json`,
+    mapping: `degrees_sdg_data${suffix}.json`
+  };
+}
+
+function buildDegreeToFacultyMap(mappingJson) {
+  const map = new Map();
+  (mappingJson || []).forEach(group => {
+    const facultyName = group.faculty;
+    (group.degrees || []).forEach(d => {
+      if (d && d.degree && facultyName) map.set(d.degree, facultyName);
+    });
+  });
+  return map;
+}
+
+function populateFacultySelect(selectedFacultyName) {
+  facultySelect.innerHTML = '';
+  facultiesFeatures.forEach((f, idx) => {
+    if (!f || !f.faculty) return;
+    const opt = document.createElement('option');
+    opt.value = String(idx);
+    opt.textContent = f.faculty;
+    facultySelect.appendChild(opt);
+  });
+
+  // Determine selection
+  let idx = facultiesFeatures.findIndex(f => f.faculty === selectedFacultyName);
+  if (idx === -1) idx = facultiesFeatures.findIndex(f => f.faculty === DEFAULT_FACULTY_NAME);
+  if (idx === -1) idx = 0;
+
+  facultySelect.value = String(idx);
+  return facultiesFeatures[idx]?.faculty;
+}
+
+function populateDegreeSelect(facultyName, selectedDegreeName) {
+  degreeSelect.innerHTML = '';
+
+  // Placeholder shown by default (implicit 'ALL' until the user picks something else)
+  const optPlaceholder = document.createElement('option');
+  optPlaceholder.value = '';
+  optPlaceholder.textContent = 'Selecciona…';
+  optPlaceholder.disabled = true;
+  degreeSelect.appendChild(optPlaceholder);
+
+  // Faculty-level option
+  const optAll = document.createElement('option');
+  optAll.value = 'ALL';
+  optAll.textContent = 'Tots';
+  degreeSelect.appendChild(optAll);
+
+  const degreesForFaculty = degreesFeatures
+    .map(d => d?.degree)
+    .filter(name => name && degreeToFaculty.get(name) === facultyName)
+    .sort((a, b) => a.localeCompare(b, 'ca'));
+
+  degreesForFaculty.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    degreeSelect.appendChild(opt);
+  });
+
+  // Selection rules:
+  // - '' (or null/undefined): keep placeholder selected but render as faculty-level
+  // - 'ALL': explicit faculty-level selection
+  // - degree name: select if available
+  if (selectedDegreeName && selectedDegreeName !== 'ALL' && degreesForFaculty.includes(selectedDegreeName)) {
+    degreeSelect.value = selectedDegreeName;
+  } else if (selectedDegreeName === 'ALL') {
+    degreeSelect.value = 'ALL';
+  } else {
+    degreeSelect.value = '';
+  }
+}
+
+function renderCurrentSelection() {
+  const facultyIdx = parseInt(facultySelect.value, 10);
+  const facultyName = facultiesFeatures[facultyIdx]?.faculty;
+  const degreeValue = degreeSelect.value;
+
+  if (!facultyName) return;
+
+  if (degreeValue === '' || degreeValue === 'ALL') {
+    const facultyObj = facultiesFeatures.find(f => f.faculty === facultyName);
+    drawWordCloud(facultyObj?.sdgs || {});
+  } else {
+    const degreeObj = degreesFeatures.find(d => d.degree === degreeValue);
+    drawWordCloud(degreeObj?.sdgs || {});
+  }
+}
+
+async function loadAllData(suffix, preferredFacultyName, preferredDegreeName) {
+  try {
+    facultySelect.disabled = true;
+    degreeSelect.disabled = true;
+
+    const files = getFileNames(suffix);
+    const [facRes, degRes, mapRes] = await Promise.all([
+      fetch(`../data/${files.faculties}`),
+      fetch(`../data/${files.degrees}`),
+      fetch(`../data/${files.mapping}`)
+    ]);
+
+    if (!facRes.ok) throw new Error(`Error loading ${files.faculties}: ${facRes.status}`);
+    if (!degRes.ok) throw new Error(`Error loading ${files.degrees}: ${degRes.status}`);
+    if (!mapRes.ok) throw new Error(`Error loading ${files.mapping}: ${mapRes.status}`);
+
+    facultiesFeatures = await facRes.json();
+    degreesFeatures = await degRes.json();
+    degreeToFaculty = buildDegreeToFacultyMap(await mapRes.json());
+
+    const activeFacultyName = populateFacultySelect(preferredFacultyName || DEFAULT_FACULTY_NAME);
+    populateDegreeSelect(activeFacultyName, preferredDegreeName);
+
+    facultySelect.disabled = false;
+    degreeSelect.disabled = false;
+
+    renderCurrentSelection();
+
+  } catch (err) {
+    console.error(err);
+    facultySelect.innerHTML = '<option value="">Error carregant dades</option>';
+    degreeSelect.innerHTML = '<option value="ALL">Tots</option>';
+    facultySelect.disabled = true;
+    degreeSelect.disabled = true;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Set a reasonable height for the canvas wrapper.
+  const wordcloudWrapper = document.querySelector('.wordcloud-wrapper');
+  wordcloudWrapper.style.height = `${Math.min(window.innerHeight * 0.6, 600)}px`;
+
+  await loadAllData(currentSuffix, DEFAULT_FACULTY_NAME, '');
+
+  facultySelect.addEventListener('change', () => {
+    const facultyIdx = parseInt(facultySelect.value, 10);
+    const facultyName = facultiesFeatures[facultyIdx]?.faculty;
+    if (!facultyName) return;
+    populateDegreeSelect(facultyName, '');
+    renderCurrentSelection();
+  });
+
+  degreeSelect.addEventListener('change', () => {
+    renderCurrentSelection();
+  });
+
+  // Tab switching (changes which JSONs are loaded)
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', async function() {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      currentSuffix = this.getAttribute('data-suffix') || '';
+      // Keep current selection when switching data sources.
+      const facultyIdx = parseInt(facultySelect.value, 10);
+      const currentFacultyName = facultiesFeatures[facultyIdx]?.faculty || DEFAULT_FACULTY_NAME;
+      const currentDegreeValue = degreeSelect.value; // '' means: show placeholder but render faculty-level
+      await loadAllData(currentSuffix, currentFacultyName, currentDegreeValue);
+    });
+  });
+
+  // Redraw on resize (keeps proportions)
+  window.addEventListener('resize', () => {
+    renderCurrentSelection();
+  });
+});
+</script>

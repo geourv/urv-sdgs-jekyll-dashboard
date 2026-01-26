@@ -1,0 +1,82 @@
+---
+# File: index.html
+# Purpose: Home page content (Jekyll page using default layout).
+# Related files:
+#   - _layouts/default.html
+#   - _includes/sidebar.html
+# Safe edits:
+#   - OK: Edit page content and links to internal pages
+#   - Careful: Keep YAML front matter valid; invalid front matter disables layout and styles
+layout: default
+title: "Docència i ODS a la URV"
+lang: ca
+---
+
+<!-- Page Header -->
+    <header class="w3-container" style="padding-top:22px">
+        <h5><b><i class="fa fa-home"></i> Presentació </b></h5>
+    </header>
+
+    <!-- Introduction Section -->
+    <div class="w3-container">
+        <h1>Benvingut a la web dels ODS als ensenyaments de la URV</h1>
+        <p>Aquesta pàgina web té com a objectiu principal mostrar
+            l'alineació dels programes acadèmics de la Universitat Rovira
+            i Virgili (URV) amb
+            els Objectius de Desenvolupament Sostenible (ODS). 
+            Per avaluar la presència dels ODS en els ensenyaments
+            de la URV, s'ha emprat una metodologia basada en tècniques de 
+            web scraping i mineria de textos per extreure els continguts de les
+            guies docents. Posteriorment, s'han traduït els textos a l'anglès 
+            per tal de poder realitzar l'anàlisi de dades en R per identificar
+            els termes relacionats amb els ODS i determinar-ne el nivell de 
+            presència en l'ensenyament impartit a la URV.
+        </p>
+
+        <h2>Estructura del lloc web</h2>
+        <p>El lloc web està organitzat en diverses seccions per facilitar la navegació. 
+            Per accedir a cadascuna d'elles, utilitzeu el menú lateral.
+
+        <p>L'estructura del lloc web és la següent:</p>
+
+
+        <ul>
+            <li><strong>Inici</strong> Explicació de l'objectiu de la pàgina i el seu caràcter interactiu.</li>
+
+            <li><strong>Què són els ODS?</strong> Informació general sobre els 17 Objectius de Desenvolupament Sostenible 
+                de l'Agenda 2030. Història, referències i accés individual a cada objectiu fent clic sobre la seva imatge.</li>
+            </li>
+
+            <li><strong>Per què monitoritzar-los?</strong> Imperatius i compromisos globals, 
+                qualitat en la docència i responsabilitat social i ambiental.
+            </li>
+
+            <li><strong>Què hem fet?</strong> Metodologia aplicada: extracció de dades de 
+                les guies docents, traducció, anàlisi en R i generació de visualitzacions interactives.</li>
+            </li>
+
+            <li><strong>Una primera ullada:</strong>
+                <ul>
+                    <li><strong>Termes ODS per centres:</strong> Núvol de paraules amb termes relacionats amb els ODS per Facultat i Escola. Permet filtrar per títol, descripció i continguts; competències i resultats d'aprenentatge; bibliografia; i guia docent completa.</li>
+                    <li><strong>Termes ODS per ensenyaments:</strong> Núvol de paraules amb termes ODS per cada ensenyament. Permet filtres similars.</li>
+                    <li><strong>Facultats i escoles:</strong> Gràfic d’anell amb l’alineació de cada Facultat i Escola amb els ODS. Permet filtres similars.</li>
+                    <li><strong>ODS per ensenyaments:</strong> Gràfics de barres que mostren la presència d’ODS per ensenyament. Permet filtres similars.</li>
+                    <li><strong>ODS per assignatura:</strong> Detalls de cada assignatura amb nombre i percentatge de presència d’ODS.</li>
+                </ul>
+            </li>
+
+            <li><strong>Dades, codi i recursos:</strong> Fitxers descarregables amb dades (JSON) i enllaços als repositoris de GitHub
+                amb el codi i la resta de recursos que han permès realitzar l'anàlisi i mostrar els resultats.
+            </li>
+
+            <li><strong>Sobre…</strong> Explicació de la iniciativa i antecedents del projecte i el seu per què.
+            </li>
+        </ul>
+    
+    <!-- About ODS Section -->
+    <div class="w3-container">
+        <h3>Espai web en construcció</h3>
+        <p>Aquest lloc web és un prototip desenvolupat per explorar les possibilitats 
+        de visualització de l'anàlisi de les dades de les guies docents i els Objectius 
+        de Desenvolupament Sostenible (ODS) a la URV.</p>
+    </div>

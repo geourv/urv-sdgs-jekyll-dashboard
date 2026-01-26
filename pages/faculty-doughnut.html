@@ -1,0 +1,439 @@
+---
+# File: pages/faculty-doughnut.html
+# Purpose: Visualization page: faculty doughnut charts (Chart.js) reading JSON datasets from /data.
+# Related files:
+#   - _layouts/default.html
+#   - assets/css/styles.css
+#   - assets/js/site.js
+#   - data/faculties_*_data.json
+# Safe edits:
+#   - OK: Edit content and explanatory text; adjust chart config carefully
+#   - Careful: Avoid renaming ids used by inline scripts (charts/controls) unless you update the JS accordingly
+# Notes:
+#   - If styles disappear, check YAML front matter validity (quote characters).
+layout: default
+title: "Gràfic d'anell"
+lang: ca
+---
+
+<!-- Header -->
+  <header class="w3-container" style="padding-top:22px">
+    <h5><b><i class="fa fa-eye"></i> Una primera ullada &gt; Gràfic d'anell</b></h5>
+  </header>
+
+  <div class="w3-container">
+    <h1>Gràfic d'anell</h1>
+    <p>Aquesta pàgina mostra informació sobre totes les Facultats i Escoles de la URV i 
+      la seva alineació amb els Objectius de Desenvolupament Sostenible.
+    Permet filtrar per títol, descripció i continguts;  
+      competències i resultats d’aprenentatge; bibliografia; i per la guia docent completa.</p>
+  </div>
+  <!-- interactive section -->
+  <div class="w3-container">
+    <div class="interactive-chart-container">
+
+      <!-- left column (controls) -->
+      <div class="left-col">
+        <strong>Selecciona una Facultat/Escola per veure la distribució d'ODS.</strong>
+
+        <strong style="display:block; margin-top: 1rem;">Facultat/Escola:</strong>
+
+        <div class="selector-container" style="margin-top: 0.75rem;">
+          <div class="selector-box">
+            <select id="faculty-select" class="w3-select w3-border" style="margin-top: 0.25rem;">
+              <option value="">-- Selecciona una Facultat/Escola --</option>
+            </select>
+          </div>
+        </div>
+
+        <strong style="display:block; margin-top: 1rem;">Ensenyament (opcional):</strong>
+
+        <div class="selector-container" style="margin-top: 0.75rem;">
+          <div class="selector-box">
+            <select id="degree-select" class="w3-select w3-border" style="margin-top: 0.25rem;" disabled>
+              <option value="" selected disabled>Selecciona…</option>
+              <option value="ALL">Tots</option>
+            </select>
+          </div>
+        </div>
+
+        <strong style="display:block; margin-top: 1rem;">Filtres per contingut analitzat:</strong>
+
+        <!-- Filter Tabs -->
+        <div class="filter-container">
+          <div class="filter-tabs">
+            <div class="filter-tab" data-filter="descriptive">Títol, descripció i continguts</div>
+            <span class="filter-symbol">+</span>
+            <div class="filter-tab" data-filter="competencial">Competències i resultats d'aprenentatge</div>
+            <span class="filter-symbol">+</span>
+            <div class="filter-tab" data-filter="bibliographical">Bibliografia</div>
+            <span class="filter-symbol">=</span>
+            <div class="filter-tab active" data-filter="complete">Guia docent completa</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right column (chart area) -->
+      <div class="right-col">
+        <div id="chart-container" class="chart-grid">
+          <!-- Dynamic chart will be loaded here -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<!-- Load charting libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+// File: inline script in pages/faculty-doughnut.html
+// Purpose: Doughnut charts with sequential selection (Centre -> Ensenyament) and filter tabs.
+// Behavior:
+//   - Centre defaults to FTG.
+//   - Ensenyament shows a placeholder by default (implicit 'Tots'): the page shows the centre chart.
+//   - Selecting an ensenyament adds a second chart to compare Centre vs Ensenyament.
+// Data:
+//   - Facultats: data/faculties_sdg_data*.json
+//   - Ensenyaments: data/degrees_sdg_data*.json
+
+const odsDefinitions = {
+  "ODS-01": "Fi de la pobresa",
+  "ODS-02": "Fam zero",
+  "ODS-03": "Salut i benestar",
+  "ODS-04": "Educació de qualitat",
+  "ODS-05": "Igualtat de gènere",
+  "ODS-06": "Aigua neta i sanejament",
+  "ODS-07": "Energia neta i assequible",
+  "ODS-08": "Treball digne i creixement econòmic",
+  "ODS-09": "Indústria, innovació i infraestructura",
+  "ODS-10": "Reducció de les desigualtats",
+  "ODS-11": "Ciutats i comunitats sostenibles",
+  "ODS-12": "Producció i consum responsables",
+  "ODS-13": "Acció climàtica",
+  "ODS-14": "Vida submarina",
+  "ODS-15": "Vida d'ecosistemes terrestres",
+  "ODS-16": "Pau, justícia i institucions sòlides",
+  "ODS-17": "Aliança per assolir els objectius"
+};
+
+const odsColors = {
+  "ODS-01": "#e5243b",
+  "ODS-02": "#dda63a",
+  "ODS-03": "#4c9f38",
+  "ODS-04": "#c5192d",
+  "ODS-05": "#ff3a21",
+  "ODS-06": "#26bde2",
+  "ODS-07": "#fcc30b",
+  "ODS-08": "#a21942",
+  "ODS-09": "#fd6925",
+  "ODS-10": "#dd1367",
+  "ODS-11": "#fd9d24",
+  "ODS-12": "#bf8b2e",
+  "ODS-13": "#3f7e44",
+  "ODS-14": "#0a97d9",
+  "ODS-15": "#56c02b",
+  "ODS-16": "#00689d",
+  "ODS-17": "#19486a"
+};
+
+const dataSources = {
+  complete: '../data/faculties_sdg_data.json',
+  descriptive: '../data/faculties_sdg_data_descriptive.json',
+  competencial: '../data/faculties_sdg_data_competencial.json',
+  bibliographical: '../data/faculties_sdg_data_bibliographical.json'
+};
+
+const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
+
+let currentFilter = 'complete';
+let facultiesByFilter = {};
+let degreesByFilter = {};
+let charts = [];
+
+function normalizeOdsKeysInPlace(obj) {
+  if (!obj) return;
+  if (obj.percentages) {
+    const p = {};
+    Object.keys(obj.percentages).forEach(k => p[k.replace('SDG','ODS')] = obj.percentages[k]);
+    obj.percentages = p;
+  }
+  if (obj.sdgs) {
+    const s = {};
+    Object.keys(obj.sdgs).forEach(k => s[k.replace('SDG','ODS')] = obj.sdgs[k]);
+    obj.sdgs = s;
+  }
+}
+
+function clearCharts() {
+  charts.forEach(c => {
+    try { c.destroy(); } catch(_) {}
+  });
+  charts = [];
+}
+
+function makeChartCard({ title, subtitle, sdgs, percentages }, mountEl) {
+  const card = document.createElement('div');
+  card.className = 'chart-container';
+  const canvasId = `chart-${Math.random().toString(16).slice(2)}`;
+  card.innerHTML = `
+    <h3>${title}</h3>
+    <p>${subtitle}</p>
+    <div class="chart-wrapper">
+      <canvas id="${canvasId}"></canvas>
+    </div>
+  `;
+  mountEl.appendChild(card);
+
+  const odsData = {};
+  const odsPercentages = {};
+  Object.entries(sdgs || {}).forEach(([k,v]) => odsData[k] = v);
+  Object.entries(percentages || {}).forEach(([k,v]) => odsPercentages[k] = v);
+
+  const labels = Object.keys(odsData).sort();
+  const values = labels.map(k => odsData[k] || 0);
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels.map(code => `${code}: ${odsDefinitions[code]}`),
+      datasets: [{
+        data: values,
+        backgroundColor: labels.map(ods => odsColors[ods] || '#ccc'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '52%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.parsed;
+              const code = label.split(':')[0];
+              const percent = odsPercentages[code] || 0;
+              return `${label}: ${value} (${percent}%)`;
+            }
+          }
+        },
+        datalabels: {
+          formatter: function(value, context) {
+            const fullLabel = context.chart.data.labels[context.dataIndex];
+            const code = fullLabel.split(':')[0];
+            const percent = odsPercentages[code] || 0;
+            return `${code}\n${percent}%`;
+          },
+          color: '#000',
+          font: { weight: 'bold', size: 10 },
+          anchor: 'end',
+          align: 'start',
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          borderColor: 'rgba(255, 255, 255, 0.9)',
+          borderWidth: 1.5,
+          borderRadius: 2,
+          padding: 1
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+
+  charts.push(chart);
+}
+
+function getSelectedFacultyName() {
+  const sel = document.getElementById('faculty-select');
+  const idx = parseInt(sel.value, 10);
+  const f = facultiesByFilter.complete?.[idx];
+  return f?.faculty || null;
+}
+
+function populateFacultySelect() {
+  const facultySelect = document.getElementById('faculty-select');
+  facultySelect.innerHTML = '<option value="">-- Selecciona una Facultat/Escola --</option>';
+
+  (facultiesByFilter.complete || []).forEach((f, idx) => {
+    if (!f?.faculty) return;
+    const opt = document.createElement('option');
+    opt.value = String(idx);
+    opt.textContent = f.faculty;
+    facultySelect.appendChild(opt);
+  });
+
+  let defaultIdx = (facultiesByFilter.complete || []).findIndex(f => f.faculty === DEFAULT_FACULTY_NAME);
+  if (defaultIdx < 0) defaultIdx = 0;
+  facultySelect.value = String(defaultIdx);
+}
+
+function populateDegreeSelect(facultyName, preferredDegree) {
+  const degreeSelect = document.getElementById('degree-select');
+  degreeSelect.innerHTML = '';
+
+  // Placeholder (implicit 'Tots' until the user picks something else)
+  const ph = document.createElement('option');
+  ph.value = '';
+  ph.textContent = 'Selecciona…';
+  ph.disabled = true;
+  degreeSelect.appendChild(ph);
+
+  const optAll = document.createElement('option');
+  optAll.value = 'ALL';
+  optAll.textContent = 'Tots';
+  degreeSelect.appendChild(optAll);
+
+  const groups = degreesByFilter.complete || [];
+  const g = groups.find(x => x.faculty === facultyName);
+  const list = (g?.degrees || []).map(d => d.degree).filter(Boolean).sort((a,b)=>a.localeCompare(b,'ca'));
+
+  list.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    degreeSelect.appendChild(opt);
+  });
+
+  degreeSelect.disabled = !facultyName;
+
+  if (preferredDegree && preferredDegree !== 'ALL' && list.includes(preferredDegree)) {
+    degreeSelect.value = preferredDegree;
+  } else if (preferredDegree === 'ALL') {
+    degreeSelect.value = 'ALL';
+  } else {
+    degreeSelect.value = '';
+  }
+}
+
+function getFacultyObj(filter, facultyName) {
+  return (facultiesByFilter[filter] || []).find(f => f.faculty === facultyName);
+}
+
+function getDegreeObj(filter, facultyName, degreeName) {
+  const g = (degreesByFilter[filter] || []).find(x => x.faculty === facultyName);
+  return (g?.degrees || []).find(d => d.degree === degreeName);
+}
+
+function render() {
+  const facultyName = getSelectedFacultyName();
+  const degreeSel = document.getElementById('degree-select');
+  const degreeValue = degreeSel ? degreeSel.value : '';
+
+  const container = document.getElementById('chart-container');
+  container.innerHTML = '';
+  clearCharts();
+
+  if (!facultyName) return;
+
+  const facObj = getFacultyObj(currentFilter, facultyName);
+  if (!facObj) return;
+
+  const showDegree = degreeValue && degreeValue !== 'ALL';
+  container.className = showDegree ? 'chart-grid two' : 'chart-grid one';
+
+  // Faculty chart (always shown)
+  makeChartCard({
+    title: facultyName,
+    subtitle: `${facObj.courses_with_sdgs} de ${facObj.total_courses} assignatures amb ODS (${facObj.sdg_coverage_percent}%)`,
+    sdgs: facObj.sdgs,
+    percentages: facObj.percentages
+  }, container);
+
+  // Degree chart (only when a degree is selected)
+  if (showDegree) {
+    const degObj = getDegreeObj(currentFilter, facultyName, degreeValue);
+    if (degObj) {
+      makeChartCard({
+        title: degreeValue,
+        subtitle: `${degObj.sdg_courses_degree} de ${degObj.courses_per_degree} assignatures amb ODS (${degObj.sdg_ratio_degree}%)`,
+        sdgs: degObj.sdgs,
+        percentages: degObj.percentages
+      }, container);
+    }
+  }
+}
+
+function setupFilterTabs() {
+  const tabs = document.querySelectorAll('.filter-tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      currentFilter = this.dataset.filter;
+      render();
+    });
+  });
+}
+
+async function loadAllData() {
+  const filters = Object.keys(dataSources);
+
+  await Promise.all(filters.map(async (filter) => {
+    const facUrl = dataSources[filter];
+    const degUrl = facUrl.replace('faculties_sdg_data', 'degrees_sdg_data');
+
+    const [facRes, degRes] = await Promise.all([fetch(facUrl), fetch(degUrl)]);
+    if (!facRes.ok) throw new Error(`Error loading faculty data (${filter})`);
+    if (!degRes.ok) throw new Error(`Error loading degree data (${filter})`);
+
+    const facJson = await facRes.json();
+    const degJson = await degRes.json();
+
+    facJson.forEach(normalizeOdsKeysInPlace);
+    degJson.forEach(group => {
+      (group.degrees || []).forEach(normalizeOdsKeysInPlace);
+    });
+
+    facultiesByFilter[filter] = facJson;
+    degreesByFilter[filter] = degJson;
+  }));
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  const facultySelect = document.getElementById('faculty-select');
+  const degreeSelect = document.getElementById('degree-select');
+
+  // Loading state
+  const loadingMessage = document.createElement('p');
+  loadingMessage.textContent = 'Carregant dades...';
+  loadingMessage.style.textAlign = 'center';
+  loadingMessage.style.padding = '20px';
+  document.getElementById('chart-container').appendChild(loadingMessage);
+
+  try {
+    await loadAllData();
+    loadingMessage.remove();
+
+    populateFacultySelect();
+    setupFilterTabs();
+
+    // Set default faculty and degrees list, then render.
+    const facultyName = getSelectedFacultyName();
+    populateDegreeSelect(facultyName, '');
+    render();
+
+    facultySelect.addEventListener('change', () => {
+      const name = getSelectedFacultyName();
+      populateDegreeSelect(name, '');
+      render();
+    });
+
+    degreeSelect.addEventListener('change', () => render());
+
+  } catch (err) {
+    console.error(err);
+    loadingMessage.remove();
+    document.getElementById('chart-container').innerHTML = `
+      <div class="w3-panel w3-red w3-round">
+        <h3>Error</h3>
+        <p>No s'han pogut carregar les dades.</p>
+      </div>`;
+    facultySelect.disabled = true;
+    degreeSelect.disabled = true;
+  }
+});
+</script></script>

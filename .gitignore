@@ -1,0 +1,12 @@
+# File: .gitignore
+# Purpose: Git ignore rules (avoid committing build artifacts like _site).
+# Safe edits:
+#   - OK: Add local-only folders/files
+#   - Careful: Do not ignore source content folders by mistake
+
+dist/
+sandbox/
+_site/
+.jekyll-cache/
+.sass-cache/
+.bundle/

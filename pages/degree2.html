@@ -1,0 +1,326 @@
+---
+# File: pages/degree2.html
+# Purpose: Content page (degree2) rendered with the default layout.
+# Related files:
+#   - _layouts/default.html
+#   - assets/css/styles.css
+#   - assets/js/site.js
+# Safe edits:
+#   - OK: Edit content and explanatory text; adjust chart config carefully
+#   - Careful: Avoid renaming ids used by inline scripts (charts/controls) unless you update the JS accordingly
+layout: default
+title: "Facultats i Escoles"
+lang: ca
+---
+
+<header class="w3-container" style="padding-top:22px">
+      <h5><b><i class="fa fa-university"></i> Facultats i Escoles</b></h5>
+    </header>
+    <div class="w3-container">
+      <h1>Facultats i Escoles de la Universitat Rovira i Virgili</h1>
+      <p>Aquesta pàgina mostra informació sobre totes les Facultats i Escoles de la URV i la seva alineació amb els Objectius de Desenvolupament Sostenible.</p>
+      <div class="w3-container">
+        <div class="interactive-chart-container">
+
+          <!-- left column (controls) -->
+          <div class="left-col">
+            <h2>ODS per Facultat/Escola</h2>
+
+            <strong>Selecciona una Facultat/Escola i un ensenyament per veure la distribució d'ODS.</strong>
+
+            <div class="selector-container" style="margin-top: 0.75rem;">
+              <div class="selector-box">
+                <select id="faculty-select" class="w3-select w3-border" style="margin-top: 0.25rem;">
+                  <option value="">-- Selecciona una Facultat/Escola --</option>
+                </select>
+              </div>
+              <div class="selector-box">
+                <select id="degree-select" class="w3-select w3-border" style="margin-top: 0.25rem;">
+                  <option value="">-- Selecciona un Grau/Ensenyament --</option>
+                </select>
+              </div>
+            </div>
+
+            <strong style="display:block; margin-top: 1rem;">Filtres per contingut analitzat:</strong>
+
+            <div class="filter-container">
+              <div class="filter-tabs">
+                <div class="filter-tab" data-filter="descriptive">Títol, descripció i continguts</div>
+                <span class="filter-symbol">+</span>
+                <div class="filter-tab" data-filter="competencial">Competències i resultats d'aprenentatge</div>
+                <span class="filter-symbol">+</span>
+                <div class="filter-tab" data-filter="bibliographical">Bibliografia</div>
+                <span class="filter-symbol">=</span>
+                <div class="filter-tab active" data-filter="complete">Guia docent completa</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- right column (chart area) -->
+          <div class="right-col">
+            <div id="chart-container" class="chart-grid">
+              <!-- Aquí apareixerà el gràfic -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <script>
+    const odsDefinitions = {
+      "ODS-01": "Fi de la pobresa",
+      "ODS-02": "Fam zero",
+      "ODS-03": "Salut i benestar",
+      "ODS-04": "Educació de qualitat",
+      "ODS-05": "Igualtat de gènere",
+      "ODS-06": "Aigua neta i sanejament",
+      "ODS-07": "Energia neta i assequible",
+      "ODS-08": "Treball digne i creixement econòmic",
+      "ODS-09": "Indústria, innovació i infraestructura",
+      "ODS-10": "Reducció de les desigualtats",
+      "ODS-11": "Ciutats i comunitats sostenibles",
+      "ODS-12": "Producció i consum responsables",
+      "ODS-13": "Acció climàtica",
+      "ODS-14": "Vida submarina",
+      "ODS-15": "Vida d'ecosistemes terrestres",
+      "ODS-16": "Pau, justícia i institucions sòlides",
+      "ODS-17": "Aliança per assolir els objectius"
+    };
+    const odsColors = {
+      "ODS-01": "#e5243b",
+      "ODS-02": "#dda63a",
+      "ODS-03": "#4c9f38",
+      "ODS-04": "#c5192d",
+      "ODS-05": "#ff3a21",
+      "ODS-06": "#26bde2",
+      "ODS-07": "#fcc30b",
+      "ODS-08": "#a21942",
+      "ODS-09": "#fd6925",
+      "ODS-10": "#dd1367",
+      "ODS-11": "#fd9d24",
+      "ODS-12": "#bf8b2e",
+      "ODS-13": "#3f7e44",
+      "ODS-14": "#0a97d9",
+      "ODS-15": "#56c02b",
+      "ODS-16": "#00689d",
+      "ODS-17": "#19486a"
+    };
+    const dataSources = {
+      complete: '../data/degrees_sdg_data.json',
+      descriptive: '../data/degrees_sdg_data_descriptive.json',
+      competencial: '../data/degrees_sdg_data_competencial.json',
+      bibliographical: '../data/degrees_sdg_data_bibliographical.json'
+    };
+
+    let currentFilter = 'complete';
+    let allData = {
+      complete: null,
+      descriptive: null,
+      competencial: null,
+      bibliographical: null
+    };
+    let currentFacultyIndex = null;
+
+    async function loadAllData() {
+      try {
+        for (const [filter, url] of Object.entries(dataSources)) {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Error loading ${filter} data: ${response.status}`);
+          allData[filter] = await response.json();
+        }
+        return true;
+      } catch (error) {
+        console.error('Error loading data:', error);
+        return false;
+      }
+    }
+
+    function createChart(data, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      const chartId = `chart-${Date.now()}`;
+      const chartDiv = document.createElement('div');
+      chartDiv.className = 'chart-container';
+      chartDiv.innerHTML = `
+        <h3>${data.faculty} - ${data.name}</h3>
+        <p>${data.sdg_courses_degree} de ${data.courses_per_degree} assignatures amb ODS (${data.sdg_ratio_degree}%)</p>
+        <div class="chart-wrapper">
+          <canvas id="${chartId}"></canvas>
+        </div>
+      `;
+      container.appendChild(chartDiv);
+
+      // suposant que data.sdgs és objecte { "ODS‑01": valor, ... }
+      const labels = Object.keys(data.sdgs);
+      const values = Object.values(data.sdgs);
+
+      const ctx = document.getElementById(chartId).getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels.map(code => `${code}: ${odsDefinitions[code] || ''}`),
+          datasets: [{
+            data: values,
+            backgroundColor: labels.map(ods => odsColors[ods] || '#ccc'),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '50%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed;
+                  return `${label}: ${value}`;
+                }
+              }
+            },
+            datalabels: {
+              formatter: function(value, context) {
+                const fullLabel = context.chart.data.labels[context.dataIndex];
+                const code = fullLabel.split(':')[0];
+                // si vols mostrar percentatges, cal que hi hagi data.percentages
+                return `${code}\n${value}`;
+              },
+              color: '#000',
+              font: { weight: 'bold', size: 10 },
+              anchor: 'end',
+              align: 'start',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              borderColor: 'rgba(255, 255, 255, 0.9)',
+              borderWidth: 1.5,
+              borderRadius: 2,
+              padding: 1
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+
+    function populateFacultySelect() {
+      const facultySelect = document.getElementById('faculty-select');
+      facultySelect.innerHTML = '<option value="">-- Selecciona una Facultat/Escola --</option>';
+      allData.complete.forEach((faculty, idx) => {
+        if (faculty.faculty) {
+          const option = document.createElement('option');
+          option.value = idx;
+          option.textContent = faculty.faculty;
+          facultySelect.append(option);
+        }
+      });
+    }
+
+    function loadDegreesForFaculty(facultyIndex) {
+      const degreeSelect = document.getElementById('degree-select');
+      degreeSelect.innerHTML = '<option value="">-- Selecciona un Grau/Ensenyament --</option>';
+      const facultyData = allData[currentFilter][facultyIndex];
+
+      // suposem que dins facultyData hi ha un array “degrees”
+      if (facultyData.degrees && Array.isArray(facultyData.degrees)) {
+        facultyData.degrees.forEach((degree, idx) => {
+          const option = document.createElement('option');
+          option.value = idx;
+          option.textContent = degree.name;
+          degreeSelect.append(option);
+        });
+      }
+    }
+
+    function updateChart() {
+      const facultySelect = document.getElementById('faculty-select');
+      const degreeSelect = document.getElementById('degree-select');
+      const fIdx = parseInt(facultySelect.value);
+      const dIdx = parseInt(degreeSelect.value);
+
+      if (!isNaN(fIdx) && fIdx >= 0) {
+        currentFacultyIndex = fIdx;
+        const dataSet = allData[currentFilter];
+        const facultyData = dataSet[fIdx];
+
+        if (!isNaN(dIdx) && facultyData.degrees && facultyData.degrees[dIdx]) {
+          // grau seleccionat
+          createChart(facultyData.degrees[dIdx], 'chart-container');
+        } else {
+          // cap grau seleccionat → mostrar dades de la facultat
+          createChart(facultyData, 'chart-container');
+        }
+      }
+    }
+
+    function setupFilterTabs() {
+      const tabs = document.querySelectorAll('.filter-tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          currentFilter = this.dataset.filter;
+          // recalibrar selecció perquè canviï filtrat
+          populateFacultySelect();
+          document.getElementById('degree-select').innerHTML = '<option value="">-- Selecciona un Grau/Ensenyament --</option>';
+          updateChart();
+        });
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const chartContainer = document.getElementById('chart-container');
+      const loadingMessage = document.createElement('p');
+      loadingMessage.textContent = 'Carregant dades...';
+      loadingMessage.style.textAlign = 'center';
+      loadingMessage.style.padding = '20px';
+      chartContainer.appendChild(loadingMessage);
+
+      const dataLoaded = await loadAllData();
+      loadingMessage.remove();
+
+      if (dataLoaded) {
+        populateFacultySelect();
+
+        const facultySelect = document.getElementById('faculty-select');
+        const degreeSelect = document.getElementById('degree-select');
+
+        facultySelect.addEventListener('change', function() {
+          const selectedIdx = parseInt(this.value);
+          if (!isNaN(selectedIdx)) {
+            currentFacultyIndex = selectedIdx;
+            loadDegreesForFaculty(selectedIdx);
+            updateChart();
+          }
+        });
+
+        degreeSelect.addEventListener('change', function() {
+          updateChart();
+        });
+
+        setupFilterTabs();
+
+        // mostrar primer element per defecte si existeix
+        if (allData.complete.length > 0) {
+          facultySelect.value = 0;
+          loadDegreesForFaculty(0);
+          updateChart();
+        } else {
+          chartContainer.innerHTML = '<p>No hi ha dades disponibles per mostrar els gràfics circulars</p>';
+        }
+      } else {
+        chartContainer.innerHTML = `
+          <div class="w3-panel w3-red w3-round">
+            <h3>Error</h3>
+            <p>No s'han pogut carregar les dades.</p>
+            <p>Si us plau, torna-ho a provar més tard.</p>
+          </div>
+        `;
+        document.getElementById('faculty-select').disabled = true;
+        document.getElementById('degree-select').disabled = true;
+      }
+    });
+  </script>

@@ -1,0 +1,15 @@
+<!--
+File: _includes/back_to_top.html
+Purpose: Floating "Back to top" button (bottom-right). Visible after scrolling; smooth-scrolls to top.
+Related files:
+  - assets/js/site.js (shows/hides + click handler)
+  - assets/css/styles.css (button styling)
+Safe edits:
+  - OK: Change SVG icon, size, position offsets
+  - Careful: Keep id="#backToTop" in sync with site.js
+-->
+<button id="backToTop" class="back-to-top" type="button" aria-label="Tornar a dalt" title="Tornar a dalt">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M12 5l-7 7 1.4 1.4L11 8.8V19h2V8.8l4.6 4.6L19 12z"></path>
+  </svg>
+</button>

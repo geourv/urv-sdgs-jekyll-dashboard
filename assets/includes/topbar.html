@@ -1,0 +1,29 @@
+<!--
+File: assets/includes/topbar.html
+Purpose: Legacy include/loader used in the original static version (kept for reference; not required by Jekyll layout).
+Related files:
+  - _layouts/default.html
+  - _includes/*.html
+Safe edits:
+  - OK: You may delete after confirming nothing references it
+  - Careful: If any page still loads it directly, removal will break that page
+Notes:
+  - Current Jekyll version uses _includes and _layouts instead of runtime HTML loaders.
+-->
+
+<!-- Top Navigation Bar -->
+<div id="myTopbar" class="w3-bar w3-top w3-black w3-large" style="z-index:4">
+    <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey"
+            onclick="w3_open();" aria-label="Obrir menú lateral">
+      <i class="fa fa-bars"></i> Menu
+    </button>
+  
+    <!-- logo / text esquerra (opcional) 
+    <a href="index.html" class="w3-bar-item w3-button w3-hide-small">
+      <img src="assets/logos/edited/cat/cat_ods_logo_cut.png" alt="URV ODS" style="height:28px;vertical-align:middle">
+    </a>-->
+  
+    <!-- títol a la dreta (el pots canviar per un logo o menú) -->
+    <span class="w3-bar-item w3-right">Els ODS als ensenyaments de la Universitat Rovira i Virgili</span>
+  </div>
+  
