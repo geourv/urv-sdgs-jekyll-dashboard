@@ -1,0 +1,100 @@
+{
+  "panel": {
+    "empty_title": "Explicació del núvol de paraules",
+    "empty_scope": "Selecciona una Facultat/Escola i, opcionalment, un ensenyament per veure el resum detallat.",
+    "error_title": "No s'ha pogut actualitzar el resum",
+    "error_scope": "Revisa la selecció i torna a provar."
+  },
+  "templates": {
+    "title_centre": "Explicació del núvol de paraules de {centre}",
+    "title_programme": "Explicació del núvol de paraules del programa {programme}",
+    "narrative_intro_centre": "Has seleccionat {centre}. Aquesta selecció inclou {n_programmes} ensenyaments i {n_courses} cursos analitzats.",
+    "narrative_intro_programme": "Has seleccionat el programa {programme} de {centre}, amb {n_courses} cursos analitzats.",
+    "narrative_method": "Per construir el núvol s'ha aplicat el sistema {system_label} ({system_mode}). {system_help} {system_quality}",
+    "narrative_context": "Pel que fa a la guia docent, {section_help} (criteri: {section_label}). El núvol mostra fins a {word_limit} termes i ara utilitza la paleta {palette_label}.",
+    "narrative_provenance": "Les fonts de captura són {platforms}.",
+    "narrative_scraping_date": "Data de l'scraping: {scraping_date}.",
+    "narrative_scraping_date_unknown": "Data de l'scraping: desconeguda.",
+    "scope_centre": "Selecció activa: tots els ensenyaments de {centre}.",
+    "scope_programme": "Selecció activa: {programme} ({centre}).",
+    "courses_line": "Aquesta selecció correspon a {n_courses} cursos.",
+    "programmes_line": "El centre inclou {n_programmes} ensenyaments.",
+    "system_line": "Sistema de classificació: {system_label}. {system_help}",
+    "system_mode_line": "Perfil del sistema: {system_mode}.",
+    "system_quality_line": "Precisió i falsos positius: {system_quality}",
+    "section_line": "Secció analitzada: {section_label}. {section_help}",
+    "limit_line": "Límit actual del núvol: {word_limit} termes.",
+    "palette_line": "Paleta activa: {palette_label}.",
+    "provenance_line": "Fonts de captura del scraping: {platforms}."
+  },
+  "system_labels": {
+    "sys:any": "Qualsevol sistema (Unió)",
+    "sys:all": "Tots els sistemes (Intersecció)",
+    "sys:auckland": "Auckland",
+    "sys:aurora": "Aurora",
+    "sys:elsevier": "Elsevier",
+    "ens:equal": "Ensemble equal",
+    "ens:third": "Ensemble third",
+    "ens:triple": "Ensemble triple",
+    "sys:sdgo": "SDGO",
+    "sys:sdsn": "SDSN",
+    "sys:siris": "SIRIS"
+  },
+  "section_labels": {
+    "sec:any": "Totes les seccions (Unió)",
+    "sec:all": "Coincidència de totes les seccions (Intersecció)",
+    "sec:competences": "Competències",
+    "sec:course_info": "Informació de l'assignatura",
+    "sec:references": "Referències"
+  },
+  "system_explanations": {
+    "sys:any": "Es marca un ODS quan apareix en qualsevol dels sistemes disponibles.",
+    "sys:all": "Només es marca un ODS quan coincideix en tots els sistemes.",
+    "sys:auckland": "Es fan servir únicament les deteccions del sistema Auckland.",
+    "sys:aurora": "Es fan servir únicament les deteccions del sistema Aurora.",
+    "sys:elsevier": "Es fan servir únicament les deteccions del sistema Elsevier.",
+    "sys:ensemble_equal": "Es combinen diversos sistemes amb pes equivalent.",
+    "sys:ensemble_third": "Es combinen sistemes amb llindar d'un terç de coincidència.",
+    "sys:ensemble_triple": "Es combinen sistemes exigint una coincidència triple.",
+    "sys:sdgo": "Es fan servir únicament les deteccions del sistema SDGO.",
+    "sys:sdsn": "Es fan servir únicament les deteccions del sistema SDSN.",
+    "sys:siris": "Es fan servir únicament les deteccions del sistema SIRIS.",
+    "default": "Aquesta opció determina com es combinen les deteccions dels sistemes."
+  },
+  "system_modes": {
+    "sys:any": "inclusiu",
+    "sys:all": "restrictiu",
+    "sys:ensemble_equal": "equilibrat",
+    "sys:ensemble_third": "intermedi",
+    "sys:ensemble_triple": "molt restrictiu",
+    "sys:auckland": "monosistema (Auckland)",
+    "sys:aurora": "monosistema (Aurora)",
+    "sys:elsevier": "monosistema (Elsevier)",
+    "sys:sdgo": "monosistema (SDGO)",
+    "sys:sdsn": "monosistema (SDSN)",
+    "sys:siris": "monosistema (SIRIS)",
+    "default": "configuració específica del sistema seleccionat"
+  },
+  "system_quality_notes": {
+    "sys:any": "Això incrementa la cobertura, però també pot augmentar els falsos positius.",
+    "sys:all": "Això redueix els falsos positius, però pot deixar fora alguns casos límit.",
+    "sys:ensemble_equal": "Acostuma a mantenir un bon equilibri entre cobertura i precisió.",
+    "sys:ensemble_third": "Acostuma a ajustar millor els falsos positius que els modes més sensibles.",
+    "sys:ensemble_triple": "Prioritza la precisió i minimitza al màxim els falsos positius.",
+    "sys:auckland": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:aurora": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:elsevier": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:sdgo": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:sdsn": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:siris": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "default": "Si vols menys falsos positius, prova una configuració més restrictiva."
+  },
+  "section_explanations": {
+    "sec:any": "es combinen totes les seccions de la guia docent.",
+    "sec:all": "només es conserven termes que apareixen a totes les seccions.",
+    "sec:competences": "només es tenen en compte competències i resultats d'aprenentatge.",
+    "sec:course_info": "només es tenen en compte títol, descripció i continguts de l'assignatura.",
+    "sec:references": "només es tenen en compte bibliografia i referències.",
+    "default": "s'aplica el criteri de secció seleccionat sobre la guia docent."
+  }
+}

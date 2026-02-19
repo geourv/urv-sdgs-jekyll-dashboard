@@ -15,6 +15,7 @@ lang: ca
 # If you publish under a GitHub Pages project site, set baseurl to /<repo-name>
 baseurl: ""
 url: ""
+sdgs_api_base_url: "https://geourv.github.io/urv-sdgs-api"
 
 # Keep these folders as static assets
 include:

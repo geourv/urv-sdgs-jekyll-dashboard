@@ -1,9 +1,8 @@
 <!--
 File: _layouts/default.html
-Purpose: Main layout wrapper: includes head/topbar/sidebar/footer and yields page content.
+Purpose: Main layout wrapper: includes head/sidebar/footer and yields page content.
 Related files:
   - _includes/head.html
-  - _includes/topbar.html
   - _includes/sidebar.html
   - _includes/footer.html
 Safe edits:
@@ -40,10 +39,13 @@ Safe edits:
 </head>
 <body class="w3-light-grey">
 
-  {% include topbar.html %}
   {% include sidebar.html %}
 
-  <div class="w3-main" style="margin-left:300px;margin-top:43px;">
+  <button id="mobileMenuBtn" class="site-mobile-menu w3-button w3-hide-large" onclick="w3_open();" aria-label="Obrir menú lateral">
+    <i class="fa fa-bars"></i> Menú
+  </button>
+
+  <div class="w3-main">
     {{ content }}
     {% include footer.html %}
   </div>

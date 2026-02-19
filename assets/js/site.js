@@ -3,7 +3,6 @@ File: assets/js/site.js
 Purpose: Client-side UI behavior: mobile sidebar toggle, overlay layering, dropdown persistence, sidebar scroll restore.
 Related files:
   - _includes/sidebar.html
-  - _includes/topbar.html
   - assets/css/styles.css
 Safe edits:
   - OK: Adjust breakpoints and persisted keys; add new dropdown groups
@@ -173,7 +172,7 @@ function setupFooterYear() {
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    // wire global handlers expected by topbar button
+    // wire global handlers expected by mobile menu button
     window.w3_open = toggleSidebar;
     window.w3_close = closeSidebar;
 

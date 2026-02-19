@@ -34,7 +34,7 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
   {% assign explore_active = true %}
 {% endif %}
 
-<nav class="w3-sidebar w3-collapse w3-white" style="z-index:1001;width:300px;" id="mySidebar" aria-label="Navegació lateral"><br>
+<nav class="w3-sidebar w3-collapse site-sidebar" style="z-index:1001;width:300px;" id="mySidebar" aria-label="Navegació lateral">
 
   <div class="w3-container w3-row">
     <div class="w3-col s4">
@@ -102,9 +102,9 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
           {% assign is_active = true %}
         {% endif %}
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <span class="fa-stack" style="font-size:0.9em; vertical-align:middle; margin-right:6px" aria-hidden="true" title="Núvol de paraules">
+          <span class="fa-stack nav-icon-stack" aria-hidden="true" title="Núvol de paraules">
             <i class="fa fa-cloud fa-stack-2x"></i>
-            <i class="fa fa-font fa-stack-1x fa-inverse" style="font-size:0.9em; top:-1px;"></i>
+            <i class="fa fa-font fa-stack-1x fa-inverse nav-icon-wordcloud-core"></i>
           </span>
           Núvol de paraules
         </a>
@@ -117,7 +117,7 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
           {% assign is_active = true %}
         {% endif %}
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <span class="fa-stack" style="font-size:0.9em; vertical-align:middle; margin-right:6px" aria-hidden="true" title="Gràfic d'anell">
+          <span class="fa-stack nav-icon-stack" aria-hidden="true" title="Gràfic d'anell">
             <i class="fa fa-circle fa-stack-2x" style="color:#000;"></i>
             <i class="fa fa-circle fa-stack-1x" style="color:#fff; font-size:0.70em;"></i>
           </span>
@@ -132,7 +132,7 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
           {% assign is_active = true %}
         {% endif %}
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <i class="fa fa-bar-chart fa-fw" aria-hidden="true" title="Gràfic de barres" style="font-size:1.4em; line-height:1; vertical-align:middle; margin-right:6px;"></i>
+          <i class="fa fa-bar-chart fa-fw" aria-hidden="true" title="Gràfic de barres"></i>
           Gràfic de barres
         </a>
 
@@ -144,7 +144,7 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
           {% assign is_active = true %}
         {% endif %}
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <i class="fa fa-pencil fa-fw" aria-hidden="true" title="Detall per assignatura" style="font-size:1.4em; line-height:1; vertical-align:middle; margin-right:6px;"></i>
+          <i class="fa fa-pencil fa-fw" aria-hidden="true" title="Detall per assignatura"></i>
           ODS per assignatura
         </a>
       </div>
