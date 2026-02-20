@@ -40,8 +40,8 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
     <div class="w3-col s4">
       <img src="{{ '/assets/logos/edited/cat/cat_ods_logo_cut.png' | relative_url }}" class="w3-circle logo-img" style="width:72px" alt="Logotip ODS">
     </div>
-    <div class="w3-col s8 w3-bar">
-      <span>Els ODS <br> als ensenyaments <br>de la URV</span>
+    <div class="w3-col s8 w3-bar site-sidebar-brand">
+      <span class="site-sidebar-brand-text">Els ODS <br> als ensenyaments <br>de la URV</span>
     </div>
   </div>
 
@@ -102,11 +102,11 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
           {% assign is_active = true %}
         {% endif %}
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <span class="fa-stack nav-icon-stack" aria-hidden="true" title="Núvol de paraules">
+          <span class="fa-stack nav-icon-stack" aria-hidden="true" title="Núvols de paraules">
             <i class="fa fa-cloud fa-stack-2x"></i>
             <i class="fa fa-font fa-stack-1x fa-inverse nav-icon-wordcloud-core"></i>
           </span>
-          Núvol de paraules
+          Núvols de paraules
         </a>
 
         {% assign link = '/pages/faculty-doughnut.html' %}
@@ -117,11 +117,11 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
           {% assign is_active = true %}
         {% endif %}
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <span class="fa-stack nav-icon-stack" aria-hidden="true" title="Gràfic d'anell">
+          <span class="fa-stack nav-icon-stack" aria-hidden="true" title="Gràfics d'anell">
             <i class="fa fa-circle fa-stack-2x" style="color:#000;"></i>
             <i class="fa fa-circle fa-stack-1x" style="color:#fff; font-size:0.70em;"></i>
           </span>
-          Gràfic d'anell
+          Gràfics d'anell
         </a>
 
         {% assign link = '/pages/degree-barchart.html' %}
@@ -132,8 +132,8 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
           {% assign is_active = true %}
         {% endif %}
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <i class="fa fa-bar-chart fa-fw" aria-hidden="true" title="Gràfic de barres"></i>
-          Gràfic de barres
+          <i class="fa fa-bar-chart fa-fw" aria-hidden="true" title="Gràfics de barres"></i>
+          Gràfics de barres
         </a>
 
         {% assign link = '/pages/course-details.html' %}

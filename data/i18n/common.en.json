@@ -1,0 +1,106 @@
+{
+  "filters": {
+    "selection_card_title": "Centre and programme selection",
+    "analysis_card_title": "Cloud analysis",
+    "faculty_label": "Centre",
+    "degree_label": "Programme",
+    "faculty_placeholder_required": "Centre (required)",
+    "faculty_aria": "Centre",
+    "degree_placeholder_optional_choose_or_all": "Programme (optional)",
+    "degree_placeholder_select_faculty_first": "Programme (optional)",
+    "degree_option_all": "All",
+    "degree_aria": "Optional programme",
+    "system_label": "Classification system",
+    "section_label": "Analyzed section",
+    "word_limit_label": "Maximum number of terms",
+    "word_limit_aria": "Maximum number of terms in the cloud",
+    "loading_systems": "Loading systems...",
+    "loading_sections": "Loading sections...",
+    "error_loading_faculties": "Error loading faculties",
+    "error_loading_degrees": "Error loading programmes",
+    "error_loading_systems": "Error loading systems",
+    "error_loading_sections": "Error loading sections",
+    "empty_state_select_prompt": "Select a centre and, optionally, a programme using the selectors on the left.",
+    "scraping_date_label": "Scraping date",
+    "scraping_date_unknown": "unknown"
+  },
+  "methodology": {
+    "systems_summary": "Classification systems are not equivalent: they differ in sensitivity, specificity, and false-positive risk.",
+    "false_positives_note": "Systematic cross-system comparisons are still limited; interpret results with caution.",
+    "sections_summary": "The analyzed section (competences, course information, references, union/intersection) directly affects detected terms and SDGs."
+  },
+  "system_labels": {
+    "sys:any": "Any system (Union)",
+    "sys:all": "All systems (Intersection)",
+    "sys:auckland": "Auckland",
+    "sys:aurora": "Aurora",
+    "sys:elsevier": "Elsevier",
+    "ens:equal": "Ensemble equal",
+    "ens:third": "Ensemble third",
+    "ens:triple": "Ensemble triple",
+    "sys:sdgo": "SDGO",
+    "sys:sdsn": "SDSN",
+    "sys:siris": "SIRIS"
+  },
+  "section_labels": {
+    "sec:any": "All sections (Union)",
+    "sec:all": "All sections match (Intersection)",
+    "sec:competences": "Competences",
+    "sec:course_info": "Course information",
+    "sec:references": "References"
+  },
+  "system_explanations": {
+    "sys:any": "An SDG is accepted if it appears in any system (union rule).",
+    "sys:all": "An SDG is accepted only if it appears in all systems (intersection rule).",
+    "sys:auckland": "Auckland system based on Boolean (Lucene-style) queries.",
+    "sys:aurora": "Aurora Universities Network system based on Boolean (Lucene-style) queries.",
+    "sys:elsevier": "Elsevier system based on Boolean (Lucene-style) queries.",
+    "sys:ensemble_equal": "text2sdg ensemble model (random forest) combining six systems and text length, trained with balanced expert and synthetic data.",
+    "sys:ensemble_third": "text2sdg ensemble model (random forest) trained with an intermediate proportion of synthetic data.",
+    "sys:ensemble_triple": "text2sdg ensemble model (random forest) trained with higher synthetic-data weight.",
+    "sys:sdgo": "SDGO system primarily based on keyword matching.",
+    "sys:sdsn": "SDSN system primarily based on keyword matching.",
+    "sys:siris": "SIRIS Academic system based on Boolean (Lucene-style) queries.",
+    "default": "This option controls how system detections are combined or selected."
+  },
+  "system_modes": {
+    "sys:any": "inclusive",
+    "sys:all": "restrictive",
+    "sys:ensemble_equal": "balanced",
+    "sys:ensemble_third": "intermediate",
+    "sys:ensemble_triple": "very restrictive",
+    "sys:auckland": "single-system (Auckland)",
+    "sys:aurora": "single-system (Aurora)",
+    "sys:elsevier": "single-system (Elsevier)",
+    "sys:sdgo": "single-system (SDGO)",
+    "sys:sdsn": "single-system (SDSN)",
+    "sys:siris": "single-system (SIRIS)",
+    "default": "system-specific configuration"
+  },
+  "system_quality_notes": {
+    "sys:any": "Maximizes coverage, but is the most prone to false positives.",
+    "sys:all": "Reduces false positives, but increases false-negative risk.",
+    "sys:ensemble_equal": "Usually offers a stable balance; review borderline cases in short or very generic texts.",
+    "sys:ensemble_third": "Provides an intermediate sensitivity/specificity balance depending on model training.",
+    "sys:ensemble_triple": "Tends toward a more conservative reading and may reduce false positives, but can miss real detections in low-context texts.",
+    "sys:auckland": "Less liberal than keyword systems, but depends on query vocabulary and patterns.",
+    "sys:aurora": "Less liberal than keyword systems, but depends on query vocabulary and patterns.",
+    "sys:elsevier": "Less liberal than keyword systems, but depends on query vocabulary and patterns.",
+    "sys:sdgo": "As a keyword-based system, it is more liberal and more sensitive to false positives in generic contexts.",
+    "sys:sdsn": "As a keyword-based system, it is more liberal and more sensitive to false positives in generic contexts.",
+    "sys:siris": "Less liberal than keyword systems, but depends on query vocabulary and patterns.",
+    "default": "Systematic cross-system validations are still limited; interpret outputs with caution."
+  },
+  "section_explanations": {
+    "sec:any": "competences, course information, and references are combined (union).",
+    "sec:all": "only terms present across all sections are kept (intersection).",
+    "sec:competences": "only competences and outcomes are analyzed; highly cross-cutting terms may repeat often.",
+    "sec:course_info": "only title, description, and syllabus content are analyzed; this is closest to what is taught in the course.",
+    "sec:references": "only bibliography and references are analyzed; this can introduce contextual terms that are not central to course delivery.",
+    "default": "the selected section criterion is applied to the course guide."
+  },
+  "ods_guidance": {
+    "summary": "In doughnut and bar charts, values represent relative presence of SDGs detected in filtered text, not a qualitative assessment of teaching quality.",
+    "coverage_caution": "Changing system or section can alter percentages due to sensitivity and textual-context differences."
+  }
+}

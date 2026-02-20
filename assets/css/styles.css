@@ -50,7 +50,7 @@ html, body {
     margin-top: 0;
     padding-left: 40px;
     padding-right: 40px;
-    border-left: 1px solid var(--site-widget-border);
+    border-left: 0;
   }
 
   .w3-main > header.w3-container {
@@ -88,10 +88,15 @@ html, body {
     top: 12px;
     left: 300px;
     transform: translateX(-50%);
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
     padding: 0;
+    line-height: 1;
+    font-size: 1.4em;
     border-radius: 999px;
     border: 1px solid var(--site-accent-dark);
     background: var(--site-accent);
@@ -110,7 +115,7 @@ html, body {
   #mySidebar {
     background: var(--site-surface-2) !important;
     color: var(--site-text);
-    border-right: 1px solid var(--site-widget-border);
+    border-right: 4px solid var(--site-card-separator);
     padding-top: 0;
     top: 0 !important;
   }
@@ -118,6 +123,22 @@ html, body {
   #mySidebar .w3-container.w3-row {
     padding-top: 8px;
     padding-bottom: 8px;
+  }
+  .site-sidebar .site-sidebar-brand,
+  #mySidebar .site-sidebar-brand {
+    align-self: center;
+  }
+  .site-sidebar .site-sidebar-brand-text,
+  #mySidebar .site-sidebar-brand-text {
+    display: block;
+    margin-top: 2px;
+    padding-bottom: 2px;
+    font-size: 1.42rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    color: var(--site-card-separator) !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
   }
   .site-sidebar .w3-bar-block,
   #mySidebar .w3-bar-block {
@@ -503,6 +524,7 @@ html, body {
   .w3-sidebar .w3-col { margin-top: 0; }
   .w3-sidebar .w3-bar { text-align: left; margin-top: 0; }
   .w3-sidebar .w3-bar span { display: block; margin-top: 0; line-height: 1.36; }
+  .w3-sidebar .site-sidebar-brand-text { line-height: 1.2; }
 
   /* active navigation item */
   .site-sidebar .nav-active,
@@ -611,6 +633,11 @@ html, body {
     #siteFooter span {
       display: inline-block;
       margin: 0 3px;
+    }
+
+    .site-sidebar .site-sidebar-brand-text,
+    #mySidebar .site-sidebar-brand-text {
+      font-size: 1.26rem;
     }
   
     /* mobile: keep sidebar offcanvas-style (leave some backdrop visible) */

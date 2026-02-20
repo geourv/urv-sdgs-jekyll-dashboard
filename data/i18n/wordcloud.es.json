@@ -1,0 +1,45 @@
+{
+  "panel": {
+    "empty_title": "Explicación de la nube de palabras",
+    "empty_scope": "Selecciona un centro y, opcionalmente, una enseñanza para ver el resumen detallado.",
+    "error_title": "No se pudo actualizar el resumen",
+    "error_scope": "Revisa la selección y vuelve a intentarlo."
+  },
+  "analysis_panel": {
+    "title": "Cómo interpretar el análisis de la nube",
+    "paragraph_methods": "text2sdg combina dos enfoques: sistemas de consulta (Aurora, Elsevier, Auckland, SIRIS, SDSN y SDGO) y modelos ensemble que integran todos los sistemas y la longitud del texto.",
+    "paragraph_tradeoff": "Según la documentación de text2sdg, Aurora/Elsevier/Auckland/SIRIS suelen ser menos liberales que SDSN/SDGO. Las validaciones comparativas siguen siendo limitadas, por lo que conviene interpretar los resultados con cautela.",
+    "paragraph_sections": "La sección seleccionada cambia el tipo de lenguaje analizado: competencias tiende a términos transversales, información de la asignatura describe mejor el temario y referencias refleja sobre todo el marco bibliográfico.",
+    "paragraph_course_info": "Para reducir falsos positivos, prueba criterios más restrictivos (intersección de sistemas o de secciones) y contrasta siempre con la guía docente completa.",
+    "paragraph_current": "",
+    "aggregate_templates": {
+      "centre": "Centro seleccionado: \"{centre}\" ({n_programmes} enseñanzas, {n_courses_centre} cursos).",
+      "compare": "Comparativa activa: centro \"{centre}\" ({n_courses_centre} cursos) y enseñanza \"{programme}\" ({n_courses_programme} cursos).",
+      "default": "La selección activa incluye {n_courses_centre} cursos."
+    },
+    "system_templates": {
+      "sys:any": "Con \"{system_label}\", un ODS cuenta si aparece en cualquier sistema. Es la lectura más inclusiva y, a la vez, la más sensible a falsos positivos.",
+      "sys:all": "Con \"{system_label}\", solo cuentan ODS que coinciden en todos los sistemas. Es más restrictivo: reduce falsos positivos pero puede perder casos reales.",
+      "sys:ensemble_equal": "Con \"{system_label}\", se aplica un modelo ensemble (random forest) que combina seis sistemas y la longitud del texto. Esta versión busca un equilibrio general entre cobertura y precisión.",
+      "sys:ensemble_third": "Con \"{system_label}\", se aplica una versión ensemble con proporción intermedia de datos sintéticos de entrenamiento. Ajusta el compromiso sensibilidad/especificidad.",
+      "sys:ensemble_triple": "Con \"{system_label}\", se aplica una versión ensemble con mayor peso de datos sintéticos. Ofrece una lectura más prudente, pero puede dejar fuera casos límite.",
+      "default": "Con \"{system_label}\", {system_help} {system_quality}"
+    },
+    "section_templates": {
+      "sec:any": "En la sección \"{section_label}\", se combinan competencias, información de la asignatura y referencias. Da una visión global pero puede mezclar contextos heterogéneos.",
+      "sec:all": "En la sección \"{section_label}\", solo se mantienen términos que aparecen en todos los bloques. Es un criterio más estricto y menos propenso a falsos positivos.",
+      "sec:competences": "En la sección \"{section_label}\", el foco está en competencias y resultados; predominan términos transversales que pueden repetirse en muchas asignaturas.",
+      "sec:course_info": "En la sección \"{section_label}\", se analizan título, descripción y contenidos/temario. Suele ser la lectura más concreta de lo que realmente se trabaja en clase.",
+      "sec:references": "En la sección \"{section_label}\", se analiza bibliografía y referencias. Puede introducir términos de contexto documental que no siempre son núcleo docente de la asignatura.",
+      "default": "En la sección \"{section_label}\", {section_help}"
+    },
+    "feature_templates": {
+      "single": "Los términos de la nube son \"features\" detectadas en los textos analizados. El tamaño indica frecuencia relativa de detección.",
+      "compare": "En cada nube, los términos son \"features\" detectadas en los textos analizados. Si un término aparece en ambas nubes, mantiene el mismo color para facilitar la comparación.",
+      "default": "Las \"features\" son términos detectados automáticamente a partir de los textos analizados."
+    },
+    "coverage_programme": "Para la enseñanza, se ha calculado la cobertura para todas las combinaciones de sistema y sección. Con \"{system_label}\" y \"{section_label}\": {with_sdg} de {total_courses} asignaturas ({coverage_pct}%).",
+    "coverage_centre_unavailable": "Para calcular este porcentaje por sistema y sección hay que seleccionar una enseñanza (vista por asignatura).",
+    "coverage_unavailable": "No se ha podido calcular el porcentaje de asignaturas con ODS reconocidos para esta selección."
+  }
+}

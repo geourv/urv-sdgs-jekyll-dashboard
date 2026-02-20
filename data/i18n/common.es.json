@@ -1,0 +1,106 @@
+{
+  "filters": {
+    "selection_card_title": "Selección de centro y enseñanza",
+    "analysis_card_title": "Análisis de la nube",
+    "faculty_label": "Centro",
+    "degree_label": "Enseñanza",
+    "faculty_placeholder_required": "Centro (obligatorio)",
+    "faculty_aria": "Centro",
+    "degree_placeholder_optional_choose_or_all": "Enseñanza (opcional)",
+    "degree_placeholder_select_faculty_first": "Enseñanza (opcional)",
+    "degree_option_all": "Todos",
+    "degree_aria": "Enseñanza opcional",
+    "system_label": "Sistema de clasificación",
+    "section_label": "Sección analizada",
+    "word_limit_label": "Número máximo de términos",
+    "word_limit_aria": "Número máximo de términos en la nube",
+    "loading_systems": "Cargando sistemas...",
+    "loading_sections": "Cargando secciones...",
+    "error_loading_faculties": "Error al cargar centros",
+    "error_loading_degrees": "Error al cargar enseñanzas",
+    "error_loading_systems": "Error al cargar sistemas",
+    "error_loading_sections": "Error al cargar secciones",
+    "empty_state_select_prompt": "Selecciona un centro y, opcionalmente, una enseñanza en los selectores de la izquierda.",
+    "scraping_date_label": "Fecha del scraping",
+    "scraping_date_unknown": "desconocida"
+  },
+  "methodology": {
+    "systems_summary": "Los sistemas de clasificación no son equivalentes: cambian en sensibilidad, especificidad y riesgo de falsos positivos.",
+    "false_positives_note": "Las comparaciones sistemáticas entre sistemas siguen siendo limitadas; interpreta los resultados con cautela.",
+    "sections_summary": "La sección analizada (competencias, información de la asignatura, referencias, unión/intersección) condiciona directamente los términos y ODS detectados."
+  },
+  "system_labels": {
+    "sys:any": "Cualquier sistema (Unión)",
+    "sys:all": "Todos los sistemas (Intersección)",
+    "sys:auckland": "Auckland",
+    "sys:aurora": "Aurora",
+    "sys:elsevier": "Elsevier",
+    "ens:equal": "Ensemble equal",
+    "ens:third": "Ensemble third",
+    "ens:triple": "Ensemble triple",
+    "sys:sdgo": "SDGO",
+    "sys:sdsn": "SDSN",
+    "sys:siris": "SIRIS"
+  },
+  "section_labels": {
+    "sec:any": "Todas las secciones (Unión)",
+    "sec:all": "Coincidencia de todas las secciones (Intersección)",
+    "sec:competences": "Competencias",
+    "sec:course_info": "Información de la asignatura",
+    "sec:references": "Referencias"
+  },
+  "system_explanations": {
+    "sys:any": "Se acepta un ODS si aparece en cualquier sistema (regla de unión).",
+    "sys:all": "Solo se acepta un ODS si coincide en todos los sistemas (regla de intersección).",
+    "sys:auckland": "Sistema de Auckland basado en consultas booleanas (estilo Lucene).",
+    "sys:aurora": "Sistema de Aurora Universities Network basado en consultas booleanas (estilo Lucene).",
+    "sys:elsevier": "Sistema de Elsevier basado en consultas booleanas (estilo Lucene).",
+    "sys:ensemble_equal": "Modelo ensemble de text2sdg (random forest) que combina seis sistemas y longitud del texto, con proporción equilibrada de datos expertos y sintéticos.",
+    "sys:ensemble_third": "Modelo ensemble de text2sdg (random forest) entrenado con una proporción intermedia de datos sintéticos.",
+    "sys:ensemble_triple": "Modelo ensemble de text2sdg (random forest) entrenado con mayor peso de datos sintéticos.",
+    "sys:sdgo": "Sistema SDGO basado principalmente en coincidencia de palabras clave (keyword matching).",
+    "sys:sdsn": "Sistema SDSN basado principalmente en coincidencia de palabras clave (keyword matching).",
+    "sys:siris": "Sistema SIRIS Academic basado en consultas booleanas (estilo Lucene).",
+    "default": "Esta opción determina cómo se combinan o seleccionan las detecciones de los sistemas."
+  },
+  "system_modes": {
+    "sys:any": "inclusivo",
+    "sys:all": "restrictivo",
+    "sys:ensemble_equal": "equilibrado",
+    "sys:ensemble_third": "intermedio",
+    "sys:ensemble_triple": "muy restrictivo",
+    "sys:auckland": "monosistema (Auckland)",
+    "sys:aurora": "monosistema (Aurora)",
+    "sys:elsevier": "monosistema (Elsevier)",
+    "sys:sdgo": "monosistema (SDGO)",
+    "sys:sdsn": "monosistema (SDSN)",
+    "sys:siris": "monosistema (SIRIS)",
+    "default": "configuración específica del sistema seleccionado"
+  },
+  "system_quality_notes": {
+    "sys:any": "Maximiza cobertura, pero es el modo más propenso a falsos positivos.",
+    "sys:all": "Reduce falsos positivos, pero incrementa el riesgo de falsos negativos.",
+    "sys:ensemble_equal": "Suele ofrecer un balance estable; conviene revisar casos dudosos en textos cortos o muy genéricos.",
+    "sys:ensemble_third": "Ofrece un punto intermedio del balance sensibilidad/especificidad según el entrenamiento del modelo.",
+    "sys:ensemble_triple": "Tiende a una lectura más prudente y puede recortar falsos positivos, pero también perder detecciones reales en contextos pobres en texto.",
+    "sys:auckland": "Menos liberal que los sistemas de palabras clave, pero dependiente del vocabulario y patrones de la consulta.",
+    "sys:aurora": "Menos liberal que los sistemas de palabras clave, pero dependiente del vocabulario y patrones de la consulta.",
+    "sys:elsevier": "Menos liberal que los sistemas de palabras clave, pero dependiente del vocabulario y patrones de la consulta.",
+    "sys:sdgo": "Como sistema de palabras clave es más liberal y sensible a falsos positivos en contextos genéricos.",
+    "sys:sdsn": "Como sistema de palabras clave es más liberal y sensible a falsos positivos en contextos genéricos.",
+    "sys:siris": "Menos liberal que los sistemas de palabras clave, pero dependiente del vocabulario y patrones de la consulta.",
+    "default": "Las comparaciones sistemáticas entre sistemas siguen siendo limitadas; interpreta los resultados con cautela."
+  },
+  "section_explanations": {
+    "sec:any": "se combinan competencias, información de la asignatura y referencias (unión).",
+    "sec:all": "solo se conservan términos que coinciden en todas las secciones (intersección).",
+    "sec:competences": "solo se analizan competencias y resultados; pueden aparecer términos muy transversales y repetidos.",
+    "sec:course_info": "solo se analizan título, descripción y contenidos/temario; es la parte más cercana a lo que se trabaja en el curso.",
+    "sec:references": "solo se analiza bibliografía y referencias; puede aportar términos contextuales no centrales en el desarrollo del curso.",
+    "default": "se aplica el criterio de sección seleccionado sobre la guía docente."
+  },
+  "ods_guidance": {
+    "summary": "En gráficos de anillo y barras, los valores muestran presencia relativa de ODS detectados en el texto filtrado, no una evaluación cualitativa de la docencia.",
+    "coverage_caution": "Cambiar sistema o sección puede alterar los porcentajes por diferencias de sensibilidad y de contexto textual."
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "panel": {
+    "empty_title": "Word cloud explanation",
+    "empty_scope": "Select a centre and, optionally, a programme to view the detailed summary.",
+    "error_title": "The summary could not be updated",
+    "error_scope": "Review your selection and try again."
+  },
+  "analysis_panel": {
+    "title": "How to interpret the word cloud analysis",
+    "paragraph_methods": "text2sdg combines two approaches: query-based systems (Aurora, Elsevier, Auckland, SIRIS, SDSN, and SDGO) and ensemble models that integrate all systems plus text length.",
+    "paragraph_tradeoff": "According to text2sdg documentation, Aurora/Elsevier/Auckland/SIRIS are usually less liberal than SDSN/SDGO. Systematic comparative validation is still limited, so results should be interpreted with caution.",
+    "paragraph_sections": "The selected section changes the language being analyzed: competences tends to contain cross-cutting terms, course information better reflects syllabus content, and references mostly reflect bibliographic context.",
+    "paragraph_course_info": "To reduce false positives, try stricter criteria (system or section intersection) and always contrast findings with the full course guide.",
+    "paragraph_current": "",
+    "aggregate_templates": {
+      "centre": "Selected centre: \"{centre}\" ({n_programmes} programmes, {n_courses_centre} courses).",
+      "compare": "Active comparison: centre \"{centre}\" ({n_courses_centre} courses) and programme \"{programme}\" ({n_courses_programme} courses).",
+      "default": "The active selection includes {n_courses_centre} courses."
+    },
+    "system_templates": {
+      "sys:any": "With \"{system_label}\", an SDG is accepted if it appears in any system. This is the most inclusive view and also the most sensitive to false positives.",
+      "sys:all": "With \"{system_label}\", only SDGs detected by all systems are accepted. This is more restrictive: it reduces false positives but can miss real cases.",
+      "sys:ensemble_equal": "With \"{system_label}\", an ensemble model (random forest) combines six systems and text length. This version aims for a general balance between coverage and precision.",
+      "sys:ensemble_third": "With \"{system_label}\", an ensemble version with an intermediate proportion of synthetic training data is used. It adjusts the sensitivity/specificity trade-off.",
+      "sys:ensemble_triple": "With \"{system_label}\", an ensemble version with higher synthetic-data weight is used. It yields a more conservative reading, but may miss borderline cases.",
+      "default": "With \"{system_label}\", {system_help} {system_quality}"
+    },
+    "section_templates": {
+      "sec:any": "In section \"{section_label}\", competences, course information, and references are combined. It provides a global view but can mix heterogeneous contexts.",
+      "sec:all": "In section \"{section_label}\", only terms appearing across all blocks are kept. This is stricter and less prone to false positives.",
+      "sec:competences": "In section \"{section_label}\", the focus is competences and learning outcomes; cross-cutting terms may repeat across many courses.",
+      "sec:course_info": "In section \"{section_label}\", title, description, and syllabus content are analyzed. This is usually the most concrete view of what is taught.",
+      "sec:references": "In section \"{section_label}\", bibliography and references are analyzed. It may introduce documentary-context terms that are not always core course content.",
+      "default": "In section \"{section_label}\", {section_help}"
+    },
+    "feature_templates": {
+      "single": "Cloud terms are \"features\" detected in the analyzed texts. Size indicates relative detection frequency.",
+      "compare": "In each cloud, terms are \"features\" detected in the analyzed texts. When a term appears in both clouds, it keeps the same color for easier comparison.",
+      "default": "\"Features\" are terms automatically detected from the analyzed texts."
+    },
+    "coverage_programme": "For the programme, coverage was computed for all system/section combinations. With \"{system_label}\" and \"{section_label}\": {with_sdg} out of {total_courses} courses ({coverage_pct}%).",
+    "coverage_centre_unavailable": "To compute this percentage by system and section, a programme selection is required (course-level view).",
+    "coverage_unavailable": "The percentage of courses with recognized SDGs could not be computed for this selection."
+  }
+}

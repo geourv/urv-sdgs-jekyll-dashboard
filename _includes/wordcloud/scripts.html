@@ -16,7 +16,19 @@ const selectionPanelScopeEl = document.getElementById("selectionPanelScope");
 const selectionPanelCoursesEl = document.getElementById("selectionPanelCourses");
 const selectionPanelSystemEl = document.getElementById("selectionPanelSystem");
 const selectionPanelSectionEl = document.getElementById("selectionPanelSection");
+const selectionPanelFeaturesEl = document.getElementById("selectionPanelFeatures");
 const selectionPanelEl = document.getElementById("selectionPanel");
+const selectionCardTitleEl = document.getElementById("wordcloudSelectionCardTitle");
+const analysisCardTitleEl = document.getElementById("wordcloudAnalysisCardTitle");
+const systemLabelEl = document.getElementById("wordcloudSystemLabel");
+const sectionLabelEl = document.getElementById("wordcloudSectionLabel");
+const wordLimitLabelTextEl = document.getElementById("wordcloudWordLimitLabelText");
+const facultyPlaceholderOptionEl = document.getElementById("wordcloudFacultyPlaceholderOption");
+const degreePlaceholderOptionEl = document.getElementById("wordcloudDegreePlaceholderOption");
+const degreeAllOptionEl = document.getElementById("wordcloudDegreeAllOption");
+const systemLoadingOptionEl = document.getElementById("wordcloudSystemLoadingOption");
+const sectionLoadingOptionEl = document.getElementById("wordcloudSectionLoadingOption");
+const cloudEmptyStateTextEl = document.getElementById("wordcloudEmptyStateText");
 const introToggleBtn = document.getElementById("wordcloudIntroToggle");
 const introPanelEl = document.getElementById("wordcloudIntroPanel");
 const mobileCloudHintEl = document.getElementById("mobileCloudHint");
@@ -44,6 +56,8 @@ const API_BASE_CANDIDATES = Array.from(new Set([
   "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
   "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
 ].map(v => String(v || "").trim().replace(/\/+$/, "")).filter(Boolean)));
+const COMMON_STRINGS_URL = "{{ '/data/i18n/common.' | append: site.lang | append: '.json' | relative_url }}";
+const COMMON_STRINGS_FALLBACK_URL = "{{ '/data/i18n/common.ca.json' | relative_url }}";
 const WORDCLOUD_STRINGS_URL = "{{ '/data/i18n/wordcloud.' | append: site.lang | append: '.json' | relative_url }}";
 const WORDCLOUD_STRINGS_FALLBACK_URL = "{{ '/data/i18n/wordcloud.ca.json' | relative_url }}";
 const WORDCLOUD_PALETTES = [
@@ -83,50 +97,78 @@ const WORDCLOUD_PALETTES = [
 const DEFAULT_UI_STRINGS = {
   panel: {
     empty_title: "Explicació del núvol de paraules",
-    empty_scope: "Selecciona una Facultat/Escola i, opcionalment, un ensenyament per veure el resum detallat.",
+    empty_scope: "Selecciona un centre i, opcionalment, un ensenyament per veure el resum detallat.",
     error_title: "No s'ha pogut actualitzar el resum",
     error_scope: "Revisa la selecció i torna a provar."
   },
   analysis_panel: {
     title: "Com interpretar l'anàlisi del núvol",
-    paragraph_methods: "Els sistemes de classificació combinen enfocaments diferents. N'hi ha de basats en paraules clau i d'altres de consens o agregació entre diversos models.",
-    paragraph_tradeoff: "Els modes de consens o intersecció solen ser més restrictius; els modes d'unió o agregació són més sensibles i poden recuperar més casos.",
-    paragraph_sections: "La secció analitzada també condiciona molt el resultat. En competències i resultats acostumen a aparèixer termes transversals que es repeteixen dins d'un mateix grau.",
-    paragraph_course_info: "En canvi, la secció d'informació de l'assignatura (títol, descripció i continguts/temari) acostuma a descriure de forma més concreta el que es treballa a cada curs.",
+    paragraph_methods: "text2sdg combina dos enfocaments: sistemes de consulta (Aurora, Elsevier, Auckland, SIRIS, SDSN i SDGO) i models ensemble que integren tots els sistemes i la longitud del text.",
+    paragraph_tradeoff: "Segons la documentació de text2sdg, Aurora/Elsevier/Auckland/SIRIS acostumen a ser menys liberals que SDSN/SDGO. Les validacions comparatives encara són limitades, així que convé interpretar els resultats amb cautela.",
+    paragraph_sections: "La secció triada canvia el tipus de llenguatge analitzat: competències tendeix a termes transversals, informació de l'assignatura descriu millor el temari i referències reflecteix sobretot el marc bibliogràfic.",
+    paragraph_course_info: "Per reduir falsos positius, prova criteris més restrictius (intersecció de sistemes o seccions) i contrasta sempre amb la guia docent completa.",
     paragraph_current: "",
     aggregate_templates: {
-      centre: "Has seleccionat \"{centre}\". El núvol agrega els seus {n_programmes} ensenyaments i resumeix {n_courses_centre} cursos.",
-      compare: "Has seleccionat el programa \"{programme}\" dins de \"{centre}\". El centre agrupa {n_courses_centre} cursos i el programa en recull {n_courses_programme}.",
+      centre: "Centre seleccionat: \"{centre}\" ({n_programmes} ensenyaments, {n_courses_centre} cursos).",
+      compare: "Comparativa activa: centre \"{centre}\" ({n_courses_centre} cursos) i ensenyament \"{programme}\" ({n_courses_programme} cursos).",
       default: "La selecció activa inclou {n_courses_centre} cursos."
     },
     system_templates: {
-      "sys:any": "Amb \"{system_label}\", un ODS compta si apareix en qualsevol mètode. És la lectura més inclusiva: amplia cobertura i pot sumar falsos positius.",
-      "sys:all": "Amb \"{system_label}\", només compten coincidències a tots els mètodes. És més restrictiu i sol reduir falsos positius.",
-      "sys:ensemble_equal": "Amb \"{system_label}\", es combina la detecció de diversos mètodes amb pes equivalent, buscant equilibri entre cobertura i precisió.",
-      "sys:ensemble_third": "Amb \"{system_label}\", es valida l'ODS quan hi ha prou acord parcial entre mètodes. Sol ajustar millor els falsos positius.",
-      "sys:ensemble_triple": "Amb \"{system_label}\", es demana una coincidència molt exigent entre mètodes. Prioritza la precisió.",
+      "sys:any": "Amb \"{system_label}\", un ODS compta si apareix en qualsevol sistema. És la lectura més inclusiva i, alhora, la més sensible als falsos positius.",
+      "sys:all": "Amb \"{system_label}\", només compten ODS que coincideixen a tots els sistemes. És més restrictiu: redueix falsos positius però pot perdre casos reals.",
+      "sys:ensemble_equal": "Amb \"{system_label}\", s'aplica un model ensemble (random forest) que combina sis sistemes i longitud del text. Aquesta versió busca un balanç general entre cobertura i precisió.",
+      "sys:ensemble_third": "Amb \"{system_label}\", s'aplica una versió ensemble amb proporció intermèdia de dades sintètiques d'entrenament. Ajusta el compromís sensibilitat/especificitat.",
+      "sys:ensemble_triple": "Amb \"{system_label}\", s'aplica una versió ensemble amb més pes de dades sintètiques. Dona una lectura més prudent, però pot deixar fora casos límit.",
       default: "Amb \"{system_label}\", {system_help} {system_quality}"
     },
     section_templates: {
-      "sec:any": "A la secció \"{section_label}\", es combinen tots els blocs de la guia docent. Dona una visió global, amb més pes dels termes transversals.",
-      "sec:all": "A la secció \"{section_label}\", només es mantenen termes presents a tots els blocs. És un criteri més estricte.",
-      "sec:competences": "A la secció \"{section_label}\", el focus és competències i resultats d'aprenentatge; per això poden repetir-se termes comuns del grau.",
-      "sec:course_info": "A la secció \"{section_label}\", s'analitzen títol, descripció i continguts/temari. Sol ser la lectura més concreta del que es fa a cada assignatura.",
-      "sec:references": "A la secció \"{section_label}\", s'analitzen referències i bibliografia; sovint reflecteix millor el marc documental.",
+      "sec:any": "A la secció \"{section_label}\", es combinen competències, informació de l'assignatura i referències. Dona una visió global però pot barrejar contextos heterogenis.",
+      "sec:all": "A la secció \"{section_label}\", només es mantenen termes que apareixen a tots els blocs. És un criteri més estricte i menys propens a falsos positius.",
+      "sec:competences": "A la secció \"{section_label}\", el focus és competències i resultats; hi predominen termes transversals que poden repetir-se en moltes assignatures.",
+      "sec:course_info": "A la secció \"{section_label}\", s'analitzen títol, descripció i continguts/temari. Sol ser la lectura més concreta del que realment es treballa a classe.",
+      "sec:references": "A la secció \"{section_label}\", s'analitza bibliografia i referències. Pot introduir termes del context documental que no sempre són nucli docent de l'assignatura.",
       default: "A la secció \"{section_label}\", {section_help}"
     },
-    coverage_programme: "Per al programa, s'ha calculat la cobertura per a totes les combinacions de sistema i secció. Amb \"{system_label}\" i \"{section_label}\": {with_sdg} de {total_courses} assignatures ({coverage_pct}%).",
+    feature_templates: {
+      single: "Els termes del núvol són \"features\" detectades en els textos analitzats. La mida indica freqüència relativa de detecció.",
+      compare: "A cada núvol, els termes són \"features\" detectades en els textos analitzats. Si un terme apareix als dos núvols, manté el mateix color per facilitar la comparació.",
+      default: "Els \"features\" són termes detectats automàticament a partir dels textos analitzats."
+    },
+    coverage_programme: "Per a l'ensenyament, s'ha calculat la cobertura per a totes les combinacions de sistema i secció. Amb \"{system_label}\" i \"{section_label}\": {with_sdg} de {total_courses} assignatures ({coverage_pct}%).",
     coverage_centre_unavailable: "Per calcular aquest percentatge per sistema i secció cal seleccionar un ensenyament (vista per assignatura).",
     coverage_unavailable: "No s'ha pogut calcular el percentatge d'assignatures amb ODS reconeguts per a aquesta selecció."
   },
+  filters: {
+    selection_card_title: "Selecció de centre i ensenyament",
+    analysis_card_title: "Anàlisi del núvol",
+    faculty_placeholder_required: "Centre (obligatori)",
+    faculty_aria: "Centre",
+    degree_placeholder_optional_choose_or_all: "Ensenyament (opcional)",
+    degree_placeholder_select_faculty_first: "Ensenyament (opcional)",
+    degree_option_all: "Tots",
+    degree_aria: "Ensenyament opcional",
+    system_label: "Sistema de classificació",
+    section_label: "Secció analitzada",
+    word_limit_label: "Nombre màxim de termes",
+    word_limit_aria: "Nombre màxim de termes al núvol",
+    loading_systems: "Carregant sistemes...",
+    loading_sections: "Carregant seccions...",
+    error_loading_faculties: "Error carregant centres",
+    error_loading_degrees: "Error carregant ensenyaments",
+    error_loading_systems: "Error carregant sistemes",
+    error_loading_sections: "Error carregant seccions",
+    empty_state_select_prompt: "Selecciona un centre i, opcionalment, un ensenyament als selectors de l'esquerra.",
+    scraping_date_label: "Data de l'scraping",
+    scraping_date_unknown: "desconeguda"
+  },
   templates: {
     title_centre: "Explicació del núvol de paraules de {centre}",
-    title_programme: "Explicació del núvol de paraules del programa {programme}",
+    title_programme: "Explicació del núvol de paraules de l'ensenyament {programme}",
     title_compare: "Explicació comparativa del núvol: {centre} vs {programme}",
     narrative_intro_centre: "Has seleccionat {centre}. Aquesta selecció inclou {n_programmes} ensenyaments i {n_courses} cursos analitzats.",
-    narrative_intro_programme: "Has seleccionat el programa {programme} de {centre}, amb {n_courses} cursos analitzats.",
-    narrative_intro_compare: "S'està comparant el centre {centre} amb el programa {programme}.",
-    narrative_compare_counts: "El centre agrega {n_courses_centre} cursos i el programa en mostra {n_courses_programme}.",
+    narrative_intro_programme: "Has seleccionat l'ensenyament {programme} de {centre}, amb {n_courses} cursos analitzats.",
+    narrative_intro_compare: "S'està comparant el centre {centre} amb l'ensenyament {programme}.",
+    narrative_compare_counts: "El centre agrega {n_courses_centre} cursos i l'ensenyament en mostra {n_courses_programme}.",
     narrative_method: "Per construir el núvol s'ha aplicat el sistema {system_label} ({system_mode}). {system_help} {system_quality}",
     narrative_context: "Pel que fa a la guia docent, {section_help} (criteri: {section_label}). El núvol mostra fins a {word_limit} termes i ara utilitza la paleta {palette_label}.",
     narrative_provenance: "Les fonts de captura són {platforms}.",
@@ -165,18 +207,18 @@ const DEFAULT_UI_STRINGS = {
     "sec:references": "Referències"
   },
   system_explanations: {
-    "sys:any": "Es marca un ODS quan apareix en qualsevol dels sistemes disponibles.",
-    "sys:all": "Només es marca un ODS quan coincideix en tots els sistemes.",
-    "sys:auckland": "Es fan servir únicament les deteccions del sistema Auckland.",
-    "sys:aurora": "Es fan servir únicament les deteccions del sistema Aurora.",
-    "sys:elsevier": "Es fan servir únicament les deteccions del sistema Elsevier.",
-    "sys:ensemble_equal": "Es combinen diversos sistemes amb pes equivalent.",
-    "sys:ensemble_third": "Es combinen sistemes amb llindar d'un terç de coincidència.",
-    "sys:ensemble_triple": "Es combinen sistemes exigint una coincidència triple.",
-    "sys:sdgo": "Es fan servir únicament les deteccions del sistema SDGO.",
-    "sys:sdsn": "Es fan servir únicament les deteccions del sistema SDSN.",
-    "sys:siris": "Es fan servir únicament les deteccions del sistema SIRIS.",
-    "default": "Aquesta opció determina com es combinen les deteccions dels sistemes."
+    "sys:any": "S'accepta un ODS si apareix en qualsevol sistema (regla d'unió).",
+    "sys:all": "Només s'accepta un ODS si coincideix en tots els sistemes (regla d'intersecció).",
+    "sys:auckland": "Sistema d'Auckland basat en consultes booleanes (estil Lucene).",
+    "sys:aurora": "Sistema d'Aurora Universities Network basat en consultes booleanes (estil Lucene).",
+    "sys:elsevier": "Sistema d'Elsevier basat en consultes booleanes (estil Lucene).",
+    "sys:ensemble_equal": "Model ensemble de text2sdg (random forest) que combina sis sistemes i longitud del text, amb proporció equilibrada de dades expertes i sintètiques.",
+    "sys:ensemble_third": "Model ensemble de text2sdg (random forest) entrenat amb una proporció intermèdia de dades sintètiques.",
+    "sys:ensemble_triple": "Model ensemble de text2sdg (random forest) entrenat amb més pes de dades sintètiques.",
+    "sys:sdgo": "Sistema SDGO basat principalment en coincidència de paraules clau (keyword matching).",
+    "sys:sdsn": "Sistema SDSN basat principalment en coincidència de paraules clau (keyword matching).",
+    "sys:siris": "Sistema SIRIS Academic basat en consultes booleanes (estil Lucene).",
+    "default": "Aquesta opció determina com es combinen o seleccionen les deteccions dels sistemes."
   },
   system_modes: {
     "sys:any": "inclusiu",
@@ -193,25 +235,25 @@ const DEFAULT_UI_STRINGS = {
     "default": "configuració específica del sistema seleccionat"
   },
   system_quality_notes: {
-    "sys:any": "Això incrementa la cobertura, però també pot augmentar els falsos positius.",
-    "sys:all": "Això redueix els falsos positius, però pot deixar fora alguns casos límit.",
-    "sys:ensemble_equal": "Acostuma a mantenir un bon equilibri entre cobertura i precisió.",
-    "sys:ensemble_third": "Acostuma a ajustar millor els falsos positius que els modes més sensibles.",
-    "sys:ensemble_triple": "Prioritza la precisió i minimitza al màxim els falsos positius.",
-    "sys:auckland": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
-    "sys:aurora": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
-    "sys:elsevier": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
-    "sys:sdgo": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
-    "sys:sdsn": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
-    "sys:siris": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
-    "default": "Si vols menys falsos positius, prova una configuració més restrictiva."
+    "sys:any": "Maximitza cobertura, però és el mode més procliu a falsos positius.",
+    "sys:all": "Redueix falsos positius, però incrementa el risc de falsos negatius.",
+    "sys:ensemble_equal": "Sol oferir un balanç estable; convé revisar casos dubtosos en textos curts o molt genèrics.",
+    "sys:ensemble_third": "Ofereix un punt intermedi del balanç sensibilitat/especificitat segons l'entrenament del model.",
+    "sys:ensemble_triple": "Tendeix a una lectura més prudent i pot retallar falsos positius, però també perdre deteccions reals en contextos pobres en text.",
+    "sys:auckland": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "sys:aurora": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "sys:elsevier": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "sys:sdgo": "Com a sistema de paraules clau és més liberal i sensible a falsos positius en contextos genèrics.",
+    "sys:sdsn": "Com a sistema de paraules clau és més liberal i sensible a falsos positius en contextos genèrics.",
+    "sys:siris": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "default": "Les comparacions sistemàtiques entre sistemes encara són limitades; interpreta els resultats amb cautela."
   },
   section_explanations: {
-    "sec:any": "es combinen totes les seccions de la guia docent.",
-    "sec:all": "només es conserven termes que apareixen a totes les seccions.",
-    "sec:competences": "només es tenen en compte competències i resultats d'aprenentatge.",
-    "sec:course_info": "només es tenen en compte títol, descripció i continguts de l'assignatura.",
-    "sec:references": "només es tenen en compte bibliografia i referències.",
+    "sec:any": "es combinen competències, informació de l'assignatura i referències (unió).",
+    "sec:all": "només es conserven termes que coincideixen a totes les seccions (intersecció).",
+    "sec:competences": "només s'analitzen competències i resultats; poden aparèixer termes molt transversals i repetits.",
+    "sec:course_info": "només s'analitzen títol, descripció i continguts/temari; és la part més propera al que es treballa al curs.",
+    "sec:references": "només s'analitza bibliografia i referències; pot aportar termes contextuals no centrals al desenvolupament del curs.",
     "default": "s'aplica el criteri de secció seleccionat sobre la guia docent."
   }
 };
@@ -246,8 +288,10 @@ let sidebarLayoutDebounceTimer = null;
 let pendingMobileAutoScroll = false;
 
 function setStatus(message, isError) {
-  statusEl.textContent = message || "";
-  statusEl.style.color = isError ? "#c0392b" : "";
+  const normalized = normalizeWhitespace(message);
+  statusEl.textContent = normalized;
+  statusEl.hidden = normalized.length === 0;
+  statusEl.style.color = (isError && normalized) ? "#c0392b" : "";
 }
 
 function mergeDeepObjects(base, override) {
@@ -341,7 +385,10 @@ function getSystemQualityText(systemId) {
 }
 
 function setPanelText(element, text) {
-  element.textContent = normalizeWhitespace(text);
+  if (!element) return;
+  const normalized = normalizeWhitespace(text);
+  element.textContent = normalized;
+  element.hidden = normalized.length === 0;
 }
 
 function capitalizeSentence(value) {
@@ -355,6 +402,57 @@ function getAnalysisPanelStrings() {
     ...DEFAULT_UI_STRINGS.analysis_panel,
     ...(state.uiStrings?.analysis_panel || {})
   };
+}
+
+function getFilterStrings() {
+  return {
+    ...(DEFAULT_UI_STRINGS.filters || {}),
+    ...(state.uiStrings?.filters || {})
+  };
+}
+
+function getFilterString(key, fallbackValue) {
+  const mapped = getFilterStrings()?.[String(key || "")];
+  return normalizeWhitespace(mapped || fallbackValue || "");
+}
+
+function applyLocalizedStaticLabels() {
+  if (selectionCardTitleEl) {
+    selectionCardTitleEl.textContent = getFilterString("selection_card_title", selectionCardTitleEl.textContent);
+  }
+  if (analysisCardTitleEl) {
+    analysisCardTitleEl.textContent = getFilterString("analysis_card_title", analysisCardTitleEl.textContent);
+  }
+  if (systemLabelEl) {
+    systemLabelEl.textContent = getFilterString("system_label", systemLabelEl.textContent);
+  }
+  if (sectionLabelEl) {
+    sectionLabelEl.textContent = getFilterString("section_label", sectionLabelEl.textContent);
+  }
+  if (wordLimitLabelTextEl) {
+    wordLimitLabelTextEl.textContent = getFilterString("word_limit_label", wordLimitLabelTextEl.textContent);
+  }
+  if (facultyPlaceholderOptionEl) {
+    facultyPlaceholderOptionEl.textContent = getFilterString("faculty_placeholder_required", facultyPlaceholderOptionEl.textContent);
+  }
+  if (degreePlaceholderOptionEl) {
+    degreePlaceholderOptionEl.textContent = getFilterString("degree_placeholder_optional_choose_or_all", degreePlaceholderOptionEl.textContent);
+  }
+  if (degreeAllOptionEl) {
+    degreeAllOptionEl.textContent = getFilterString("degree_option_all", degreeAllOptionEl.textContent);
+  }
+  if (systemLoadingOptionEl) {
+    systemLoadingOptionEl.textContent = getFilterString("loading_systems", systemLoadingOptionEl.textContent);
+  }
+  if (sectionLoadingOptionEl) {
+    sectionLoadingOptionEl.textContent = getFilterString("loading_sections", sectionLoadingOptionEl.textContent);
+  }
+  if (cloudEmptyStateTextEl) {
+    cloudEmptyStateTextEl.textContent = getFilterString("empty_state_select_prompt", cloudEmptyStateTextEl.textContent);
+  }
+  facultySelect.setAttribute("aria-label", getFilterString("faculty_aria", facultySelect.getAttribute("aria-label")));
+  degreeSelect.setAttribute("aria-label", getFilterString("degree_aria", degreeSelect.getAttribute("aria-label")));
+  wordLimitRange.setAttribute("aria-label", getFilterString("word_limit_aria", wordLimitRange.getAttribute("aria-label")));
 }
 
 function getMappedTemplate(templateMap, key, fallbackTemplate) {
@@ -453,21 +551,33 @@ function getProgrammeCoverageMatrix(programmeKey, programmeDetail) {
 
 function renderSelectionPanelEmpty() {
   const analysisStrings = getAnalysisPanelStrings();
+  const featureTemplate = getMappedTemplate(
+    analysisStrings.feature_templates,
+    "default",
+    "Els \"features\" són termes detectats automàticament a partir dels textos analitzats."
+  );
   setPanelText(selectionPanelTitleEl, analysisStrings.title);
   setPanelText(selectionPanelScopeEl, analysisStrings.paragraph_methods);
   setPanelText(selectionPanelCoursesEl, analysisStrings.paragraph_tradeoff);
   setPanelText(selectionPanelSystemEl, analysisStrings.paragraph_sections);
   setPanelText(selectionPanelSectionEl, analysisStrings.paragraph_course_info);
+  setPanelText(selectionPanelFeaturesEl, featureTemplate);
 }
 
 function renderSelectionPanelError() {
   const panelStrings = state.uiStrings?.panel || {};
   const analysisStrings = getAnalysisPanelStrings();
+  const featureTemplate = getMappedTemplate(
+    analysisStrings.feature_templates,
+    "default",
+    "Els \"features\" són termes detectats automàticament a partir dels textos analitzats."
+  );
   setPanelText(selectionPanelTitleEl, panelStrings.error_title || DEFAULT_UI_STRINGS.panel.error_title);
   setPanelText(selectionPanelScopeEl, panelStrings.error_scope || DEFAULT_UI_STRINGS.panel.error_scope);
   setPanelText(selectionPanelCoursesEl, analysisStrings.paragraph_methods);
   setPanelText(selectionPanelSystemEl, analysisStrings.paragraph_sections);
   setPanelText(selectionPanelSectionEl, analysisStrings.paragraph_course_info);
+  setPanelText(selectionPanelFeaturesEl, featureTemplate);
 }
 
 function isCompareSelection(selectedDegree) {
@@ -741,6 +851,15 @@ function updateSelectionPanel(context) {
     section_label: sectionLabel,
     section_help: sectionHelp
   });
+  const featureTemplate = getMappedTemplate(
+    analysisStrings.feature_templates,
+    compareMode ? "compare" : "single",
+    "Els termes del núvol són \"features\": expressions detectades automàticament."
+  );
+  const featureContextText = formatTemplate(featureTemplate, {
+    system_label: systemLabel,
+    section_label: sectionLabel
+  });
   let coverageText = analysisStrings.coverage_unavailable;
   if (compareMode && context.selectedDegree && context.selectedDegree !== "ALL") {
     const coverageMatrix = getProgrammeCoverageMatrix(context.selectedDegree, context.programmeDetail);
@@ -755,7 +874,7 @@ function updateSelectionPanel(context) {
       });
     }
   } else {
-    coverageText = analysisStrings.coverage_centre_unavailable;
+    coverageText = "";
   }
 
   setPanelText(selectionPanelTitleEl, analysisStrings.title);
@@ -763,20 +882,40 @@ function updateSelectionPanel(context) {
   setPanelText(selectionPanelCoursesEl, coverageText);
   setPanelText(selectionPanelSystemEl, systemContextText);
   setPanelText(selectionPanelSectionEl, sectionContextText);
+  setPanelText(selectionPanelFeaturesEl, featureContextText);
+}
+
+async function loadFirstAvailableStrings(urls) {
+  for (const url of Array.from(new Set((urls || []).filter(Boolean)))) {
+    try {
+      return await fetchJson(url);
+    } catch (_) {
+      // Continue with fallback candidates.
+    }
+  }
+  return null;
 }
 
 async function loadUiStrings() {
-  const candidates = Array.from(new Set([WORDCLOUD_STRINGS_URL, WORDCLOUD_STRINGS_FALLBACK_URL].filter(Boolean)));
-  for (const url of candidates) {
-    try {
-      const loadedStrings = await fetchJson(url);
-      state.uiStrings = mergeDeepObjects(DEFAULT_UI_STRINGS, loadedStrings || {});
-      return;
-    } catch (err) {
-      // Fallback handled by next candidate / defaults.
-    }
+  let mergedStrings = DEFAULT_UI_STRINGS;
+
+  const commonStrings = await loadFirstAvailableStrings([
+    COMMON_STRINGS_URL,
+    COMMON_STRINGS_FALLBACK_URL
+  ]);
+  if (commonStrings && typeof commonStrings === "object") {
+    mergedStrings = mergeDeepObjects(mergedStrings, commonStrings);
   }
-  state.uiStrings = DEFAULT_UI_STRINGS;
+
+  const appStrings = await loadFirstAvailableStrings([
+    WORDCLOUD_STRINGS_URL,
+    WORDCLOUD_STRINGS_FALLBACK_URL
+  ]);
+  if (appStrings && typeof appStrings === "object") {
+    mergedStrings = mergeDeepObjects(mergedStrings, appStrings);
+  }
+
+  state.uiStrings = mergedStrings;
 }
 
 function setRecolorButtonEnabled(isEnabled) {
@@ -1247,6 +1386,13 @@ function addOption(selectEl, value, label) {
   selectEl.appendChild(option);
 }
 
+function setSingleSelectOption(selectEl, label) {
+  if (!selectEl) return;
+  selectEl.innerHTML = "";
+  addOption(selectEl, "", label);
+  selectEl.value = "";
+}
+
 function programmeKey(centreCode, programmeCode) {
   return `${String(centreCode)}::${String(programmeCode)}`;
 }
@@ -1256,7 +1402,7 @@ function populateFacultySelect(selectedCentreCode) {
 
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = "Facultat/Escola (obligatori)";
+  placeholder.textContent = getFilterString("faculty_placeholder_required", "Centre (obligatori)");
   placeholder.disabled = true;
   placeholder.selected = true;
   facultySelect.appendChild(placeholder);
@@ -1278,8 +1424,8 @@ function populateDegreeSelect(centreCode, selectedProgrammeKey) {
   const placeholder = document.createElement("option");
   placeholder.value = "";
   placeholder.textContent = centreCode
-    ? 'Ensenyament (opcional): selecciona o tria "Tots"'
-    : "Ensenyament (opcional): selecciona una Facultat/Escola primer";
+    ? getFilterString("degree_placeholder_optional_choose_or_all", "Ensenyament (opcional)")
+    : getFilterString("degree_placeholder_select_faculty_first", "Ensenyament (opcional)");
   placeholder.disabled = true;
   placeholder.selected = true;
   degreeSelect.appendChild(placeholder);
@@ -1291,7 +1437,7 @@ function populateDegreeSelect(centreCode, selectedProgrammeKey) {
   }
 
   degreeSelect.disabled = false;
-  addOption(degreeSelect, "ALL", "Tots");
+  addOption(degreeSelect, "ALL", getFilterString("degree_option_all", "Tots"));
 
   const programmes = state.programmesByCentreCode.get(String(centreCode)) || [];
   programmes.forEach(p => {
@@ -1497,17 +1643,16 @@ async function loadIndexes() {
 }
 
 function renderApiInfo() {
-  const generatedAt = state.apiVersionMeta?.generated_at;
-  const generatedLabel = generatedAt ? new Date(generatedAt).toLocaleString("ca-ES") : "data desconeguda";
-  const safeBase = escapeHtml(state.apiBase);
-  const safeVersion = escapeHtml(state.apiVersion);
-  const safeGenerated = escapeHtml(generatedLabel);
-  const safePlatforms = state.apiScrapingPlatforms.map(name => escapeHtml(name)).join(", ");
-  const provenance = safePlatforms
-    ? ` · Fonts de captura: <strong>${safePlatforms}</strong>`
-    : "";
+  const scrapingDate = state.apiScrapingDate || state.apiVersionMeta?.generated_at || null;
+  const parsedDate = parseDateCandidate(scrapingDate);
+  const lang = String(document.documentElement?.lang || "ca").toLowerCase();
+  const locale = lang.startsWith("es") ? "es-ES" : (lang.startsWith("en") ? "en-GB" : "ca-ES");
+  const scrapingDateLabel = parsedDate
+    ? parsedDate.toLocaleString(locale)
+    : getFilterString("scraping_date_unknown", "desconeguda");
+  const label = getFilterString("scraping_date_label", "Data de l'scraping");
 
-  apiInfoEl.innerHTML = `Font de dades: <a href="${safeBase}" target="_blank" rel="noopener noreferrer" class="wordcloud-source-link">${safeBase}</a> (${safeVersion}, snapshot ${safeGenerated})${provenance}`;
+  apiInfoEl.textContent = `${label}: ${scrapingDateLabel}`;
 }
 
 async function getCentreDetail(centreCode) {
@@ -1586,7 +1731,7 @@ async function renderCurrentSelection() {
     updateCloudTitles(null);
     updateCloudSubtitles(null, null);
     renderSelectionPanelEmpty();
-    setStatus("Selecciona una Facultat/Escola per veure el núvol de paraules.", false);
+    setStatus("", false);
     return;
   }
 
@@ -1644,19 +1789,7 @@ async function renderCurrentSelection() {
     }
 
     setRecolorButtonEnabled(true);
-    if (renderResult.compareMode) {
-      setStatus(
-        formatCompareRenderStatus(
-          renderResult.renderedCentre,
-          renderResult.totalCentre,
-          renderResult.renderedProgramme,
-          renderResult.totalProgramme
-        ),
-        false
-      );
-    } else {
-      setStatus(formatRenderStatus(renderResult.renderedCentre, renderResult.totalCentre), false);
-    }
+    setStatus("", false);
 
     if (pendingMobileAutoScroll && isCompactWordcloudLayout()) {
       pendingMobileAutoScroll = false;
@@ -1682,10 +1815,22 @@ async function renderCurrentSelection() {
 }
 
 function setFatalErrorState() {
-  facultySelect.innerHTML = '<option value="">Error carregant centres</option>';
-  degreeSelect.innerHTML = '<option value="">Error carregant ensenyaments</option>';
-  systemSelect.innerHTML = '<option value="">Error carregant sistemes</option>';
-  sectionSelect.innerHTML = '<option value="">Error carregant seccions</option>';
+  setSingleSelectOption(
+    facultySelect,
+    getFilterString("error_loading_faculties", "Error carregant centres")
+  );
+  setSingleSelectOption(
+    degreeSelect,
+    getFilterString("error_loading_degrees", "Error carregant ensenyaments")
+  );
+  setSingleSelectOption(
+    systemSelect,
+    getFilterString("error_loading_systems", "Error carregant sistemes")
+  );
+  setSingleSelectOption(
+    sectionSelect,
+    getFilterString("error_loading_sections", "Error carregant seccions")
+  );
   state.lastRenderData = null;
   state.lastRenderContext = null;
   setComparisonViewEnabled(false);
@@ -1728,6 +1873,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await resolveApiBaseAndVersion();
     await loadUiStrings();
+    applyLocalizedStaticLabels();
+    renderSelectionPanelEmpty();
     await loadIndexes();
 
     resetAnalysisFiltersToDefaults();
@@ -1769,26 +1916,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   recolorBtn.addEventListener("click", () => {
     if (!state.lastRenderData) return;
-    const palette = pickNextPalette();
+    pickNextPalette();
     const renderResult = renderCloudsFromRenderData(state.lastRenderData);
     if (state.lastRenderContext) {
       updateCloudSubtitles(state.lastRenderContext, renderResult);
     }
-    const paletteLabel = palette?.label ? `Paleta ${palette.label}. ` : "";
     if (state.lastRenderContext) updateSelectionPanel(state.lastRenderContext);
-    if (renderResult.compareMode) {
-      setStatus(
-        `${paletteLabel}${formatCompareRenderStatus(
-          renderResult.renderedCentre,
-          renderResult.totalCentre,
-          renderResult.renderedProgramme,
-          renderResult.totalProgramme
-        )}`,
-        false
-      );
-      return;
-    }
-    setStatus(`${paletteLabel}${formatRenderStatus(renderResult.renderedCentre, renderResult.totalCentre)}`, false);
+    setStatus("", false);
   });
 
   wordLimitRange.addEventListener("input", () => {
@@ -1804,19 +1938,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateCloudSubtitles(state.lastRenderContext, renderResult);
         updateSelectionPanel(state.lastRenderContext);
       }
-      if (renderResult.compareMode) {
-        setStatus(
-          `Límit ajustat. ${formatCompareRenderStatus(
-            renderResult.renderedCentre,
-            renderResult.totalCentre,
-            renderResult.renderedProgramme,
-            renderResult.totalProgramme
-          )}`,
-          false
-        );
-        return;
-      }
-      setStatus(`Límit ajustat. ${formatRenderStatus(renderResult.renderedCentre, renderResult.totalCentre)}`, false);
+      setStatus("", false);
     }, 120);
   });
 

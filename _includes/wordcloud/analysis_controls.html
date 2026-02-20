@@ -9,27 +9,27 @@ Safe edits:
 -->
 
 <div class="wordcloud-config-col">
-  <div class="wordcloud-config-title wordcloud-card-title">Anàlisi del núvol</div>
+  <div id="wordcloudAnalysisCardTitle" class="wordcloud-config-title wordcloud-card-title">Anàlisi del núvol</div>
 
-  <label class="wordcloud-field-label" for="systemSelect">Sistema de classificació</label>
+  <label id="wordcloudSystemLabel" class="wordcloud-field-label" for="systemSelect">Sistema de classificació</label>
   <div class="selector-container">
     <div class="selector-box">
       <select id="systemSelect" class="w3-select w3-border">
-        <option value="">Carregant sistemes...</option>
+        <option id="wordcloudSystemLoadingOption" value="">Carregant sistemes...</option>
       </select>
     </div>
   </div>
 
-  <label class="wordcloud-field-label" for="sectionSelect">Secció analitzada</label>
+  <label id="wordcloudSectionLabel" class="wordcloud-field-label" for="sectionSelect">Secció analitzada</label>
   <div class="selector-container">
     <div class="selector-box">
       <select id="sectionSelect" class="w3-select w3-border">
-        <option value="">Carregant seccions...</option>
+        <option id="wordcloudSectionLoadingOption" value="">Carregant seccions...</option>
       </select>
     </div>
   </div>
 
-  <label class="wordcloud-field-label" for="wordLimitRange">Nombre màxim de termes: <span id="wordLimitValue">70</span></label>
+  <label class="wordcloud-field-label" for="wordLimitRange"><span id="wordcloudWordLimitLabelText">Nombre màxim de termes</span>: <span id="wordLimitValue">70</span></label>
   <div class="selector-container">
     <input
       id="wordLimitRange"

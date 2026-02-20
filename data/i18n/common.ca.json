@@ -1,0 +1,106 @@
+{
+  "filters": {
+    "selection_card_title": "Selecció de centre i ensenyament",
+    "analysis_card_title": "Anàlisi del núvol",
+    "faculty_label": "Centre",
+    "degree_label": "Ensenyament",
+    "faculty_placeholder_required": "Centre (obligatori)",
+    "faculty_aria": "Centre",
+    "degree_placeholder_optional_choose_or_all": "Ensenyament (opcional)",
+    "degree_placeholder_select_faculty_first": "Ensenyament (opcional)",
+    "degree_option_all": "Tots",
+    "degree_aria": "Ensenyament opcional",
+    "system_label": "Sistema de classificació",
+    "section_label": "Secció analitzada",
+    "word_limit_label": "Nombre màxim de termes",
+    "word_limit_aria": "Nombre màxim de termes al núvol",
+    "loading_systems": "Carregant sistemes...",
+    "loading_sections": "Carregant seccions...",
+    "error_loading_faculties": "Error carregant centres",
+    "error_loading_degrees": "Error carregant ensenyaments",
+    "error_loading_systems": "Error carregant sistemes",
+    "error_loading_sections": "Error carregant seccions",
+    "empty_state_select_prompt": "Selecciona un centre i, opcionalment, un ensenyament als selectors de l'esquerra.",
+    "scraping_date_label": "Data de l'scraping",
+    "scraping_date_unknown": "desconeguda"
+  },
+  "methodology": {
+    "systems_summary": "Els sistemes de classificació no són equivalents: canvien en sensibilitat, especificitat i risc de falsos positius.",
+    "false_positives_note": "Les comparacions sistemàtiques entre sistemes encara són limitades; interpreta els resultats amb cautela.",
+    "sections_summary": "La secció analitzada (competències, informació de l'assignatura, referències, unió/intersecció) condiciona directament els termes i ODS detectats."
+  },
+  "system_labels": {
+    "sys:any": "Qualsevol sistema (Unió)",
+    "sys:all": "Tots els sistemes (Intersecció)",
+    "sys:auckland": "Auckland",
+    "sys:aurora": "Aurora",
+    "sys:elsevier": "Elsevier",
+    "ens:equal": "Ensemble equal",
+    "ens:third": "Ensemble third",
+    "ens:triple": "Ensemble triple",
+    "sys:sdgo": "SDGO",
+    "sys:sdsn": "SDSN",
+    "sys:siris": "SIRIS"
+  },
+  "section_labels": {
+    "sec:any": "Totes les seccions (Unió)",
+    "sec:all": "Coincidència de totes les seccions (Intersecció)",
+    "sec:competences": "Competències",
+    "sec:course_info": "Informació de l'assignatura",
+    "sec:references": "Referències"
+  },
+  "system_explanations": {
+    "sys:any": "S'accepta un ODS si apareix en qualsevol sistema (regla d'unió).",
+    "sys:all": "Només s'accepta un ODS si coincideix en tots els sistemes (regla d'intersecció).",
+    "sys:auckland": "Sistema d'Auckland basat en consultes booleanes (estil Lucene).",
+    "sys:aurora": "Sistema d'Aurora Universities Network basat en consultes booleanes (estil Lucene).",
+    "sys:elsevier": "Sistema d'Elsevier basat en consultes booleanes (estil Lucene).",
+    "sys:ensemble_equal": "Model ensemble de text2sdg (random forest) que combina sis sistemes i longitud del text, amb proporció equilibrada de dades expertes i sintètiques.",
+    "sys:ensemble_third": "Model ensemble de text2sdg (random forest) entrenat amb una proporció intermèdia de dades sintètiques.",
+    "sys:ensemble_triple": "Model ensemble de text2sdg (random forest) entrenat amb més pes de dades sintètiques.",
+    "sys:sdgo": "Sistema SDGO basat principalment en coincidència de paraules clau (keyword matching).",
+    "sys:sdsn": "Sistema SDSN basat principalment en coincidència de paraules clau (keyword matching).",
+    "sys:siris": "Sistema SIRIS Academic basat en consultes booleanes (estil Lucene).",
+    "default": "Aquesta opció determina com es combinen o seleccionen les deteccions dels sistemes."
+  },
+  "system_modes": {
+    "sys:any": "inclusiu",
+    "sys:all": "restrictiu",
+    "sys:ensemble_equal": "equilibrat",
+    "sys:ensemble_third": "intermedi",
+    "sys:ensemble_triple": "molt restrictiu",
+    "sys:auckland": "monosistema (Auckland)",
+    "sys:aurora": "monosistema (Aurora)",
+    "sys:elsevier": "monosistema (Elsevier)",
+    "sys:sdgo": "monosistema (SDGO)",
+    "sys:sdsn": "monosistema (SDSN)",
+    "sys:siris": "monosistema (SIRIS)",
+    "default": "configuració específica del sistema seleccionat"
+  },
+  "system_quality_notes": {
+    "sys:any": "Maximitza cobertura, però és el mode més procliu a falsos positius.",
+    "sys:all": "Redueix falsos positius, però incrementa el risc de falsos negatius.",
+    "sys:ensemble_equal": "Sol oferir un balanç estable; convé revisar casos dubtosos en textos curts o molt genèrics.",
+    "sys:ensemble_third": "Ofereix un punt intermedi del balanç sensibilitat/especificitat segons l'entrenament del model.",
+    "sys:ensemble_triple": "Tendeix a una lectura més prudent i pot retallar falsos positius, però també perdre deteccions reals en contextos pobres en text.",
+    "sys:auckland": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "sys:aurora": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "sys:elsevier": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "sys:sdgo": "Com a sistema de paraules clau és més liberal i sensible a falsos positius en contextos genèrics.",
+    "sys:sdsn": "Com a sistema de paraules clau és més liberal i sensible a falsos positius en contextos genèrics.",
+    "sys:siris": "Menys liberal que els sistemes de paraules clau, però dependent del vocabulari i patrons de la consulta.",
+    "default": "Les comparacions sistemàtiques entre sistemes encara són limitades; interpreta els resultats amb cautela."
+  },
+  "section_explanations": {
+    "sec:any": "es combinen competències, informació de l'assignatura i referències (unió).",
+    "sec:all": "només es conserven termes que coincideixen a totes les seccions (intersecció).",
+    "sec:competences": "només s'analitzen competències i resultats; poden aparèixer termes molt transversals i repetits.",
+    "sec:course_info": "només s'analitzen títol, descripció i continguts/temari; és la part més propera al que es treballa al curs.",
+    "sec:references": "només s'analitza bibliografia i referències; pot aportar termes contextuals no centrals al desenvolupament del curs.",
+    "default": "s'aplica el criteri de secció seleccionat sobre la guia docent."
+  },
+  "ods_guidance": {
+    "summary": "En gràfics d'anell i barres, els valors mostren presència relativa d'ODS detectats en el text filtrat, no una avaluació qualitativa de la docència.",
+    "coverage_caution": "Canviar sistema o secció pot alterar els percentatges per diferències de sensibilitat i de context textual."
+  }
+}
