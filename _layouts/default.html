@@ -41,14 +41,25 @@ Safe edits:
 
   {% include sidebar.html %}
 
+  <button
+    id="desktopSidebarToggle"
+    class="site-desktop-sidebar-toggle w3-button w3-hide-small w3-hide-medium"
+    type="button"
+    onclick="if(window.toggleDesktopSidebar){window.toggleDesktopSidebar();}else{var collapsed=document.body.classList.toggle('sidebar-collapsed');var icon=this.querySelector('i');if(icon){icon.className=collapsed?'fa fa-bars':'fa fa-angle-left';}var label=collapsed?'Mostra menú lateral':'Oculta menú lateral';this.setAttribute('aria-label',label);this.setAttribute('title',label);this.setAttribute('aria-expanded',String(!collapsed));try{localStorage.setItem('sidebar:desktopCollapsed',collapsed?'1':'0');}catch(_){}}return false;"
+    aria-label="Oculta menú lateral"
+    aria-expanded="true"
+    title="Oculta menú lateral">
+    <i class="fa fa-angle-left" aria-hidden="true"></i>
+  </button>
+
   <button id="mobileMenuBtn" class="site-mobile-menu w3-button w3-hide-large" onclick="w3_open();" aria-label="Obrir menú lateral">
     <i class="fa fa-bars"></i> Menú
   </button>
 
   <div class="w3-main">
     {{ content }}
-    {% include footer.html %}
   </div>
+  {% include footer.html %}
 
   {% include back_to_top.html %}
 

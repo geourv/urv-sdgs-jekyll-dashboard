@@ -1,0 +1,18 @@
+<!--
+File: _includes/wordcloud/left_stack.html
+Purpose: Left-side stack with selection + analysis controls.
+Related files:
+  - _includes/wordcloud/controls_primary.html
+  - _includes/wordcloud/analysis_controls.html
+  - _includes/wordcloud/mobile_hint.html
+-->
+
+<div class="wordcloud-left-stack">
+  <div class="wordcloud-primary-card">
+    <div class="wordcloud-card-title">Selecció de facultat i ensenyament</div>
+    {% include wordcloud/controls_primary.html %}
+  </div>
+
+  {% include wordcloud/analysis_controls.html %}
+  {% include wordcloud/mobile_hint.html %}
+</div>

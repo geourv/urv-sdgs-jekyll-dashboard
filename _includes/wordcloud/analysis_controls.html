@@ -1,0 +1,58 @@
+<!--
+File: _includes/wordcloud/analysis_controls.html
+Purpose: System/section/limit controls and status actions for the wordcloud app.
+Related files:
+  - _includes/wordcloud/scripts.html
+Safe edits:
+  - OK: labels, helper copy, button text
+  - Careful: keep ids used by JS
+-->
+
+<div class="wordcloud-config-col">
+  <div class="wordcloud-config-title wordcloud-card-title">Anàlisi del núvol</div>
+
+  <label class="wordcloud-field-label" for="systemSelect">Sistema de classificació</label>
+  <div class="selector-container">
+    <div class="selector-box">
+      <select id="systemSelect" class="w3-select w3-border">
+        <option value="">Carregant sistemes...</option>
+      </select>
+    </div>
+  </div>
+
+  <label class="wordcloud-field-label" for="sectionSelect">Secció analitzada</label>
+  <div class="selector-container">
+    <div class="selector-box">
+      <select id="sectionSelect" class="w3-select w3-border">
+        <option value="">Carregant seccions...</option>
+      </select>
+    </div>
+  </div>
+
+  <label class="wordcloud-field-label" for="wordLimitRange">Nombre màxim de termes: <span id="wordLimitValue">70</span></label>
+  <div class="selector-container">
+    <input
+      id="wordLimitRange"
+      type="range"
+      min="20"
+      max="95"
+      step="5"
+      value="70"
+      style="width: 100%;"
+      aria-label="Nombre màxim de termes al núvol">
+  </div>
+
+  <div class="selector-container wordcloud-action-row">
+    <button
+      id="recolorBtn"
+      type="button"
+      class="w3-button w3-border w3-round"
+      title="Prova una nova paleta de colors per al núvol actual"
+      disabled>
+      <i class="fa fa-paint-brush" aria-hidden="true"></i> Recolora el núvol
+    </button>
+  </div>
+
+  <p id="apiInfo" style="margin-top: 0.9rem;"></p>
+  <p id="wordcloudStatus" style="margin-top: 0.25rem;"></p>
+</div>

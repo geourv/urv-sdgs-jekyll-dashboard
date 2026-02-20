@@ -1,0 +1,18 @@
+<!--
+File: _includes/app/explore_header.html
+Purpose: Reusable breadcrumb header for exploration/webapp pages.
+Related files:
+  - _layouts/visualization_app.html
+Safe edits:
+  - OK: labels, icon, spacing
+  - Careful: keep semantic heading structure for accessibility
+-->
+
+<header class="w3-container" style="padding-top:{{ include.padding_top | default: '10px' }}">
+  <h5>
+    <b>
+      <i class="fa fa-{{ include.icon | default: 'eye' }}"></i>
+      {{ include.section | default: 'Una primera ullada' }} &gt; {{ include.title }}
+    </b>
+  </h5>
+</header>

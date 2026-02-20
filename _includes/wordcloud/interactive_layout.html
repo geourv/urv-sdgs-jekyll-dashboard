@@ -1,0 +1,16 @@
+<!--
+File: _includes/wordcloud/interactive_layout.html
+Purpose: Main interactive grid for the wordcloud app.
+Related files:
+  - _includes/wordcloud/left_stack.html
+  - _includes/wordcloud/selection_panel.html
+  - _includes/wordcloud/cloud_canvas.html
+-->
+
+<div class="w3-container">
+  <div class="interactive-chart-container wordcloud-layout">
+    {% include wordcloud/left_stack.html %}
+    {% include wordcloud/selection_panel.html %}
+    {% include wordcloud/cloud_canvas.html %}
+  </div>
+</div>

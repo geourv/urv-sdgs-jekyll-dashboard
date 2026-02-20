@@ -1,0 +1,36 @@
+<!--
+File: _includes/wordcloud/cloud_canvas.html
+Purpose: Canvas host for the generated word cloud.
+Related files:
+  - _includes/wordcloud/scripts.html
+-->
+
+<div id="wordcloudCloudZone" class="wordcloud-cloud-zone">
+  <div id="wordcloudEmptyState" class="wordcloud-empty-state" aria-live="polite">
+    <div id="wordcloudEmptyCue" class="wordcloud-empty-cue">
+      <i
+        id="wordcloudEmptyArrow"
+        class="fa fa-long-arrow-left wordcloud-empty-arrow"
+        aria-hidden="true"></i>
+      <p class="wordcloud-empty-state-text">
+        Selecciona una Facultat/Escola i, opcionalment, un ensenyament als selectors de l'esquerra.
+      </p>
+    </div>
+  </div>
+
+  <section id="wordcloudPrimaryCard" class="wordcloud-cloud-card">
+    <h3 id="wordcloudPrimaryTitle" class="wordcloud-cloud-title" hidden></h3>
+    <p id="wordcloudPrimarySubtitle" class="wordcloud-cloud-subtitle" hidden></p>
+    <div class="wordcloud-wrapper">
+      <canvas id="wordcloud"></canvas>
+    </div>
+  </section>
+
+  <section id="wordcloudSecondaryCard" class="wordcloud-cloud-card" hidden>
+    <h3 id="wordcloudSecondaryTitle" class="wordcloud-cloud-title" hidden></h3>
+    <p id="wordcloudSecondarySubtitle" class="wordcloud-cloud-subtitle" hidden></p>
+    <div class="wordcloud-wrapper">
+      <canvas id="wordcloudSecondary"></canvas>
+    </div>
+  </section>
+</div>

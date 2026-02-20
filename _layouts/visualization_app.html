@@ -1,0 +1,25 @@
+---
+layout: default
+---
+
+<!--
+File: _layouts/visualization_app.html
+Purpose: Reusable layout for interactive visualization pages with breadcrumb header.
+Related files:
+  - _layouts/default.html
+  - _includes/app/explore_header.html
+Safe edits:
+  - OK: adjust wrapper structure and header defaults
+  - Careful: keep `layout: default` to preserve sidebar/mobile behavior
+-->
+
+{% assign app_title = page.app_nav_title | default: page.title %}
+
+{% include app/explore_header.html
+  icon=page.app_nav_icon
+  section=page.app_nav_section
+  title=app_title
+  padding_top=page.app_header_padding_top
+%}
+
+{{ content }}

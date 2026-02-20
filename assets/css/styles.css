@@ -12,10 +12,14 @@ Safe edits:
 
 /* ===== base typography ===== */
 html, body, h1, h2, h3, h4, h5 {
-    font-family: "Raleway", sans-serif;
+    font-family: "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   }
 html, body {
     margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
 
   :root {
@@ -76,6 +80,29 @@ html, body {
   .site-mobile-menu:hover,
   .site-mobile-menu:focus {
     background: var(--site-accent-dark) !important;
+    color: #fff !important;
+  }
+
+.site-desktop-sidebar-toggle {
+    position: fixed;
+    top: 12px;
+    left: 300px;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid var(--site-accent-dark);
+    background: var(--site-accent);
+    color: var(--site-on-accent) !important;
+    box-shadow: 0 3px 9px rgba(39, 63, 89, 0.22);
+    z-index: 1002;
+    transition: left 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+  }
+  .site-desktop-sidebar-toggle:hover,
+  .site-desktop-sidebar-toggle:focus {
+    background: var(--site-accent-dark);
     color: #fff !important;
   }
 
@@ -173,43 +200,29 @@ html, body {
   
   /* ===== footer ===== */
   #siteFooter {
-    background: var(--site-accent-strong) !important;
-    color: var(--site-on-accent);
-    border-top: 1px solid var(--site-accent-dark);
+    width: 100%;
+    margin: 0;
+    background: var(--site-surface-2) !important;
+    color: #465668;
+    border-top: 1px solid var(--site-widget-border);
   }
   #siteFooter .footer-content {
-    font-size: 14px;
+    font-size: 13.5px;
     color: inherit;
-    padding: 8px 0;
+    padding: 5px 12px;
   }
   #siteFooter a,
   #siteFooter a:visited {
-    color: #e8eff7;
-    text-decoration: none;
-  }
-  #siteFooter a:hover {
-    color: #ffffff;
-    text-decoration: underline;
-  }
-  #siteFooter span {
-    color: rgba(255, 255, 255, 0.92);
-  }
-
-  .copyright {
-    font-size: 14px;
-    color: #555;
-    padding: 8px 0;
-  }
-  .copyright a {
     color: var(--site-link);
     text-decoration: none;
   }
-  .copyright a:hover {
+  #siteFooter a:hover {
+    color: var(--site-link-hover);
     text-decoration: underline;
   }
-  .copyright span {
-    margin: 0 5px;
-    color: #999;
+  #siteFooter span {
+    color: inherit;
+    opacity: 0.95;
   }
 
   /* ===== content links (main text) =====
@@ -236,14 +249,6 @@ html, body {
     border-radius: 2px;
   }
 
-  /* Footer links are more subtle than in-text links */
-  .copyright a,
-  .copyright a:visited {
-    color: var(--site-link);
-    text-decoration: none;
-  }
-  .copyright a:hover { text-decoration: underline; }
-  
   /* ===== charts (cards + responsive canvases) ===== */
   .charts-wrapper {
     width: 100%;
@@ -312,7 +317,7 @@ html, body {
     align-items: center;
     margin-right: 10px;
     margin-bottom: 5px;
-    font-size: 0.8em;
+    font-size: 0.92em;
   }
   .sdg-color {
     width: 15px;
@@ -419,7 +424,7 @@ html, body {
     color: #33485f;
     padding: 3px 8px;
     border-radius: 12px;
-    font-size: 0.8em;
+    font-size: 0.9em;
     display: inline-block;
     margin: 2px;
   }
@@ -467,7 +472,7 @@ html, body {
     border-radius: 4px;
     background: #ecf2f8;
     transition: all 0.3s;
-    font-size: 0.9em;
+    font-size: 0.98em;
   }
   .filter-tab:hover { background-color: #e1e9f2; }
   .filter-tab.active {
@@ -543,9 +548,30 @@ html, body {
   }
   
   /* ===== responsive ===== */
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 992px) {
     /* two columns for .w3-quarter at medium widths */
     .w3-quarter { width: 50%; }
+  }
+
+  @media screen and (min-width: 993px) {
+    #mySidebar {
+      transition: transform 0.2s ease, visibility 0.2s ease;
+      transform: translateX(0);
+      visibility: visible;
+    }
+    body.sidebar-collapsed #mySidebar {
+      transform: translateX(-100%);
+      visibility: hidden;
+      pointer-events: none;
+    }
+    body.sidebar-collapsed .w3-main {
+      margin-left: 0;
+      border-left: 0;
+    }
+    body.sidebar-collapsed .site-desktop-sidebar-toggle {
+      left: 10px;
+      transform: translateX(0);
+    }
   }
 
   @media screen and (max-width: 992px) {
@@ -553,6 +579,9 @@ html, body {
     .w3-main {
       padding-top: var(--site-mobile-menu-clearance);
       border-left: 0;
+    }
+    .site-desktop-sidebar-toggle {
+      display: none !important;
     }
   }
   
@@ -575,12 +604,10 @@ html, body {
     }
   
     /* footer text sizing */
-    .copyright,
     #siteFooter .footer-content {
       font-size: 12px;
       line-height: 1.5;
     }
-    .copyright span,
     #siteFooter span {
       display: inline-block;
       margin: 0 3px;
@@ -639,7 +666,7 @@ html, body {
     overflow-y:auto;
     padding-bottom:4px;
   }
-  .sdg-legend-item{ font-size:0.85em; }
+  .sdg-legend-item{ font-size:0.92em; }
   .sdg-color{ width:14px; height:14px; border-radius:3px; margin-right:6px; }
   
   /* controls: que ocupen ample complet si cal */
@@ -649,7 +676,7 @@ html, body {
   
   /* pestanyes de filtre: millor stacking en mòbil */
   .filter-tabs{ display:flex; flex-wrap:wrap; gap:10px; }
-  @media (max-width: 1000px){
+  @media (max-width: 992px){
     .left-col, .right-col{
       flex:1 0 100% !important;  /* mata qualsevol inline restant */
       min-width:0;
@@ -690,8 +717,8 @@ html, body {
   .right-col .sdg-legend-item{
     display: inline-flex;
     align-items: center;
-    font-size: 0.85em;
-    line-height: 1.2;
+    font-size: 0.92em;
+    line-height: 1.3;
   }
   .right-col .sdg-color{
     width: 14px;

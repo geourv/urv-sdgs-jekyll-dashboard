@@ -14,6 +14,7 @@ Notes:
 // assets/js/site.js
 (function () {
   const SIDEBAR_STATE_KEY = 'sidebar:state'; // 'open' | 'closed'
+  const DESKTOP_SIDEBAR_COLLAPSE_KEY = 'sidebar:desktopCollapsed'; // '1' | '0'
   function ensureOverlay() {
     let overlay = document.getElementById('myOverlay');
     if (!overlay) {
@@ -65,14 +66,86 @@ Notes:
     else openSidebar(true);
   }
 
+  function isDesktopViewport() {
+    if (typeof window.matchMedia === 'function') {
+      return window.matchMedia('(min-width: 993px)').matches;
+    }
+    return (window.innerWidth || 0) >= 993;
+  }
+
+  function updateDesktopSidebarToggleButton() {
+    const btn = document.getElementById('desktopSidebarToggle');
+    if (!btn) return;
+    const icon = btn.querySelector('i');
+    const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+    const label = isCollapsed ? 'Mostra menú lateral' : 'Oculta menú lateral';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    btn.setAttribute('aria-expanded', String(!isCollapsed));
+    if (icon) {
+      icon.className = isCollapsed ? 'fa fa-bars' : 'fa fa-angle-left';
+    }
+  }
+
+  function setDesktopSidebarCollapsed(collapsed, persist = true) {
+    const shouldCollapse = Boolean(collapsed) && isDesktopViewport();
+    document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
+    updateDesktopSidebarToggleButton();
+    if (!persist) return;
+    try {
+      localStorage.setItem(DESKTOP_SIDEBAR_COLLAPSE_KEY, shouldCollapse ? '1' : '0');
+    } catch (_) {}
+  }
+
+  function setupDesktopSidebarToggle() {
+    const btn = document.getElementById('desktopSidebarToggle');
+    if (!btn) return;
+
+    const mq = (typeof window.matchMedia === 'function')
+      ? window.matchMedia('(min-width: 993px)')
+      : null;
+    const sync = () => {
+      if (!isDesktopViewport()) {
+        setDesktopSidebarCollapsed(false, false);
+        return;
+      }
+      let stored = '0';
+      try {
+        stored = localStorage.getItem(DESKTOP_SIDEBAR_COLLAPSE_KEY) || '0';
+      } catch (_) {}
+      setDesktopSidebarCollapsed(stored === '1', false);
+    };
+
+    window.toggleDesktopSidebar = function () {
+      if (!isDesktopViewport()) return;
+      const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+      setDesktopSidebarCollapsed(!isCollapsed, true);
+    };
+
+    if (mq && typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', sync);
+    } else if (mq && typeof mq.addListener === 'function') {
+      // Legacy fallback (older browsers).
+      mq.addListener(sync);
+    } else {
+      window.addEventListener('resize', sync);
+    }
+    sync();
+  }
+
   function syncSidebarWithViewport() {
     const s = document.getElementById('mySidebar');
     const o = ensureOverlay();
     if (!s) return;
 
-    const mq = window.matchMedia('(min-width: 993px)');
+    const mq = (typeof window.matchMedia === 'function')
+      ? window.matchMedia('(min-width: 993px)')
+      : null;
     function sync(e) {
-      if (e.matches) {
+      const desktopMatch = (e && typeof e.matches === 'boolean')
+        ? e.matches
+        : isDesktopViewport();
+      if (desktopMatch) {
         s.style.display = 'block';
         o.style.display = 'none';
         document.body.style.overflow = '';
@@ -91,7 +164,13 @@ Notes:
         }
       }
     }
-    mq.addEventListener('change', sync);
+    if (mq && typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', sync);
+    } else if (mq && typeof mq.addListener === 'function') {
+      mq.addListener(sync);
+    } else {
+      window.addEventListener('resize', sync);
+    }
     sync(mq);
 
     // Clicking the overlay is an explicit user action → persist the closed state.
@@ -176,6 +255,7 @@ function setupFooterYear() {
     window.w3_open = toggleSidebar;
     window.w3_close = closeSidebar;
 
+    setupDesktopSidebarToggle();
     syncSidebarWithViewport();
     setupDropdowns();
     restoreSidebarScroll();

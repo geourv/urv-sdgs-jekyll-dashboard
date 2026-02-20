@@ -1,0 +1,17 @@
+<!--
+File: _includes/wordcloud/selection_panel.html
+Purpose: Analysis side panel with static guidance and current filter summary.
+Related files:
+  - _includes/wordcloud/scripts.html
+Safe edits:
+  - OK: reorder fields
+  - Careful: keep element ids bound by JS
+-->
+
+<aside id="selectionPanel" class="wordcloud-selection-panel" aria-live="polite" hidden>
+  <h3 id="selectionPanelTitle" class="wordcloud-selection-title wordcloud-card-title"></h3>
+  <p id="selectionPanelScope" class="wordcloud-selection-text"></p>
+  <p id="selectionPanelCourses" class="wordcloud-selection-text"></p>
+  <p id="selectionPanelSystem" class="wordcloud-selection-text"></p>
+  <p id="selectionPanelSection" class="wordcloud-selection-text"></p>
+</aside>

@@ -5,11 +5,46 @@
     "error_title": "No s'ha pogut actualitzar el resum",
     "error_scope": "Revisa la selecció i torna a provar."
   },
+  "analysis_panel": {
+    "title": "Com interpretar l'anàlisi del núvol",
+    "paragraph_methods": "Els sistemes de classificació combinen enfocaments diferents. N'hi ha de basats en paraules clau i d'altres de consens o agregació entre diversos models.",
+    "paragraph_tradeoff": "Els modes de consens o intersecció solen ser més restrictius; els modes d'unió o agregació són més sensibles i poden recuperar més casos.",
+    "paragraph_sections": "La secció analitzada també condiciona molt el resultat. En competències i resultats acostumen a aparèixer termes transversals que es repeteixen dins d'un mateix grau.",
+    "paragraph_course_info": "En canvi, la secció d'informació de l'assignatura (títol, descripció i continguts/temari) acostuma a descriure de forma més concreta el que es treballa a cada curs.",
+    "paragraph_current": "",
+    "aggregate_templates": {
+      "centre": "Has seleccionat \"{centre}\". El núvol agrega els seus {n_programmes} ensenyaments i resumeix {n_courses_centre} cursos.",
+      "compare": "Has seleccionat el programa \"{programme}\" dins de \"{centre}\". El centre agrupa {n_courses_centre} cursos i el programa en recull {n_courses_programme}.",
+      "default": "La selecció activa inclou {n_courses_centre} cursos."
+    },
+    "system_templates": {
+      "sys:any": "Amb \"{system_label}\", un ODS compta si apareix en qualsevol mètode. És la lectura més inclusiva: amplia cobertura i pot sumar falsos positius.",
+      "sys:all": "Amb \"{system_label}\", només compten coincidències a tots els mètodes. És més restrictiu i sol reduir falsos positius.",
+      "sys:ensemble_equal": "Amb \"{system_label}\", es combina la detecció de diversos mètodes amb pes equivalent, buscant equilibri entre cobertura i precisió.",
+      "sys:ensemble_third": "Amb \"{system_label}\", es valida l'ODS quan hi ha prou acord parcial entre mètodes. Sol ajustar millor els falsos positius.",
+      "sys:ensemble_triple": "Amb \"{system_label}\", es demana una coincidència molt exigent entre mètodes. Prioritza la precisió.",
+      "default": "Amb \"{system_label}\", {system_help} {system_quality}"
+    },
+    "section_templates": {
+      "sec:any": "A la secció \"{section_label}\", es combinen tots els blocs de la guia docent. Dona una visió global, amb més pes dels termes transversals.",
+      "sec:all": "A la secció \"{section_label}\", només es mantenen termes presents a tots els blocs. És un criteri més estricte.",
+      "sec:competences": "A la secció \"{section_label}\", el focus és competències i resultats d'aprenentatge; per això poden repetir-se termes comuns del grau.",
+      "sec:course_info": "A la secció \"{section_label}\", s'analitzen títol, descripció i continguts/temari. Sol ser la lectura més concreta del que es fa a cada assignatura.",
+      "sec:references": "A la secció \"{section_label}\", s'analitzen referències i bibliografia; sovint reflecteix millor el marc documental.",
+      "default": "A la secció \"{section_label}\", {section_help}"
+    },
+    "coverage_programme": "Per al programa, s'ha calculat la cobertura per a totes les combinacions de sistema i secció. Amb \"{system_label}\" i \"{section_label}\": {with_sdg} de {total_courses} assignatures ({coverage_pct}%).",
+    "coverage_centre_unavailable": "Per calcular aquest percentatge per sistema i secció cal seleccionar un ensenyament (vista per assignatura).",
+    "coverage_unavailable": "No s'ha pogut calcular el percentatge d'assignatures amb ODS reconeguts per a aquesta selecció."
+  },
   "templates": {
     "title_centre": "Explicació del núvol de paraules de {centre}",
     "title_programme": "Explicació del núvol de paraules del programa {programme}",
+    "title_compare": "Explicació comparativa del núvol: {centre} vs {programme}",
     "narrative_intro_centre": "Has seleccionat {centre}. Aquesta selecció inclou {n_programmes} ensenyaments i {n_courses} cursos analitzats.",
     "narrative_intro_programme": "Has seleccionat el programa {programme} de {centre}, amb {n_courses} cursos analitzats.",
+    "narrative_intro_compare": "S'està comparant el centre {centre} amb el programa {programme}.",
+    "narrative_compare_counts": "El centre agrega {n_courses_centre} cursos i el programa en mostra {n_courses_programme}.",
     "narrative_method": "Per construir el núvol s'ha aplicat el sistema {system_label} ({system_mode}). {system_help} {system_quality}",
     "narrative_context": "Pel que fa a la guia docent, {section_help} (criteri: {section_label}). El núvol mostra fins a {word_limit} termes i ara utilitza la paleta {palette_label}.",
     "narrative_provenance": "Les fonts de captura són {platforms}.",

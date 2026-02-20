@@ -1,0 +1,520 @@
+<style>
+/* Page-specific layout for wordcloud controls */
+.wordcloud-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) minmax(0, 1fr) minmax(280px, 350px);
+  grid-template-areas: "left cloud cloud panel";
+  align-items: start;
+  gap: 12px 14px;
+  --wc-blue: var(--site-accent, #5f7898);
+  --wc-blue-dark: var(--site-accent-dark, #4e6582);
+  --wc-card-bg: var(--site-surface-2, #e8eff7);
+  --wc-card-border: #cfdae6;
+  --wc-card-title: #1f2a36;
+  --wc-select-bg: #fff;
+  --wc-select-border: #c4d0dc;
+  --wc-postit-bg: #edf3fa;
+  --wc-postit-border: #cfdae6;
+  --wc-postit-text: #243242;
+}
+
+.wordcloud-layout.wordcloud-layout--compare {
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "left cloud cloud"
+    "left panel panel";
+}
+
+.wordcloud-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wordcloud-title-row h1 {
+  margin: 0;
+}
+
+.wordcloud-info-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  padding: 0;
+  border-radius: 999px !important;
+  border-color: var(--site-accent-dark, #334457) !important;
+  color: #fff !important;
+  background: var(--site-accent, #3f536b);
+  font-weight: 600;
+}
+
+.wordcloud-info-toggle:hover,
+.wordcloud-info-toggle:focus {
+  background: var(--site-accent-dark, #334457) !important;
+  border-color: var(--site-accent-dark, #334457) !important;
+  color: #fff !important;
+}
+
+.wordcloud-info-toggle-icon {
+  font-size: 1.4em;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.wordcloud-info-toggle[aria-expanded="true"] {
+  background: #fff !important;
+  color: var(--site-accent-dark, #334457) !important;
+  border-color: var(--site-accent, #3f536b) !important;
+}
+
+.wordcloud-info-toggle[aria-expanded="true"]:hover,
+.wordcloud-info-toggle[aria-expanded="true"]:focus {
+  background: #edf3fa !important;
+  color: var(--site-accent-dark, #334457) !important;
+  border-color: var(--site-accent-dark, #334457) !important;
+}
+
+.wordcloud-info-toggle[aria-expanded="true"] .wordcloud-info-toggle-icon {
+  transform: rotate(45deg);
+}
+
+.wordcloud-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.wordcloud-intro-panel {
+  margin-top: 0.55rem;
+  padding: 10px 12px;
+  border: 1px solid var(--wc-postit-border);
+  border-radius: 8px;
+  background: var(--wc-postit-bg);
+}
+
+.wordcloud-intro-panel p {
+  margin: 0 0 0.55rem;
+}
+
+.wordcloud-intro-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.mobile-cloud-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 2px 0 0;
+  padding: 9px 10px;
+  border: 1px dashed #a9bbce;
+  border-radius: 8px;
+  background: #f3f7fc;
+  color: #2f4c69;
+  font-size: 0.96rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobile-cloud-hint:hover,
+.mobile-cloud-hint:focus {
+  background: #e9f1fa;
+  border-color: #8ea4bc;
+  color: #253d54;
+}
+
+.mobile-cloud-hint i {
+  animation: mobile-cloud-hint-bounce 1.2s ease-in-out infinite;
+}
+
+@keyframes mobile-cloud-hint-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+.wordcloud-left-stack {
+  grid-area: left;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wordcloud-primary-card,
+.wordcloud-config-col {
+  background: var(--wc-card-bg);
+  border: 1px solid var(--wc-card-border);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(33, 52, 75, 0.1);
+}
+
+.wordcloud-primary-card,
+.wordcloud-config-col {
+  padding: 14px 14px 12px;
+}
+
+.wordcloud-config-col {
+  color: var(--wc-card-title);
+}
+
+.wordcloud-card-title {
+  margin: 0 0 10px;
+  font-weight: 800;
+  font-size: 1.12rem;
+  letter-spacing: 0.01em;
+  color: var(--wc-card-title);
+  line-height: 1.3;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #d3deea;
+}
+
+.wordcloud-primary-item {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.wordcloud-primary-item + .wordcloud-primary-item {
+  margin-top: 0.55rem;
+}
+
+.wordcloud-primary-item .selector-container,
+.wordcloud-config-col .selector-container {
+  margin-bottom: 0;
+  gap: 8px;
+}
+
+.wordcloud-layout .selector-box {
+  margin-bottom: 0;
+}
+
+.wordcloud-primary-item strong,
+.wordcloud-config-col strong {
+  color: var(--wc-card-title);
+}
+
+.wordcloud-field-label {
+  display: block;
+  margin: 0.52rem 0 0.24rem;
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: var(--wc-card-title);
+}
+
+.wordcloud-config-col .wordcloud-field-label:first-of-type {
+  margin-top: 0.35rem;
+}
+
+.wordcloud-wrapper {
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wordcloud-cloud-zone {
+  grid-area: cloud;
+  min-width: 0;
+  position: relative;
+  min-height: 360px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.wordcloud-layout.wordcloud-layout--compare .wordcloud-cloud-zone {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wordcloud-cloud-card {
+  min-width: 0;
+}
+
+.wordcloud-cloud-card[hidden] {
+  display: none !important;
+}
+
+.wordcloud-cloud-title {
+  margin: 0 0 6px;
+  font-size: 1.32rem;
+  font-weight: 800;
+  color: var(--wc-card-title);
+  line-height: 1.3;
+  text-align: center;
+}
+
+.wordcloud-cloud-subtitle {
+  margin: -2px 0 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+  color: #5a6b7d;
+}
+
+.wordcloud-empty-state {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 14px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.wordcloud-empty-state[hidden] {
+  display: none !important;
+}
+
+.wordcloud-empty-cue {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(560px, calc(100% - 18px));
+  color: #41566f;
+}
+
+.wordcloud-empty-state-text {
+  margin: 0;
+  font-size: 1.03rem;
+  line-height: 1.45;
+  font-weight: 600;
+  text-align: left;
+}
+
+.wordcloud-empty-arrow {
+  font-size: 1.9rem;
+  color: var(--wc-blue-dark);
+  flex: 0 0 auto;
+}
+
+.wordcloud-empty-arrow.wordcloud-empty-arrow--animate {
+  animation: wordcloud-empty-arrow-nudge 0.58s ease-in-out 3;
+}
+
+@keyframes wordcloud-empty-arrow-nudge {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-10px);
+  }
+}
+
+.wordcloud-selection-panel {
+  grid-area: panel;
+  position: relative;
+  background: var(--wc-postit-bg);
+  border: 1px solid var(--wc-postit-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(33, 52, 75, 0.1);
+  padding: 12px 13px;
+  color: var(--wc-postit-text);
+}
+
+.wordcloud-selection-panel.wordcloud-selection-panel--wide {
+  display: block;
+  width: 100%;
+}
+
+.wordcloud-selection-panel.wordcloud-selection-panel--wide .wordcloud-selection-text {
+  margin: 0 0 8px;
+}
+
+.wordcloud-selection-title {
+  margin: 0 0 10px;
+  color: #1f2a36;
+  border-bottom: 1px solid rgba(95, 120, 152, 0.35);
+}
+
+.wordcloud-selection-text {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--wc-postit-text);
+  line-height: 1.5;
+}
+
+.wordcloud-selection-text:last-child {
+  margin-bottom: 0;
+}
+
+.wordcloud-selection-text strong {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.wordcloud-action-row {
+  justify-content: center;
+  margin-top: 0.55rem;
+}
+
+#recolorBtn {
+  background-color: var(--wc-blue);
+  color: #fff;
+  border-color: var(--wc-blue-dark) !important;
+  font-weight: 700;
+  border-radius: 6px !important;
+}
+
+#recolorBtn:hover:not(:disabled),
+#recolorBtn:focus:not(:disabled) {
+  background-color: var(--wc-blue-dark);
+  color: #fff;
+}
+
+#recolorBtn:disabled {
+  background-color: #dfe5ed;
+  color: #79889b;
+  border-color: #c8d2de !important;
+}
+
+#wordcloud {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wordcloud-layout .w3-select {
+  width: 100%;
+  min-width: 0;
+  background-color: var(--wc-select-bg);
+  color: #111;
+  border: 1px solid var(--wc-select-border) !important;
+  border-radius: 6px;
+  padding: 10px 36px 10px 12px;
+  min-height: 42px;
+  font-size: 1rem;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.wordcloud-layout .w3-select:focus {
+  background-color: #f7fbff;
+  border-color: var(--wc-blue) !important;
+  box-shadow: 0 0 0 2px rgba(95, 120, 152, 0.22);
+}
+
+.wordcloud-layout .w3-select:disabled {
+  background-color: #eef2f7;
+  color: #7b8a9d;
+}
+
+#wordLimitRange {
+  accent-color: var(--wc-blue);
+}
+
+#wordLimitRange:disabled {
+  accent-color: #a9b7c8;
+}
+
+#apiInfo,
+#wordcloudStatus {
+  color: #4f6073 !important;
+  font-size: 0.95rem !important;
+  line-height: 1.5;
+}
+
+.wordcloud-source-link {
+  color: #45637f !important;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.wordcloud-source-link:visited {
+  color: #45637f !important;
+}
+
+.wordcloud-source-link:hover,
+.wordcloud-source-link:focus {
+  color: var(--wc-blue-dark) !important;
+}
+
+@media (max-width: 1250px) {
+  .wordcloud-layout {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(260px, 330px);
+    grid-template-areas: "left cloud panel";
+  }
+  .wordcloud-layout.wordcloud-layout--compare {
+    grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+    grid-template-areas:
+      "left cloud"
+      "left panel";
+  }
+  .wordcloud-layout.wordcloud-layout--compare .wordcloud-cloud-zone {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 992px) {
+  .wordcloud-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "cloud"
+      "panel";
+  }
+  .wordcloud-layout.wordcloud-layout--compare {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "cloud"
+      "panel";
+  }
+  .wordcloud-layout.wordcloud-layout--compare .wordcloud-cloud-zone {
+    gap: 16px;
+  }
+  .wordcloud-layout.wordcloud-layout--compare #wordcloudSecondaryCard {
+    margin-top: 2px;
+    padding-top: 12px;
+    border-top: 1px solid #cfd8e3;
+  }
+
+  .wordcloud-empty-cue {
+    left: 10px !important;
+    right: 10px;
+    top: 50% !important;
+    justify-content: center;
+    transform: translateY(-50%);
+    max-width: none;
+  }
+
+  .wordcloud-empty-arrow {
+    display: none;
+  }
+
+  .wordcloud-empty-state-text {
+    text-align: center;
+  }
+}
+
+@media (min-width: 993px) {
+  .mobile-cloud-hint {
+    display: none !important;
+  }
+}
+</style>

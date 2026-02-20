@@ -1,0 +1,1834 @@
+<script>
+// File: _includes/wordcloud/scripts.html
+// Purpose: Load wordcloud data from URV SDGs API with on-demand detail fetches and local cache.
+
+const facultySelect = document.getElementById("facultySelect");
+const degreeSelect = document.getElementById("degreeSelect");
+const systemSelect = document.getElementById("systemSelect");
+const sectionSelect = document.getElementById("sectionSelect");
+const wordLimitRange = document.getElementById("wordLimitRange");
+const wordLimitValue = document.getElementById("wordLimitValue");
+const recolorBtn = document.getElementById("recolorBtn");
+const statusEl = document.getElementById("wordcloudStatus");
+const apiInfoEl = document.getElementById("apiInfo");
+const selectionPanelTitleEl = document.getElementById("selectionPanelTitle");
+const selectionPanelScopeEl = document.getElementById("selectionPanelScope");
+const selectionPanelCoursesEl = document.getElementById("selectionPanelCourses");
+const selectionPanelSystemEl = document.getElementById("selectionPanelSystem");
+const selectionPanelSectionEl = document.getElementById("selectionPanelSection");
+const selectionPanelEl = document.getElementById("selectionPanel");
+const introToggleBtn = document.getElementById("wordcloudIntroToggle");
+const introPanelEl = document.getElementById("wordcloudIntroPanel");
+const mobileCloudHintEl = document.getElementById("mobileCloudHint");
+const wordcloudLayoutEl = document.querySelector(".wordcloud-layout");
+const cloudZoneEl = document.getElementById("wordcloudCloudZone");
+const cloudEmptyStateEl = document.getElementById("wordcloudEmptyState");
+const cloudEmptyCueEl = document.getElementById("wordcloudEmptyCue");
+const cloudEmptyArrowEl = document.getElementById("wordcloudEmptyArrow");
+const primaryCloudTitleEl = document.getElementById("wordcloudPrimaryTitle");
+const primaryCloudSubtitleEl = document.getElementById("wordcloudPrimarySubtitle");
+const secondaryCloudTitleEl = document.getElementById("wordcloudSecondaryTitle");
+const secondaryCloudSubtitleEl = document.getElementById("wordcloudSecondarySubtitle");
+const secondaryCloudCardEl = document.getElementById("wordcloudSecondaryCard");
+const canvas = document.getElementById("wordcloud");
+const secondaryCanvas = document.getElementById("wordcloudSecondary");
+
+const DEFAULT_SYSTEM_ID = "sys:any";
+const DEFAULT_SECTION_ID = "sec:any";
+const DEFAULT_WORDS_TO_RENDER = 70;
+const MIN_WORDS_TO_RENDER = 20;
+const MAX_WORDS_TO_RENDER = 95;
+const MIN_WORD_SIZE = 11;
+const MAX_WORD_SIZE = 92;
+const API_BASE_CANDIDATES = Array.from(new Set([
+  "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
+  "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
+].map(v => String(v || "").trim().replace(/\/+$/, "")).filter(Boolean)));
+const WORDCLOUD_STRINGS_URL = "{{ '/data/i18n/wordcloud.' | append: site.lang | append: '.json' | relative_url }}";
+const WORDCLOUD_STRINGS_FALLBACK_URL = "{{ '/data/i18n/wordcloud.ca.json' | relative_url }}";
+const WORDCLOUD_PALETTES = [
+  {
+    label: "Viva",
+    colors: ["#d90429", "#f72585", "#f77f00", "#ffba08", "#3a86ff", "#8338ec", "#118ab2"]
+  },
+  {
+    label: "Mediterrània",
+    colors: ["#005f73", "#0a9396", "#94d2bd", "#ee9b00", "#ca6702", "#bb3e03", "#9b2226"]
+  },
+  {
+    label: "Bosc i Terra",
+    colors: ["#283618", "#606c38", "#6a994e", "#a7c957", "#bc4749", "#7f5539", "#386641"]
+  },
+  {
+    label: "Neó",
+    colors: ["#00a6fb", "#00f5d4", "#70e000", "#ffea00", "#ff5400", "#ff0054", "#9b5de5"]
+  },
+  {
+    label: "Urbana",
+    colors: ["#1d3557", "#457b9d", "#2b2d42", "#8d99ae", "#ef233c", "#ff9f1c", "#5f0f40"]
+  },
+  {
+    label: "Suau",
+    colors: ["#6d597a", "#b56576", "#e56b6f", "#eaac8b", "#355070", "#b08968", "#7f5539"]
+  },
+  {
+    label: "Contrast Fosc",
+    colors: ["#0d1b2a", "#1b263b", "#415a77", "#577590", "#2a9d8f", "#e76f51", "#f4a261"]
+  },
+  {
+    label: "Retro",
+    colors: ["#2f3e46", "#52796f", "#84a98c", "#e9c46a", "#f4a261", "#e76f51", "#9a031e"]
+  }
+];
+const DEFAULT_UI_STRINGS = {
+  panel: {
+    empty_title: "Explicació del núvol de paraules",
+    empty_scope: "Selecciona una Facultat/Escola i, opcionalment, un ensenyament per veure el resum detallat.",
+    error_title: "No s'ha pogut actualitzar el resum",
+    error_scope: "Revisa la selecció i torna a provar."
+  },
+  analysis_panel: {
+    title: "Com interpretar l'anàlisi del núvol",
+    paragraph_methods: "Els sistemes de classificació combinen enfocaments diferents. N'hi ha de basats en paraules clau i d'altres de consens o agregació entre diversos models.",
+    paragraph_tradeoff: "Els modes de consens o intersecció solen ser més restrictius; els modes d'unió o agregació són més sensibles i poden recuperar més casos.",
+    paragraph_sections: "La secció analitzada també condiciona molt el resultat. En competències i resultats acostumen a aparèixer termes transversals que es repeteixen dins d'un mateix grau.",
+    paragraph_course_info: "En canvi, la secció d'informació de l'assignatura (títol, descripció i continguts/temari) acostuma a descriure de forma més concreta el que es treballa a cada curs.",
+    paragraph_current: "",
+    aggregate_templates: {
+      centre: "Has seleccionat \"{centre}\". El núvol agrega els seus {n_programmes} ensenyaments i resumeix {n_courses_centre} cursos.",
+      compare: "Has seleccionat el programa \"{programme}\" dins de \"{centre}\". El centre agrupa {n_courses_centre} cursos i el programa en recull {n_courses_programme}.",
+      default: "La selecció activa inclou {n_courses_centre} cursos."
+    },
+    system_templates: {
+      "sys:any": "Amb \"{system_label}\", un ODS compta si apareix en qualsevol mètode. És la lectura més inclusiva: amplia cobertura i pot sumar falsos positius.",
+      "sys:all": "Amb \"{system_label}\", només compten coincidències a tots els mètodes. És més restrictiu i sol reduir falsos positius.",
+      "sys:ensemble_equal": "Amb \"{system_label}\", es combina la detecció de diversos mètodes amb pes equivalent, buscant equilibri entre cobertura i precisió.",
+      "sys:ensemble_third": "Amb \"{system_label}\", es valida l'ODS quan hi ha prou acord parcial entre mètodes. Sol ajustar millor els falsos positius.",
+      "sys:ensemble_triple": "Amb \"{system_label}\", es demana una coincidència molt exigent entre mètodes. Prioritza la precisió.",
+      default: "Amb \"{system_label}\", {system_help} {system_quality}"
+    },
+    section_templates: {
+      "sec:any": "A la secció \"{section_label}\", es combinen tots els blocs de la guia docent. Dona una visió global, amb més pes dels termes transversals.",
+      "sec:all": "A la secció \"{section_label}\", només es mantenen termes presents a tots els blocs. És un criteri més estricte.",
+      "sec:competences": "A la secció \"{section_label}\", el focus és competències i resultats d'aprenentatge; per això poden repetir-se termes comuns del grau.",
+      "sec:course_info": "A la secció \"{section_label}\", s'analitzen títol, descripció i continguts/temari. Sol ser la lectura més concreta del que es fa a cada assignatura.",
+      "sec:references": "A la secció \"{section_label}\", s'analitzen referències i bibliografia; sovint reflecteix millor el marc documental.",
+      default: "A la secció \"{section_label}\", {section_help}"
+    },
+    coverage_programme: "Per al programa, s'ha calculat la cobertura per a totes les combinacions de sistema i secció. Amb \"{system_label}\" i \"{section_label}\": {with_sdg} de {total_courses} assignatures ({coverage_pct}%).",
+    coverage_centre_unavailable: "Per calcular aquest percentatge per sistema i secció cal seleccionar un ensenyament (vista per assignatura).",
+    coverage_unavailable: "No s'ha pogut calcular el percentatge d'assignatures amb ODS reconeguts per a aquesta selecció."
+  },
+  templates: {
+    title_centre: "Explicació del núvol de paraules de {centre}",
+    title_programme: "Explicació del núvol de paraules del programa {programme}",
+    title_compare: "Explicació comparativa del núvol: {centre} vs {programme}",
+    narrative_intro_centre: "Has seleccionat {centre}. Aquesta selecció inclou {n_programmes} ensenyaments i {n_courses} cursos analitzats.",
+    narrative_intro_programme: "Has seleccionat el programa {programme} de {centre}, amb {n_courses} cursos analitzats.",
+    narrative_intro_compare: "S'està comparant el centre {centre} amb el programa {programme}.",
+    narrative_compare_counts: "El centre agrega {n_courses_centre} cursos i el programa en mostra {n_courses_programme}.",
+    narrative_method: "Per construir el núvol s'ha aplicat el sistema {system_label} ({system_mode}). {system_help} {system_quality}",
+    narrative_context: "Pel que fa a la guia docent, {section_help} (criteri: {section_label}). El núvol mostra fins a {word_limit} termes i ara utilitza la paleta {palette_label}.",
+    narrative_provenance: "Les fonts de captura són {platforms}.",
+    narrative_scraping_date: "Data de l'scraping: {scraping_date}.",
+    narrative_scraping_date_unknown: "Data de l'scraping: desconeguda.",
+    scope_centre: "Selecció activa: tots els ensenyaments de {centre}.",
+    scope_programme: "Selecció activa: {programme} ({centre}).",
+    courses_line: "Aquesta selecció correspon a {n_courses} cursos.",
+    programmes_line: "El centre inclou {n_programmes} ensenyaments.",
+    system_line: "Sistema de classificació: {system_label}. {system_help}",
+    system_mode_line: "Perfil del sistema: {system_mode}.",
+    system_quality_line: "Precisió i falsos positius: {system_quality}",
+    section_line: "Secció analitzada: {section_label}. {section_help}",
+    limit_line: "Límit actual del núvol: {word_limit} termes.",
+    palette_line: "Paleta activa: {palette_label}.",
+    provenance_line: "Fonts de captura del scraping: {platforms}."
+  },
+  system_labels: {
+    "sys:any": "Qualsevol sistema (Unió)",
+    "sys:all": "Tots els sistemes (Intersecció)",
+    "sys:auckland": "Auckland",
+    "sys:aurora": "Aurora",
+    "sys:elsevier": "Elsevier",
+    "ens:equal": "Ensemble equal",
+    "ens:third": "Ensemble third",
+    "ens:triple": "Ensemble triple",
+    "sys:sdgo": "SDGO",
+    "sys:sdsn": "SDSN",
+    "sys:siris": "SIRIS"
+  },
+  section_labels: {
+    "sec:any": "Totes les seccions (Unió)",
+    "sec:all": "Coincidència de totes les seccions (Intersecció)",
+    "sec:competences": "Competències",
+    "sec:course_info": "Informació de l'assignatura",
+    "sec:references": "Referències"
+  },
+  system_explanations: {
+    "sys:any": "Es marca un ODS quan apareix en qualsevol dels sistemes disponibles.",
+    "sys:all": "Només es marca un ODS quan coincideix en tots els sistemes.",
+    "sys:auckland": "Es fan servir únicament les deteccions del sistema Auckland.",
+    "sys:aurora": "Es fan servir únicament les deteccions del sistema Aurora.",
+    "sys:elsevier": "Es fan servir únicament les deteccions del sistema Elsevier.",
+    "sys:ensemble_equal": "Es combinen diversos sistemes amb pes equivalent.",
+    "sys:ensemble_third": "Es combinen sistemes amb llindar d'un terç de coincidència.",
+    "sys:ensemble_triple": "Es combinen sistemes exigint una coincidència triple.",
+    "sys:sdgo": "Es fan servir únicament les deteccions del sistema SDGO.",
+    "sys:sdsn": "Es fan servir únicament les deteccions del sistema SDSN.",
+    "sys:siris": "Es fan servir únicament les deteccions del sistema SIRIS.",
+    "default": "Aquesta opció determina com es combinen les deteccions dels sistemes."
+  },
+  system_modes: {
+    "sys:any": "inclusiu",
+    "sys:all": "restrictiu",
+    "sys:ensemble_equal": "equilibrat",
+    "sys:ensemble_third": "intermedi",
+    "sys:ensemble_triple": "molt restrictiu",
+    "sys:auckland": "monosistema (Auckland)",
+    "sys:aurora": "monosistema (Aurora)",
+    "sys:elsevier": "monosistema (Elsevier)",
+    "sys:sdgo": "monosistema (SDGO)",
+    "sys:sdsn": "monosistema (SDSN)",
+    "sys:siris": "monosistema (SIRIS)",
+    "default": "configuració específica del sistema seleccionat"
+  },
+  system_quality_notes: {
+    "sys:any": "Això incrementa la cobertura, però també pot augmentar els falsos positius.",
+    "sys:all": "Això redueix els falsos positius, però pot deixar fora alguns casos límit.",
+    "sys:ensemble_equal": "Acostuma a mantenir un bon equilibri entre cobertura i precisió.",
+    "sys:ensemble_third": "Acostuma a ajustar millor els falsos positius que els modes més sensibles.",
+    "sys:ensemble_triple": "Prioritza la precisió i minimitza al màxim els falsos positius.",
+    "sys:auckland": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:aurora": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:elsevier": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:sdgo": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:sdsn": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "sys:siris": "En aquest mode, la sensibilitat als falsos positius depèn del comportament d'aquest sistema.",
+    "default": "Si vols menys falsos positius, prova una configuració més restrictiva."
+  },
+  section_explanations: {
+    "sec:any": "es combinen totes les seccions de la guia docent.",
+    "sec:all": "només es conserven termes que apareixen a totes les seccions.",
+    "sec:competences": "només es tenen en compte competències i resultats d'aprenentatge.",
+    "sec:course_info": "només es tenen en compte títol, descripció i continguts de l'assignatura.",
+    "sec:references": "només es tenen en compte bibliografia i referències.",
+    "default": "s'aplica el criteri de secció seleccionat sobre la guia docent."
+  }
+};
+
+const state = {
+  apiBase: "",
+  apiVersion: "",
+  apiVersionMeta: null,
+  apiDetailedMeta: null,
+  apiScrapingPlatforms: [],
+  apiScrapingDate: null,
+  centres: [],
+  centreByCode: new Map(),
+  programmesByCentreCode: new Map(),
+  programmeByKey: new Map(),
+  systemOptions: [],
+  sectionOptions: [],
+  centreCache: new Map(),
+  programmeCache: new Map(),
+  programmeCoverageCache: new Map(),
+  renderToken: 0,
+  lastRenderData: null,
+  lastRenderContext: null,
+  paletteIndex: 0,
+  wordLimit: DEFAULT_WORDS_TO_RENDER,
+  uiStrings: DEFAULT_UI_STRINGS
+};
+
+let resizeDebounceTimer = null;
+let wordLimitDebounceTimer = null;
+let sidebarLayoutDebounceTimer = null;
+let pendingMobileAutoScroll = false;
+
+function setStatus(message, isError) {
+  statusEl.textContent = message || "";
+  statusEl.style.color = isError ? "#c0392b" : "";
+}
+
+function mergeDeepObjects(base, override) {
+  const result = { ...(base || {}) };
+  const source = override || {};
+  Object.keys(source).forEach((key) => {
+    const baseValue = result[key];
+    const overrideValue = source[key];
+    const canMerge = baseValue && overrideValue
+      && typeof baseValue === "object"
+      && typeof overrideValue === "object"
+      && !Array.isArray(baseValue)
+      && !Array.isArray(overrideValue);
+    result[key] = canMerge ? mergeDeepObjects(baseValue, overrideValue) : overrideValue;
+  });
+  return result;
+}
+
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatTemplate(template, values) {
+  return String(template || "").replace(/\{(\w+)\}/g, (_, key) => {
+    const mapped = values && Object.prototype.hasOwnProperty.call(values, key) ? values[key] : "";
+    return mapped == null ? "" : String(mapped);
+  });
+}
+
+function formatCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "0";
+  return parsed.toLocaleString("ca-ES");
+}
+
+function parseDateCandidate(value) {
+  if (value == null || value === "") return null;
+  const candidateDate = new Date(value);
+  return Number.isFinite(candidateDate.getTime()) ? candidateDate : null;
+}
+
+function formatDateCa(value) {
+  const parsed = parseDateCandidate(value);
+  return parsed ? parsed.toLocaleString("ca-ES") : "desconeguda";
+}
+
+function getSelectedOptionLabel(selectEl) {
+  const option = selectEl && selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
+  return normalizeWhitespace(option?.textContent || "");
+}
+
+function getLocalizedOptionLabel(kind, optionId, fallbackLabel) {
+  const catalog = kind === "system"
+    ? state.uiStrings?.system_labels
+    : state.uiStrings?.section_labels;
+  const mapped = catalog?.[String(optionId || "")];
+  return normalizeWhitespace(mapped || fallbackLabel || optionId || "");
+}
+
+function getSystemExplanationText(systemId) {
+  return normalizeWhitespace(state.uiStrings?.system_explanations?.[String(systemId || "")]
+    || state.uiStrings?.system_explanations?.default
+    || "");
+}
+
+function getSystemModeText(systemId) {
+  return normalizeWhitespace(state.uiStrings?.system_modes?.[String(systemId || "")]
+    || state.uiStrings?.system_modes?.default
+    || "");
+}
+
+function getSectionExplanationText(sectionId) {
+  return normalizeWhitespace(state.uiStrings?.section_explanations?.[String(sectionId || "")]
+    || state.uiStrings?.section_explanations?.default
+    || "");
+}
+
+function getSystemQualityText(systemId) {
+  return normalizeWhitespace(state.uiStrings?.system_quality_notes?.[String(systemId || "")]
+    || state.uiStrings?.system_quality_notes?.default
+    || "");
+}
+
+function setPanelText(element, text) {
+  element.textContent = normalizeWhitespace(text);
+}
+
+function capitalizeSentence(value) {
+  const text = normalizeWhitespace(value);
+  if (!text) return "";
+  return text.charAt(0).toLocaleUpperCase("ca-ES") + text.slice(1);
+}
+
+function getAnalysisPanelStrings() {
+  return {
+    ...DEFAULT_UI_STRINGS.analysis_panel,
+    ...(state.uiStrings?.analysis_panel || {})
+  };
+}
+
+function getMappedTemplate(templateMap, key, fallbackTemplate) {
+  const catalog = templateMap && typeof templateMap === "object" ? templateMap : {};
+  const mapped = catalog[String(key || "")] || catalog.default || fallbackTemplate || "";
+  return normalizeWhitespace(mapped);
+}
+
+function getCoverageSystemIds() {
+  return Array.from(new Set(
+    (state.systemOptions || []).map(opt => normalizeSystemId(opt?.id)).filter(Boolean)
+  ));
+}
+
+function getCoverageSectionIds() {
+  return Array.from(new Set(
+    (state.sectionOptions || []).map(opt => String(opt?.id || "")).filter(Boolean)
+  ));
+}
+
+function createCoverageMatrix() {
+  const matrix = {
+    totalCourses: 0,
+    counts: {}
+  };
+  const systems = getCoverageSystemIds();
+  const sections = getCoverageSectionIds();
+  systems.forEach((systemId) => {
+    matrix.counts[systemId] = {};
+    sections.forEach((sectionId) => {
+      matrix.counts[systemId][sectionId] = 0;
+    });
+  });
+  return matrix;
+}
+
+function buildCoverageMatrixFromCourses(courses) {
+  const matrix = createCoverageMatrix();
+  const safeCourses = Array.isArray(courses) ? courses : [];
+  matrix.totalCourses = safeCourses.length;
+
+  const systems = Object.keys(matrix.counts);
+  const sections = getCoverageSectionIds();
+
+  safeCourses.forEach((course) => {
+    const compact = course?.sdg_compact;
+    if (!compact || typeof compact !== "object") return;
+
+    systems.forEach((systemId) => {
+      const bySection = compact[systemId];
+      if (!bySection || typeof bySection !== "object") return;
+
+      sections.forEach((sectionId) => {
+        const recognisedSdgs = bySection[sectionId];
+        if (Array.isArray(recognisedSdgs) && recognisedSdgs.length > 0) {
+          matrix.counts[systemId][sectionId] += 1;
+        }
+      });
+    });
+  });
+
+  return matrix;
+}
+
+function getCoverageCell(matrix, systemId, sectionId) {
+  const totalCourses = Number(matrix?.totalCourses || 0);
+  const recognisedCourses = Number(matrix?.counts?.[String(systemId || "")]?.[String(sectionId || "")] || 0);
+  const coveragePct = totalCourses > 0 ? (recognisedCourses * 100) / totalCourses : 0;
+  return {
+    totalCourses,
+    recognisedCourses,
+    coveragePct
+  };
+}
+
+function formatPercentCa(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "0,0";
+  return numeric.toLocaleString("ca-ES", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+}
+
+function getProgrammeCoverageMatrix(programmeKey, programmeDetail) {
+  const cacheKey = String(programmeKey || "");
+  if (!cacheKey) return null;
+  if (state.programmeCoverageCache.has(cacheKey)) {
+    return state.programmeCoverageCache.get(cacheKey);
+  }
+
+  const matrix = buildCoverageMatrixFromCourses(programmeDetail?.courses || []);
+  state.programmeCoverageCache.set(cacheKey, matrix);
+  return matrix;
+}
+
+function renderSelectionPanelEmpty() {
+  const analysisStrings = getAnalysisPanelStrings();
+  setPanelText(selectionPanelTitleEl, analysisStrings.title);
+  setPanelText(selectionPanelScopeEl, analysisStrings.paragraph_methods);
+  setPanelText(selectionPanelCoursesEl, analysisStrings.paragraph_tradeoff);
+  setPanelText(selectionPanelSystemEl, analysisStrings.paragraph_sections);
+  setPanelText(selectionPanelSectionEl, analysisStrings.paragraph_course_info);
+}
+
+function renderSelectionPanelError() {
+  const panelStrings = state.uiStrings?.panel || {};
+  const analysisStrings = getAnalysisPanelStrings();
+  setPanelText(selectionPanelTitleEl, panelStrings.error_title || DEFAULT_UI_STRINGS.panel.error_title);
+  setPanelText(selectionPanelScopeEl, panelStrings.error_scope || DEFAULT_UI_STRINGS.panel.error_scope);
+  setPanelText(selectionPanelCoursesEl, analysisStrings.paragraph_methods);
+  setPanelText(selectionPanelSystemEl, analysisStrings.paragraph_sections);
+  setPanelText(selectionPanelSectionEl, analysisStrings.paragraph_course_info);
+}
+
+function isCompareSelection(selectedDegree) {
+  const value = String(selectedDegree || "");
+  return value !== "" && value !== "ALL";
+}
+
+function setComparisonViewEnabled(isEnabled) {
+  const compareMode = Boolean(isEnabled);
+  if (secondaryCloudCardEl) {
+    secondaryCloudCardEl.hidden = !compareMode;
+  }
+  if (wordcloudLayoutEl) {
+    wordcloudLayoutEl.classList.toggle("wordcloud-layout--compare", compareMode);
+  }
+  if (selectionPanelEl) {
+    selectionPanelEl.classList.toggle("wordcloud-selection-panel--wide", compareMode);
+  }
+}
+
+function setCloudEmptyStateVisible(isVisible) {
+  const shouldShow = Boolean(isVisible);
+  if (cloudEmptyStateEl) {
+    cloudEmptyStateEl.hidden = !shouldShow;
+  }
+  if (!shouldShow) return;
+  updateEmptyCuePosition();
+  triggerEmptyCueAnimation();
+}
+
+function triggerEmptyCueAnimation() {
+  if (!cloudEmptyArrowEl || isCompactWordcloudLayout()) return;
+  cloudEmptyArrowEl.classList.remove("wordcloud-empty-arrow--animate");
+  // Force reflow so finite animation restarts when empty state is shown again.
+  void cloudEmptyArrowEl.offsetWidth;
+  cloudEmptyArrowEl.classList.add("wordcloud-empty-arrow--animate");
+}
+
+function updateEmptyCuePosition() {
+  if (!cloudEmptyCueEl || !cloudZoneEl || !facultySelect) return;
+  if (isCompactWordcloudLayout()) {
+    cloudEmptyCueEl.style.left = "";
+    cloudEmptyCueEl.style.top = "";
+    return;
+  }
+
+  const zoneRect = cloudZoneEl.getBoundingClientRect();
+  const facultyRect = facultySelect.getBoundingClientRect();
+  if (!zoneRect.height || !facultyRect.height) return;
+
+  const cueX = facultyRect.right - zoneRect.left + 8;
+  const clampedX = clamp(cueX, -54, 18);
+  const cueY = facultyRect.top + (facultyRect.height / 2) - zoneRect.top;
+  const clampedY = clamp(cueY, 24, Math.max(24, zoneRect.height - 24));
+  cloudEmptyCueEl.style.left = `${Math.round(clampedX)}px`;
+  cloudEmptyCueEl.style.top = `${Math.round(clampedY)}px`;
+}
+
+function syncEmptyCueIfVisible() {
+  if (!cloudEmptyStateEl || cloudEmptyStateEl.hidden) return;
+  updateEmptyCuePosition();
+}
+
+function scheduleEmptyCueSync() {
+  window.requestAnimationFrame(syncEmptyCueIfVisible);
+  window.requestAnimationFrame(syncEmptyCueIfVisible);
+}
+
+function observeFacultySelectLayout() {
+  if (!facultySelect || typeof ResizeObserver === "undefined") return;
+  const observer = new ResizeObserver(() => {
+    scheduleEmptyCueSync();
+  });
+  observer.observe(facultySelect);
+  if (facultySelect.parentElement) {
+    observer.observe(facultySelect.parentElement);
+  }
+}
+
+function observeSidebarLayoutState() {
+  if (typeof MutationObserver === "undefined" || !document.body) return;
+  let lastBodyClassName = document.body.className;
+  const observer = new MutationObserver(() => {
+    const currentBodyClassName = document.body.className;
+    if (currentBodyClassName === lastBodyClassName) return;
+    lastBodyClassName = currentBodyClassName;
+
+    if (sidebarLayoutDebounceTimer) clearTimeout(sidebarLayoutDebounceTimer);
+    sidebarLayoutDebounceTimer = setTimeout(() => {
+      rerenderWordcloudFromCacheAfterLayoutChange();
+    }, 120);
+  });
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+}
+
+function rerenderWordcloudFromCacheAfterLayoutChange() {
+  if (!state.lastRenderData) {
+    syncWordcloudWrapperHeight();
+    scheduleEmptyCueSync();
+    return;
+  }
+
+  const renderResult = renderCloudsFromRenderData(state.lastRenderData);
+  if (state.lastRenderContext) {
+    updateCloudSubtitles(state.lastRenderContext, renderResult);
+    updateSelectionPanel(state.lastRenderContext);
+  }
+  scheduleEmptyCueSync();
+}
+
+function setSelectionPanelVisible(isVisible) {
+  if (selectionPanelEl) {
+    selectionPanelEl.hidden = !Boolean(isVisible);
+  }
+}
+
+function setCloudSubtitle(element, text) {
+  if (!element) return;
+  const normalized = normalizeWhitespace(text);
+  element.textContent = normalized;
+  element.hidden = normalized.length === 0;
+}
+
+function isCompactWordcloudLayout() {
+  return window.matchMedia("(max-width: 992px)").matches;
+}
+
+function scrollToWordcloud() {
+  const target = cloudZoneEl || document.querySelector(".wordcloud-wrapper");
+  if (!target) return;
+  target.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function updateMobileCloudHintVisibility() {
+  if (!mobileCloudHintEl) return;
+  const hasFacultySelection = Boolean(String(facultySelect.value || ""));
+  mobileCloudHintEl.hidden = !(isCompactWordcloudLayout() && !hasFacultySelection);
+}
+
+function setIntroPanelExpanded(isExpanded) {
+  if (!introToggleBtn || !introPanelEl) return;
+  introPanelEl.hidden = !isExpanded;
+  introToggleBtn.setAttribute("aria-expanded", String(!!isExpanded));
+}
+
+function resolveCentreName(context) {
+  const centre = state.centreByCode.get(String(context?.centreCode || ""));
+  return normalizeWhitespace(
+    centre?.centre_name
+    || context?.centreDetail?.centre?.name
+    || context?.detail?.centre?.name
+    || ""
+  );
+}
+
+function resolveProgrammeName(context) {
+  const programme = state.programmeByKey.get(String(context?.selectedDegree || ""));
+  return normalizeWhitespace(
+    programme?.programme_name
+    || context?.programmeDetail?.programme?.name
+    || context?.detail?.programme?.name
+    || ""
+  );
+}
+
+function updateCloudTitles(context) {
+  const centreName = resolveCentreName(context);
+  const programmeName = resolveProgrammeName(context);
+  const compareMode = Boolean(context?.compareMode);
+
+  if (primaryCloudTitleEl) {
+    const hasCentreName = Boolean(centreName);
+    primaryCloudTitleEl.textContent = hasCentreName ? centreName : "";
+    primaryCloudTitleEl.hidden = !hasCentreName;
+  }
+
+  if (secondaryCloudTitleEl) {
+    const hasProgrammeName = Boolean(programmeName) && compareMode;
+    secondaryCloudTitleEl.textContent = hasProgrammeName ? programmeName : "";
+    secondaryCloudTitleEl.hidden = !hasProgrammeName;
+  }
+
+  setComparisonViewEnabled(compareMode);
+}
+
+function updateCloudSubtitles(context, renderResult) {
+  if (!context) {
+    setCloudSubtitle(primaryCloudSubtitleEl, "");
+    setCloudSubtitle(secondaryCloudSubtitleEl, "");
+    return;
+  }
+
+  const compareMode = Boolean(context.compareMode);
+  const centreCourses = Number(context.centreDetail?.n_courses || context.detail?.n_courses || 0);
+  const programmeCourses = Number(context.programmeDetail?.n_courses || 0);
+
+  const centreRendered = Number(renderResult?.renderedCentre || 0);
+  const centreTotal = Number(renderResult?.totalCentre || 0);
+  const centreSubtitle = centreTotal > 0
+    ? `${formatCount(centreCourses)} cursos · ${formatCount(centreRendered)}/${formatCount(centreTotal)} termes`
+    : `${formatCount(centreCourses)} cursos`;
+  setCloudSubtitle(primaryCloudSubtitleEl, centreSubtitle);
+
+  if (!compareMode) {
+    setCloudSubtitle(secondaryCloudSubtitleEl, "");
+    return;
+  }
+
+  const programmeRendered = Number(renderResult?.renderedProgramme || 0);
+  const programmeTotal = Number(renderResult?.totalProgramme || 0);
+  const programmeSubtitle = programmeTotal > 0
+    ? `${formatCount(programmeCourses)} cursos · ${formatCount(programmeRendered)}/${formatCount(programmeTotal)} termes`
+    : `${formatCount(programmeCourses)} cursos`;
+  setCloudSubtitle(secondaryCloudSubtitleEl, programmeSubtitle);
+}
+
+function updateSelectionPanel(context) {
+  if (!context?.centreCode) {
+    setSelectionPanelVisible(false);
+    renderSelectionPanelEmpty();
+    return;
+  }
+
+  setSelectionPanelVisible(true);
+  const analysisStrings = getAnalysisPanelStrings();
+  const compareMode = Boolean(context.compareMode);
+  const centreName = resolveCentreName(context) || "-";
+  const programmeName = resolveProgrammeName(context) || "-";
+  const centreCourses = Number(context.centreDetail?.n_courses || context.detail?.n_courses || 0);
+  const programmeCourses = Number(context.programmeDetail?.n_courses || 0);
+  const programmesInCentre = (state.programmesByCentreCode.get(String(context.centreCode || "")) || []).length;
+  const systemLabel = getSelectedOptionLabel(systemSelect) || context.selectedSystem || "-";
+  const sectionLabel = getSelectedOptionLabel(sectionSelect) || context.selectedSection || "-";
+  const systemHelp = capitalizeSentence(getSystemExplanationText(context.selectedSystem));
+  const systemQuality = normalizeWhitespace(getSystemQualityText(context.selectedSystem));
+  const sectionHelp = capitalizeSentence(getSectionExplanationText(context.selectedSection));
+  const aggregateTemplate = getMappedTemplate(
+    analysisStrings.aggregate_templates,
+    compareMode ? "compare" : "centre",
+    "La selecció activa inclou {n_courses_centre} cursos."
+  );
+  const aggregateText = formatTemplate(aggregateTemplate, {
+    centre: centreName,
+    programme: programmeName,
+    n_programmes: formatCount(programmesInCentre),
+    n_courses_centre: formatCount(centreCourses),
+    n_courses_programme: formatCount(programmeCourses)
+  });
+  const systemTemplate = getMappedTemplate(
+    analysisStrings.system_templates,
+    context.selectedSystem,
+    "Amb \"{system_label}\", {system_help} {system_quality}"
+  );
+  const systemContextText = formatTemplate(systemTemplate, {
+    system_label: systemLabel,
+    system_help: systemHelp,
+    system_quality: systemQuality
+  });
+  const sectionTemplate = getMappedTemplate(
+    analysisStrings.section_templates,
+    context.selectedSection,
+    "A la secció \"{section_label}\", {section_help}"
+  );
+  const sectionContextText = formatTemplate(sectionTemplate, {
+    section_label: sectionLabel,
+    section_help: sectionHelp
+  });
+  let coverageText = analysisStrings.coverage_unavailable;
+  if (compareMode && context.selectedDegree && context.selectedDegree !== "ALL") {
+    const coverageMatrix = getProgrammeCoverageMatrix(context.selectedDegree, context.programmeDetail);
+    const coverageCell = getCoverageCell(coverageMatrix, context.selectedSystem, context.selectedSection);
+    if (coverageCell.totalCourses > 0) {
+      coverageText = formatTemplate(analysisStrings.coverage_programme, {
+        system_label: systemLabel,
+        section_label: sectionLabel,
+        with_sdg: formatCount(coverageCell.recognisedCourses),
+        total_courses: formatCount(coverageCell.totalCourses),
+        coverage_pct: formatPercentCa(coverageCell.coveragePct)
+      });
+    }
+  } else {
+    coverageText = analysisStrings.coverage_centre_unavailable;
+  }
+
+  setPanelText(selectionPanelTitleEl, analysisStrings.title);
+  setPanelText(selectionPanelScopeEl, aggregateText);
+  setPanelText(selectionPanelCoursesEl, coverageText);
+  setPanelText(selectionPanelSystemEl, systemContextText);
+  setPanelText(selectionPanelSectionEl, sectionContextText);
+}
+
+async function loadUiStrings() {
+  const candidates = Array.from(new Set([WORDCLOUD_STRINGS_URL, WORDCLOUD_STRINGS_FALLBACK_URL].filter(Boolean)));
+  for (const url of candidates) {
+    try {
+      const loadedStrings = await fetchJson(url);
+      state.uiStrings = mergeDeepObjects(DEFAULT_UI_STRINGS, loadedStrings || {});
+      return;
+    } catch (err) {
+      // Fallback handled by next candidate / defaults.
+    }
+  }
+  state.uiStrings = DEFAULT_UI_STRINGS;
+}
+
+function setRecolorButtonEnabled(isEnabled) {
+  recolorBtn.disabled = !isEnabled;
+}
+
+function setSelectorsDisabled(isDisabled) {
+  facultySelect.disabled = isDisabled;
+  systemSelect.disabled = isDisabled;
+  sectionSelect.disabled = isDisabled;
+  wordLimitRange.disabled = isDisabled;
+  if (isDisabled) {
+    degreeSelect.disabled = true;
+    setRecolorButtonEnabled(false);
+    return;
+  }
+  degreeSelect.disabled = !String(facultySelect.value || "");
+}
+
+function randomIndex(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeHexColor(hex) {
+  const raw = String(hex || "").trim().replace(/^#/, "");
+  if (raw.length === 3) {
+    return raw.split("").map(ch => ch + ch).join("");
+  }
+  if (raw.length === 6) return raw;
+  return "1f4e79";
+}
+
+function hexToRgb(hex) {
+  const normalized = normalizeHexColor(hex);
+  const value = Number.parseInt(normalized, 16);
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255
+  };
+}
+
+function rgbToHex(r, g, b) {
+  const toHex = (n) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function rgbToHsl(r, g, b) {
+  const rr = clamp(r, 0, 255) / 255;
+  const gg = clamp(g, 0, 255) / 255;
+  const bb = clamp(b, 0, 255) / 255;
+  const max = Math.max(rr, gg, bb);
+  const min = Math.min(rr, gg, bb);
+  const delta = max - min;
+
+  let h = 0;
+  if (delta > 0) {
+    if (max === rr) h = ((gg - bb) / delta) % 6;
+    else if (max === gg) h = (bb - rr) / delta + 2;
+    else h = (rr - gg) / delta + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  const l = (max + min) / 2;
+  const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+  return {
+    h,
+    s: s * 100,
+    l: l * 100
+  };
+}
+
+function hslToRgb(h, s, l) {
+  const hh = ((h % 360) + 360) % 360;
+  const ss = clamp(s, 0, 100) / 100;
+  const ll = clamp(l, 0, 100) / 100;
+
+  const c = (1 - Math.abs(2 * ll - 1)) * ss;
+  const x = c * (1 - Math.abs((hh / 60) % 2 - 1));
+  const m = ll - c / 2;
+
+  let rr = 0;
+  let gg = 0;
+  let bb = 0;
+
+  if (hh < 60) {
+    rr = c; gg = x; bb = 0;
+  } else if (hh < 120) {
+    rr = x; gg = c; bb = 0;
+  } else if (hh < 180) {
+    rr = 0; gg = c; bb = x;
+  } else if (hh < 240) {
+    rr = 0; gg = x; bb = c;
+  } else if (hh < 300) {
+    rr = x; gg = 0; bb = c;
+  } else {
+    rr = c; gg = 0; bb = x;
+  }
+
+  return {
+    r: (rr + m) * 255,
+    g: (gg + m) * 255,
+    b: (bb + m) * 255
+  };
+}
+
+function transformHexColor(hex, shiftH, shiftS, shiftL) {
+  const { r, g, b } = hexToRgb(hex);
+  const { h, s, l } = rgbToHsl(r, g, b);
+  const nextH = h + shiftH;
+  const nextS = clamp(s + shiftS, 28, 95);
+  const nextL = clamp(l + shiftL, 18, 78);
+  const rgb = hslToRgb(nextH, nextS, nextL);
+  return rgbToHex(rgb.r, rgb.g, rgb.b);
+}
+
+function buildExpandedPalette(baseColors, targetSize) {
+  const source = (Array.isArray(baseColors) ? baseColors : []).filter(Boolean);
+  if (!source.length) return ["#1f4e79"];
+
+  const transforms = [
+    { h: 0, s: 0, l: 0 },
+    { h: 10, s: 12, l: -8 },
+    { h: -12, s: 8, l: 10 },
+    { h: 22, s: -10, l: 4 },
+    { h: -24, s: -6, l: -10 },
+    { h: 32, s: 16, l: 0 }
+  ];
+
+  const expanded = [];
+  const seen = new Set();
+  const pushColor = (color) => {
+    const key = String(color || "").toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    expanded.push(color);
+  };
+
+  for (const transform of transforms) {
+    for (const color of source) {
+      pushColor(transformHexColor(color, transform.h, transform.s, transform.l));
+    }
+  }
+
+  const needed = Math.max(targetSize, source.length * 2);
+  for (let i = 0; expanded.length < needed && i < needed * 3; i += 1) {
+    const base = source[i % source.length];
+    const jitterH = ((i * 37) % 49) - 24;
+    const jitterS = ((i * 17) % 19) - 9;
+    const jitterL = ((i * 13) % 21) - 10;
+    pushColor(transformHexColor(base, jitterH, jitterS, jitterL));
+  }
+
+  return expanded.length ? expanded : source.map(c => `#${normalizeHexColor(c)}`);
+}
+
+function greatestCommonDivisor(a, b) {
+  let x = Math.abs(Math.floor(a));
+  let y = Math.abs(Math.floor(b));
+  while (y) {
+    const temp = y;
+    y = x % y;
+    x = temp;
+  }
+  return x || 1;
+}
+
+function getCoprimeStride(length) {
+  if (length <= 1) return 1;
+  let stride = Math.floor(length / 2) + 1;
+  while (stride < length) {
+    if (greatestCommonDivisor(stride, length) === 1) return stride;
+    stride += 1;
+  }
+  return 1;
+}
+
+function buildWordColorMap(wordList, baseColors) {
+  const expandedColors = buildExpandedPalette(baseColors, Math.max(24, wordList.length * 2));
+  const colorMap = new Map();
+  const stride = getCoprimeStride(expandedColors.length);
+
+  wordList.forEach(([word], index) => {
+    const slot = (index * stride) % expandedColors.length;
+    colorMap.set(word, expandedColors[slot]);
+  });
+
+  return { colorMap, expandedColors };
+}
+
+function buildWordOrderMap(wordList) {
+  const orderMap = new Map();
+  (Array.isArray(wordList) ? wordList : []).forEach(([word], index) => {
+    const key = String(word || "");
+    if (!key || orderMap.has(key)) return;
+    orderMap.set(key, index);
+  });
+  return orderMap;
+}
+
+function clampWordLimit(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return DEFAULT_WORDS_TO_RENDER;
+  return Math.min(MAX_WORDS_TO_RENDER, Math.max(MIN_WORDS_TO_RENDER, Math.round(parsed)));
+}
+
+function buildRawWordList(featureRows) {
+  const wordLimit = clampWordLimit(state.wordLimit);
+  return (featureRows || [])
+    .filter(row => row && typeof row.feature === "string" && row.feature.trim().length > 0 && typeof row.n_hits === "number" && row.n_hits > 0)
+    .sort((a, b) => b.n_hits - a.n_hits)
+    .slice(0, wordLimit)
+    .map(row => [row.feature.trim(), row.n_hits]);
+}
+
+function buildSharedColorConfig(primaryRows, secondaryRows, baseColors) {
+  const combinedHits = new Map();
+  const addHits = (rows) => {
+    rows.forEach(([word, hits]) => {
+      const key = String(word || "");
+      if (!key) return;
+      const prev = Number(combinedHits.get(key) || 0);
+      combinedHits.set(key, prev + Number(hits || 0));
+    });
+  };
+
+  addHits(primaryRows || []);
+  addHits(secondaryRows || []);
+
+  const sharedWordList = Array.from(combinedHits.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([word, hits]) => [word, hits]);
+
+  const baseConfig = buildWordColorMap(sharedWordList, baseColors);
+  return {
+    ...baseConfig,
+    wordOrderMap: buildWordOrderMap(sharedWordList)
+  };
+}
+
+function syncWordLimitUi() {
+  state.wordLimit = clampWordLimit(state.wordLimit);
+  wordLimitRange.value = String(state.wordLimit);
+  wordLimitValue.textContent = String(state.wordLimit);
+}
+
+function getActivePalette() {
+  return WORDCLOUD_PALETTES[state.paletteIndex] || WORDCLOUD_PALETTES[0];
+}
+
+function pickNextPalette() {
+  if (!WORDCLOUD_PALETTES.length) return [];
+  let index = randomIndex(WORDCLOUD_PALETTES.length);
+  if (WORDCLOUD_PALETTES.length > 1 && index === state.paletteIndex) {
+    index = (index + 1) % WORDCLOUD_PALETTES.length;
+  }
+  state.paletteIndex = index;
+  return getActivePalette();
+}
+
+function formatRenderStatus(renderedCount, totalCount) {
+  return `Mostrant ${renderedCount} termes (de ${totalCount}, límit ${state.wordLimit}).`;
+}
+
+function formatCompareRenderStatus(primaryCount, primaryTotal, secondaryCount, secondaryTotal) {
+  const centrePart = `Centre ${primaryCount}/${primaryTotal}`;
+  const programmePart = `Ensenyament ${secondaryCount}/${secondaryTotal}`;
+  return `Comparativa activa (${centrePart}, ${programmePart}, límit ${state.wordLimit}).`;
+}
+
+function getCanvasWrapper(targetCanvas) {
+  if (!targetCanvas) return null;
+  return targetCanvas.closest(".wordcloud-wrapper");
+}
+
+function resizeCanvas(targetCanvas) {
+  const activeCanvas = targetCanvas || canvas;
+  const container = getCanvasWrapper(activeCanvas);
+  if (!activeCanvas || !container) return { width: 300, height: 320 };
+  const rect = container.getBoundingClientRect();
+  const width = Math.max(300, Math.floor(container.clientWidth || rect.width));
+  const height = Math.max(320, Math.floor(container.clientHeight || rect.height));
+  activeCanvas.width = width;
+  activeCanvas.height = height;
+  return { width, height };
+}
+
+function syncWordcloudWrapperHeight() {
+  const wrappers = Array.from(document.querySelectorAll(".wordcloud-wrapper"));
+  if (!wrappers.length) return;
+  const compareMode = Boolean(state.lastRenderData?.compareMode);
+
+  if (compareMode) {
+    const limitNorm = (clampWordLimit(state.wordLimit) - MIN_WORDS_TO_RENDER) / (MAX_WORDS_TO_RENDER - MIN_WORDS_TO_RENDER);
+    const heightRatio = 0.64 + clamp(limitNorm, 0, 1) * 0.16;
+    wrappers.forEach((wordcloudWrapper) => {
+      const rect = wordcloudWrapper.getBoundingClientRect();
+      const availableWidth = Math.max(300, Math.floor(wordcloudWrapper.clientWidth || rect.width));
+      const targetHeight = Math.max(250, Math.min(Math.floor(availableWidth * heightRatio), 420));
+      wordcloudWrapper.style.width = "100%";
+      wordcloudWrapper.style.maxWidth = "100%";
+      wordcloudWrapper.style.margin = "0 auto";
+      wordcloudWrapper.style.height = `${targetHeight}px`;
+    });
+    return;
+  }
+
+  const targetHeight = Math.max(340, Math.min(window.innerHeight * 0.62, 640));
+  wrappers.forEach((wordcloudWrapper) => {
+    wordcloudWrapper.style.width = "100%";
+    wordcloudWrapper.style.maxWidth = "";
+    wordcloudWrapper.style.margin = "";
+    wordcloudWrapper.style.height = `${Math.round(targetHeight)}px`;
+  });
+}
+
+function clearWordCloud(targetCanvas) {
+  const activeCanvas = targetCanvas || canvas;
+  if (!activeCanvas) return;
+  const context = activeCanvas.getContext("2d");
+  if (context) {
+    context.clearRect(0, 0, activeCanvas.width, activeCanvas.height);
+  }
+}
+
+function drawWordCloud(featureRows, targetCanvas, sharedColorConfig) {
+  const activeCanvas = targetCanvas || canvas;
+  if (!activeCanvas) return 0;
+
+  const rawWordList = buildRawWordList(featureRows);
+  const currentWordLimit = clampWordLimit(state.wordLimit);
+
+  const { width } = resizeCanvas(activeCanvas);
+
+  clearWordCloud(activeCanvas);
+
+  if (!rawWordList.length) {
+    return 0;
+  }
+
+  const rankSpread = rawWordList.length <= 30 ? 0.55 : (rawWordList.length <= 50 ? 0.35 : 0.2);
+  const wordList = rawWordList.map(([word, hits], index) => {
+    const rankNorm = rawWordList.length > 1 ? 1 - (index / (rawWordList.length - 1)) : 1;
+    const adjustedHits = hits * (1 + rankNorm * rankSpread);
+    return [word, adjustedHits];
+  });
+  let placementWordList = wordList;
+
+  const maxFrequency = Math.max(...wordList.map(w => w[1]));
+  const minFrequency = Math.min(...wordList.map(w => w[1]));
+  const maxLog = Math.log1p(maxFrequency);
+  const minLog = Math.log1p(minFrequency);
+  const logRange = Math.max(0.000001, maxLog - minLog);
+  const compareMode = Boolean(state.lastRenderData?.compareMode);
+  const isDenseCloud = rawWordList.length >= 60;
+  const isSparseCloud = rawWordList.length <= 30;
+  const limitNorm = (currentWordLimit - MIN_WORDS_TO_RENDER) / (MAX_WORDS_TO_RENDER - MIN_WORDS_TO_RENDER);
+
+  // Keep weight lower bound below minSize so shrinkToFit can terminate.
+  const effectiveMinSize = compareMode ? Math.max(10, MIN_WORD_SIZE) : MIN_WORD_SIZE;
+  const minWeight = compareMode
+    ? Math.max(4, Math.floor(effectiveMinSize * 0.72))
+    : Math.max(2, Math.floor(effectiveMinSize * 0.48));
+  const baseMaxWeight = Math.max(minWeight + 10, width * (compareMode ? 0.102 : 0.095));
+  const spreadMultiplier = (isSparseCloud ? 1.35 : (isDenseCloud ? 1 : 1.18)) * (compareMode ? 1.05 : 1);
+  const sliderBoost = 1 + (1 - clamp(limitNorm, 0, 1)) * (compareMode ? 0.32 : 0.45);
+  const maxWeight = Math.max(minWeight + 10, baseMaxWeight * spreadMultiplier * sliderBoost);
+  const exponent = compareMode
+    ? (isSparseCloud ? 1.06 : (isDenseCloud ? 0.92 : 0.98))
+    : (isSparseCloud ? 1.55 : (isDenseCloud ? 1.2 : 1.35));
+
+  const activePalette = getActivePalette();
+  const activeColors = Array.isArray(activePalette?.colors) ? activePalette.colors : [];
+  const colorConfig = sharedColorConfig || buildWordColorMap(rawWordList, activeColors);
+  const colorMap = colorConfig?.colorMap instanceof Map ? colorConfig.colorMap : new Map();
+  const expandedColors = Array.isArray(colorConfig?.expandedColors) ? colorConfig.expandedColors : [];
+  const sharedOrderMap = colorConfig?.wordOrderMap instanceof Map ? colorConfig.wordOrderMap : null;
+  if (sharedOrderMap) {
+    placementWordList = wordList.slice().sort((a, b) => {
+      const aWord = String(a[0] || "");
+      const bWord = String(b[0] || "");
+      const aOrder = sharedOrderMap.has(aWord) ? sharedOrderMap.get(aWord) : Number.MAX_SAFE_INTEGER;
+      const bOrder = sharedOrderMap.has(bWord) ? sharedOrderMap.get(bWord) : Number.MAX_SAFE_INTEGER;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      if (a[1] !== b[1]) return b[1] - a[1];
+      return aWord.localeCompare(bWord, "ca");
+    });
+  }
+  const targetEllipticity = compareMode ? 1.08 : 0.72;
+  const targetGridSize = compareMode
+    ? Math.max(2, Math.round(width * 0.0042))
+    : Math.max(3, Math.round(width * 0.0052));
+  const targetRotateRatio = 0;
+  const targetMinRotation = 0;
+  const targetMaxRotation = 0;
+  const targetRotationSteps = 1;
+  const targetWait = compareMode ? 0 : 10;
+  const targetAbortThreshold = compareMode ? 4500 : 1800;
+
+  WordCloud(activeCanvas, {
+    list: placementWordList,
+    shuffle: !compareMode,
+    gridSize: targetGridSize,
+    weightFactor: function(size) {
+      if (maxLog <= 0) return minWeight;
+      // Adaptive scale per active limit: sparse clouds get extra contrast.
+      const normalizedRaw = (Math.log1p(Math.max(0, size)) - minLog) / logRange;
+      const normalized = Math.pow(clamp(normalizedRaw, 0, 1), exponent);
+      return minWeight + normalized * (maxWeight - minWeight);
+    },
+    fontFamily: "Arial",
+    color: function(word) {
+      const key = String(word || "");
+      if (colorMap.has(key)) return colorMap.get(key);
+      if (!expandedColors.length) return "#1f4e79";
+      return expandedColors[randomIndex(expandedColors.length)];
+    },
+    backgroundColor: "#fff",
+    rotateRatio: targetRotateRatio,
+    minRotation: targetMinRotation,
+    maxRotation: targetMaxRotation,
+    rotationSteps: targetRotationSteps,
+    drawOutOfBound: false,
+    shrinkToFit: true,
+    minSize: effectiveMinSize,
+    maxSize: MAX_WORD_SIZE,
+    shape: "square",
+    ellipticity: targetEllipticity,
+    clearCanvas: true,
+    wait: targetWait,
+    abortThreshold: targetAbortThreshold,
+    abort: function() {
+      console.warn("Word cloud render aborted due timeout.");
+    }
+  });
+
+  return placementWordList.length;
+}
+
+function joinUrl(base, path) {
+  const cleanPath = String(path || "").replace(/^\/+/, "");
+  return `${base}/${cleanPath}`;
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Error carregant ${url}: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function fetchApiJson(relativePath) {
+  const url = joinUrl(state.apiBase, relativePath);
+  return fetchJson(url);
+}
+
+function addOption(selectEl, value, label) {
+  const option = document.createElement("option");
+  option.value = String(value);
+  option.textContent = normalizeWhitespace(label);
+  selectEl.appendChild(option);
+}
+
+function programmeKey(centreCode, programmeCode) {
+  return `${String(centreCode)}::${String(programmeCode)}`;
+}
+
+function populateFacultySelect(selectedCentreCode) {
+  facultySelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Facultat/Escola (obligatori)";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  facultySelect.appendChild(placeholder);
+
+  state.centres.forEach(c => {
+    addOption(facultySelect, c.centre_code, c.centre_name);
+  });
+
+  if (selectedCentreCode && state.centreByCode.has(String(selectedCentreCode))) {
+    facultySelect.value = String(selectedCentreCode);
+  } else {
+    facultySelect.value = "";
+  }
+}
+
+function populateDegreeSelect(centreCode, selectedProgrammeKey) {
+  degreeSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = centreCode
+    ? 'Ensenyament (opcional): selecciona o tria "Tots"'
+    : "Ensenyament (opcional): selecciona una Facultat/Escola primer";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  degreeSelect.appendChild(placeholder);
+
+  if (!centreCode) {
+    degreeSelect.disabled = true;
+    degreeSelect.value = "";
+    return;
+  }
+
+  degreeSelect.disabled = false;
+  addOption(degreeSelect, "ALL", "Tots");
+
+  const programmes = state.programmesByCentreCode.get(String(centreCode)) || [];
+  programmes.forEach(p => {
+    addOption(degreeSelect, programmeKey(p.centre_code, p.programme_code), p.programme_name);
+  });
+
+  if (selectedProgrammeKey && selectedProgrammeKey !== "ALL" && state.programmeByKey.has(selectedProgrammeKey)) {
+    degreeSelect.value = selectedProgrammeKey;
+  } else if (selectedProgrammeKey === "ALL") {
+    degreeSelect.value = "ALL";
+  } else {
+    degreeSelect.value = "";
+  }
+}
+
+function populateSystemSelect(selectedId) {
+  systemSelect.innerHTML = "";
+  state.systemOptions.forEach(opt => {
+    addOption(systemSelect, opt.id, getLocalizedOptionLabel("system", opt.id, opt.label));
+  });
+  const fallback = state.systemOptions[0] ? state.systemOptions[0].id : "";
+  systemSelect.value = state.systemOptions.some(opt => opt.id === selectedId) ? selectedId : fallback;
+}
+
+function populateSectionSelect(selectedId) {
+  sectionSelect.innerHTML = "";
+  state.sectionOptions.forEach(opt => {
+    addOption(sectionSelect, opt.id, getLocalizedOptionLabel("section", opt.id, opt.label));
+  });
+  const fallback = state.sectionOptions[0] ? state.sectionOptions[0].id : "";
+  sectionSelect.value = state.sectionOptions.some(opt => opt.id === selectedId) ? selectedId : fallback;
+}
+
+function getFeatureRows(detailJson, systemId, sectionId) {
+  const rows = detailJson?.by_set?.feature?.[systemId]?.[sectionId];
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map(row => ({
+      feature: row?.feature,
+      n_hits: Number(row?.n_hits)
+    }))
+    .filter(row => typeof row.feature === "string" && row.feature.trim().length > 0 && Number.isFinite(row.n_hits) && row.n_hits > 0);
+}
+
+function normalizeSystemId(systemId) {
+  if (systemId === "ens:equal") return "sys:ensemble_equal";
+  if (systemId === "ens:third") return "sys:ensemble_third";
+  if (systemId === "ens:triple") return "sys:ensemble_triple";
+  return systemId;
+}
+
+function resetAnalysisFiltersToDefaults() {
+  populateSystemSelect(DEFAULT_SYSTEM_ID);
+  populateSectionSelect(DEFAULT_SECTION_ID);
+}
+
+function extractScrapingPlatforms(metaJson) {
+  const rawPlatforms = metaJson?.generated_from?.scraping_meta?.scraping_context?.platforms;
+  if (!Array.isArray(rawPlatforms)) return [];
+  return rawPlatforms
+    .map(item => normalizeWhitespace(item?.name))
+    .filter(Boolean);
+}
+
+function extractScrapingDate(metaJson) {
+  const scrapingMeta = metaJson?.generated_from?.scraping_meta || {};
+  const scrapingContext = scrapingMeta?.scraping_context || {};
+  const platforms = Array.isArray(scrapingContext?.platforms) ? scrapingContext.platforms : [];
+
+  const platformCandidates = platforms.flatMap((item) => [
+    item?.generated_at,
+    item?.scraped_at,
+    item?.snapshot_at,
+    item?.updated_at,
+    item?.date,
+    item?.captured_at
+  ]);
+
+  const candidates = [
+    scrapingMeta?.generated_at,
+    scrapingMeta?.scraped_at,
+    scrapingMeta?.snapshot_at,
+    scrapingMeta?.updated_at,
+    scrapingMeta?.date,
+    scrapingMeta?.captured_at,
+    scrapingContext?.generated_at,
+    scrapingContext?.scraped_at,
+    scrapingContext?.snapshot_at,
+    scrapingContext?.updated_at,
+    scrapingContext?.date,
+    scrapingContext?.captured_at,
+    metaJson?.generated_at,
+    metaJson?.updated_at,
+    metaJson?.created_at,
+    ...platformCandidates
+  ].filter((value) => value != null && value !== "");
+
+  for (const candidate of candidates) {
+    const parsed = parseDateCandidate(candidate);
+    if (parsed) return parsed.toISOString();
+  }
+
+  return null;
+}
+
+async function resolveApiBaseAndVersion() {
+  let lastError = null;
+
+  for (const base of API_BASE_CANDIDATES) {
+    try {
+      const versions = await fetchJson(joinUrl(base, "versions.json"));
+      const latestVersion = versions?.latest || versions?.versions?.[0]?.id;
+      if (!latestVersion) throw new Error(`versions.json sense 'latest' a ${base}`);
+
+      state.apiBase = base;
+      state.apiVersion = latestVersion;
+      state.apiVersionMeta = (versions.versions || []).find(v => v.id === latestVersion) || null;
+      state.apiDetailedMeta = null;
+      state.apiScrapingPlatforms = [];
+      state.apiScrapingDate = null;
+
+      const metaPathFromVersions = state.apiVersionMeta?.meta;
+      const metaCandidates = [
+        metaPathFromVersions,
+        `${latestVersion}/meta.json`
+      ].filter(Boolean);
+
+      for (const metaPath of metaCandidates) {
+        try {
+          const metaJson = await fetchApiJson(metaPath);
+          state.apiDetailedMeta = metaJson;
+          state.apiScrapingPlatforms = extractScrapingPlatforms(metaJson);
+          state.apiScrapingDate = extractScrapingDate(metaJson);
+          break;
+        } catch (metaErr) {
+          // Keep processing with available metadata.
+        }
+      }
+
+      if (!state.apiScrapingDate && state.apiVersionMeta?.generated_at) {
+        state.apiScrapingDate = state.apiVersionMeta.generated_at;
+      }
+
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("No s'ha pogut connectar amb cap endpoint de l'API");
+}
+
+async function loadIndexes() {
+  const versionPrefix = state.apiVersion;
+  const [centres, programmes, systemsJson, sectionsJson] = await Promise.all([
+    fetchApiJson(`${versionPrefix}/index/centres.json`),
+    fetchApiJson(`${versionPrefix}/index/programmes.json`),
+    fetchApiJson(`${versionPrefix}/index/systems.json`),
+    fetchApiJson(`${versionPrefix}/index/sections.json`)
+  ]);
+
+  state.centres = Array.isArray(centres)
+    ? centres
+      .map(c => ({
+        ...c,
+        centre_name: normalizeWhitespace(c?.centre_name)
+      }))
+      .sort((a, b) => String(a.centre_name || "").localeCompare(String(b.centre_name || ""), "ca"))
+    : [];
+  state.centreByCode = new Map(state.centres.map(c => [String(c.centre_code), c]));
+
+  state.programmesByCentreCode = new Map();
+  state.programmeByKey = new Map();
+  (Array.isArray(programmes) ? programmes : []).forEach(rawProgramme => {
+    const p = {
+      ...rawProgramme,
+      centre_name: normalizeWhitespace(rawProgramme?.centre_name),
+      programme_name: normalizeWhitespace(rawProgramme?.programme_name)
+    };
+
+    const centreCode = String(p?.centre_code || "");
+    const pKey = programmeKey(p?.centre_code, p?.programme_code);
+    if (!centreCode) return;
+
+    if (!state.programmesByCentreCode.has(centreCode)) {
+      state.programmesByCentreCode.set(centreCode, []);
+    }
+    state.programmesByCentreCode.get(centreCode).push(p);
+    state.programmeByKey.set(pKey, p);
+  });
+
+  for (const [centreCode, items] of state.programmesByCentreCode.entries()) {
+    const sorted = items.slice().sort((a, b) => String(a.programme_name || "").localeCompare(String(b.programme_name || ""), "ca"));
+    state.programmesByCentreCode.set(centreCode, sorted);
+  }
+
+  state.systemOptions = Array.isArray(systemsJson?.system_options)
+    ? systemsJson.system_options.map(opt => ({ ...opt, label: normalizeWhitespace(opt?.label) }))
+    : [];
+  state.sectionOptions = Array.isArray(sectionsJson?.section_options)
+    ? sectionsJson.section_options.map(opt => ({ ...opt, label: normalizeWhitespace(opt?.label) }))
+    : [];
+}
+
+function renderApiInfo() {
+  const generatedAt = state.apiVersionMeta?.generated_at;
+  const generatedLabel = generatedAt ? new Date(generatedAt).toLocaleString("ca-ES") : "data desconeguda";
+  const safeBase = escapeHtml(state.apiBase);
+  const safeVersion = escapeHtml(state.apiVersion);
+  const safeGenerated = escapeHtml(generatedLabel);
+  const safePlatforms = state.apiScrapingPlatforms.map(name => escapeHtml(name)).join(", ");
+  const provenance = safePlatforms
+    ? ` · Fonts de captura: <strong>${safePlatforms}</strong>`
+    : "";
+
+  apiInfoEl.innerHTML = `Font de dades: <a href="${safeBase}" target="_blank" rel="noopener noreferrer" class="wordcloud-source-link">${safeBase}</a> (${safeVersion}, snapshot ${safeGenerated})${provenance}`;
+}
+
+async function getCentreDetail(centreCode) {
+  const key = String(centreCode || "");
+  if (!key) throw new Error("Centre no seleccionat");
+  if (state.centreCache.has(key)) return state.centreCache.get(key);
+
+  const centre = state.centreByCode.get(key);
+  if (!centre?.json) throw new Error(`Centre sense fitxer de detall: ${key}`);
+
+  const detail = await fetchApiJson(`${state.apiVersion}/${centre.json}`);
+  state.centreCache.set(key, detail);
+  return detail;
+}
+
+async function getProgrammeDetail(programmeId) {
+  const key = String(programmeId || "");
+  if (!key) throw new Error("Ensenyament no seleccionat");
+  if (state.programmeCache.has(key)) return state.programmeCache.get(key);
+
+  const programme = state.programmeByKey.get(key);
+  if (!programme?.json) throw new Error(`Ensenyament sense fitxer de detall: ${key}`);
+
+  const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
+  state.programmeCache.set(key, detail);
+  return detail;
+}
+
+function renderCloudsFromRenderData(renderData) {
+  const compareMode = Boolean(renderData?.compareMode);
+  setComparisonViewEnabled(compareMode);
+  syncWordcloudWrapperHeight();
+
+  const centreRows = Array.isArray(renderData?.centreRows) ? renderData.centreRows : [];
+  const programmeRows = compareMode && Array.isArray(renderData?.programmeRows) ? renderData.programmeRows : [];
+  const centreRawWordList = buildRawWordList(centreRows);
+  const programmeRawWordList = compareMode ? buildRawWordList(programmeRows) : [];
+  const activePalette = getActivePalette();
+  const activeColors = Array.isArray(activePalette?.colors) ? activePalette.colors : [];
+  const sharedColorConfig = compareMode
+    ? buildSharedColorConfig(centreRawWordList, programmeRawWordList, activeColors)
+    : null;
+
+  const renderedCentre = drawWordCloud(centreRows, canvas, sharedColorConfig);
+  let renderedProgramme = 0;
+
+  if (compareMode) {
+    renderedProgramme = drawWordCloud(programmeRows, secondaryCanvas, sharedColorConfig);
+  } else {
+    clearWordCloud(secondaryCanvas);
+  }
+
+  return {
+    compareMode,
+    renderedCentre,
+    renderedProgramme,
+    totalCentre: centreRows.length,
+    totalProgramme: programmeRows.length
+  };
+}
+
+async function renderCurrentSelection() {
+  const centreCode = String(facultySelect.value || "");
+  updateMobileCloudHintVisibility();
+
+  if (!centreCode) {
+    state.lastRenderData = null;
+    state.lastRenderContext = null;
+    setComparisonViewEnabled(false);
+    setCloudEmptyStateVisible(true);
+    setSelectionPanelVisible(false);
+    syncWordcloudWrapperHeight();
+    setRecolorButtonEnabled(false);
+    drawWordCloud([], canvas);
+    clearWordCloud(secondaryCanvas);
+    updateCloudTitles(null);
+    updateCloudSubtitles(null, null);
+    renderSelectionPanelEmpty();
+    setStatus("Selecciona una Facultat/Escola per veure el núvol de paraules.", false);
+    return;
+  }
+
+  const token = ++state.renderToken;
+  setCloudEmptyStateVisible(false);
+  setSelectionPanelVisible(true);
+  setStatus("Carregant dades...");
+
+  try {
+    const selectedSystem = normalizeSystemId(String(systemSelect.value || DEFAULT_SYSTEM_ID));
+    const selectedSection = String(sectionSelect.value || DEFAULT_SECTION_ID);
+    const selectedDegree = String(degreeSelect.value || "");
+    const compareMode = isCompareSelection(selectedDegree);
+
+    const [centreDetail, programmeDetail] = compareMode
+      ? await Promise.all([
+        getCentreDetail(centreCode),
+        getProgrammeDetail(selectedDegree)
+      ])
+      : [await getCentreDetail(centreCode), null];
+
+    if (token !== state.renderToken) return;
+
+    const centreRows = getFeatureRows(centreDetail, selectedSystem, selectedSection);
+    const programmeRows = compareMode
+      ? getFeatureRows(programmeDetail, selectedSystem, selectedSection)
+      : [];
+
+    state.lastRenderData = {
+      compareMode,
+      centreRows,
+      programmeRows
+    };
+    state.lastRenderContext = {
+      detail: compareMode ? programmeDetail : centreDetail,
+      centreDetail,
+      programmeDetail,
+      compareMode,
+      showCentre: !compareMode,
+      centreCode,
+      selectedDegree,
+      selectedSystem,
+      selectedSection
+    };
+    updateCloudTitles(state.lastRenderContext);
+    const renderResult = renderCloudsFromRenderData(state.lastRenderData);
+    updateCloudSubtitles(state.lastRenderContext, renderResult);
+    updateSelectionPanel(state.lastRenderContext);
+    const hasRows = renderResult.totalCentre > 0 || renderResult.totalProgramme > 0;
+
+    if (!hasRows) {
+      setRecolorButtonEnabled(false);
+      setStatus("No hi ha termes per a aquesta combinació de filtres.", false);
+      return;
+    }
+
+    setRecolorButtonEnabled(true);
+    if (renderResult.compareMode) {
+      setStatus(
+        formatCompareRenderStatus(
+          renderResult.renderedCentre,
+          renderResult.totalCentre,
+          renderResult.renderedProgramme,
+          renderResult.totalProgramme
+        ),
+        false
+      );
+    } else {
+      setStatus(formatRenderStatus(renderResult.renderedCentre, renderResult.totalCentre), false);
+    }
+
+    if (pendingMobileAutoScroll && isCompactWordcloudLayout()) {
+      pendingMobileAutoScroll = false;
+      setTimeout(scrollToWordcloud, 110);
+    }
+  } catch (err) {
+    if (token !== state.renderToken) return;
+    console.error(err);
+    state.lastRenderData = null;
+    state.lastRenderContext = null;
+    setComparisonViewEnabled(false);
+    setCloudEmptyStateVisible(true);
+    setSelectionPanelVisible(true);
+    syncWordcloudWrapperHeight();
+    setRecolorButtonEnabled(false);
+    drawWordCloud([], canvas);
+    clearWordCloud(secondaryCanvas);
+    updateCloudTitles(null);
+    updateCloudSubtitles(null, null);
+    renderSelectionPanelError();
+    setStatus("Error carregant les dades del núvol de paraules.", true);
+  }
+}
+
+function setFatalErrorState() {
+  facultySelect.innerHTML = '<option value="">Error carregant centres</option>';
+  degreeSelect.innerHTML = '<option value="">Error carregant ensenyaments</option>';
+  systemSelect.innerHTML = '<option value="">Error carregant sistemes</option>';
+  sectionSelect.innerHTML = '<option value="">Error carregant seccions</option>';
+  state.lastRenderData = null;
+  state.lastRenderContext = null;
+  setComparisonViewEnabled(false);
+  setCloudEmptyStateVisible(true);
+  setSelectionPanelVisible(false);
+  syncWordcloudWrapperHeight();
+  setRecolorButtonEnabled(false);
+  setSelectorsDisabled(true);
+  updateCloudTitles(null);
+  updateCloudSubtitles(null, null);
+  renderSelectionPanelError();
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  updateMobileCloudHintVisibility();
+  if (mobileCloudHintEl) {
+    mobileCloudHintEl.addEventListener("click", scrollToWordcloud);
+  }
+  observeFacultySelectLayout();
+  observeSidebarLayoutState();
+
+  setIntroPanelExpanded(false);
+  if (introToggleBtn && introPanelEl) {
+    introToggleBtn.addEventListener("click", () => {
+      const expanded = introToggleBtn.getAttribute("aria-expanded") === "true";
+      setIntroPanelExpanded(!expanded);
+    });
+  }
+
+  syncWordcloudWrapperHeight();
+  state.paletteIndex = randomIndex(WORDCLOUD_PALETTES.length);
+  syncWordLimitUi();
+  setSelectionPanelVisible(false);
+  renderSelectionPanelEmpty();
+
+  setSelectorsDisabled(true);
+  setRecolorButtonEnabled(false);
+  setStatus("Inicialitzant dades de l'API...");
+
+  try {
+    await resolveApiBaseAndVersion();
+    await loadUiStrings();
+    await loadIndexes();
+
+    resetAnalysisFiltersToDefaults();
+
+    populateFacultySelect("");
+    populateDegreeSelect("", "");
+    scheduleEmptyCueSync();
+
+    renderApiInfo();
+    setSelectorsDisabled(false);
+    await renderCurrentSelection();
+  } catch (err) {
+    console.error(err);
+    setFatalErrorState();
+    setStatus("No s'ha pogut inicialitzar la càrrega de dades de l'API.", true);
+  }
+
+  facultySelect.addEventListener("change", () => {
+    pendingMobileAutoScroll = Boolean(String(facultySelect.value || "")) && isCompactWordcloudLayout();
+    populateDegreeSelect(facultySelect.value, "");
+    resetAnalysisFiltersToDefaults();
+    scheduleEmptyCueSync();
+    renderCurrentSelection();
+  });
+
+  degreeSelect.addEventListener("change", () => {
+    resetAnalysisFiltersToDefaults();
+    scheduleEmptyCueSync();
+    renderCurrentSelection();
+  });
+
+  systemSelect.addEventListener("change", () => {
+    renderCurrentSelection();
+  });
+
+  sectionSelect.addEventListener("change", () => {
+    renderCurrentSelection();
+  });
+
+  recolorBtn.addEventListener("click", () => {
+    if (!state.lastRenderData) return;
+    const palette = pickNextPalette();
+    const renderResult = renderCloudsFromRenderData(state.lastRenderData);
+    if (state.lastRenderContext) {
+      updateCloudSubtitles(state.lastRenderContext, renderResult);
+    }
+    const paletteLabel = palette?.label ? `Paleta ${palette.label}. ` : "";
+    if (state.lastRenderContext) updateSelectionPanel(state.lastRenderContext);
+    if (renderResult.compareMode) {
+      setStatus(
+        `${paletteLabel}${formatCompareRenderStatus(
+          renderResult.renderedCentre,
+          renderResult.totalCentre,
+          renderResult.renderedProgramme,
+          renderResult.totalProgramme
+        )}`,
+        false
+      );
+      return;
+    }
+    setStatus(`${paletteLabel}${formatRenderStatus(renderResult.renderedCentre, renderResult.totalCentre)}`, false);
+  });
+
+  wordLimitRange.addEventListener("input", () => {
+    state.wordLimit = clampWordLimit(wordLimitRange.value);
+    syncWordLimitUi();
+
+    if (wordLimitDebounceTimer) clearTimeout(wordLimitDebounceTimer);
+    if (!state.lastRenderData) return;
+
+    wordLimitDebounceTimer = setTimeout(() => {
+      const renderResult = renderCloudsFromRenderData(state.lastRenderData);
+      if (state.lastRenderContext) {
+        updateCloudSubtitles(state.lastRenderContext, renderResult);
+        updateSelectionPanel(state.lastRenderContext);
+      }
+      if (renderResult.compareMode) {
+        setStatus(
+          `Límit ajustat. ${formatCompareRenderStatus(
+            renderResult.renderedCentre,
+            renderResult.totalCentre,
+            renderResult.renderedProgramme,
+            renderResult.totalProgramme
+          )}`,
+          false
+        );
+        return;
+      }
+      setStatus(`Límit ajustat. ${formatRenderStatus(renderResult.renderedCentre, renderResult.totalCentre)}`, false);
+    }, 120);
+  });
+
+  window.addEventListener("resize", () => {
+    updateMobileCloudHintVisibility();
+    scheduleEmptyCueSync();
+
+    if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
+    resizeDebounceTimer = setTimeout(() => {
+      syncWordcloudWrapperHeight();
+      renderCurrentSelection();
+    }, 220);
+  });
+});
+</script>
