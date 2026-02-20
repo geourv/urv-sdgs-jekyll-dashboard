@@ -22,7 +22,9 @@
     "error_loading_sections": "Error loading sections",
     "empty_state_select_prompt": "Select a centre and, optionally, a programme using the selectors on the left.",
     "scraping_date_label": "Scraping date",
-    "scraping_date_unknown": "unknown"
+    "scraping_date_unknown": "unknown",
+    "panel_toggle_show": "Show explanation",
+    "panel_toggle_hide": "Hide explanation"
   },
   "methodology": {
     "systems_summary": "Classification systems are not equivalent: they differ in sensitivity, specificity, and false-positive risk.",

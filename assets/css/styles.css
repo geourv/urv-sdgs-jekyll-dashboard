@@ -16,6 +16,7 @@ html, body, h1, h2, h3, h4, h5 {
   }
 html, body {
     margin: 0;
+    min-height: 100%;
     font-size: 16px;
     line-height: 1.5;
     text-rendering: optimizeLegibility;
@@ -38,19 +39,24 @@ html, body {
     --site-link-hover: #2f4963;
     --site-link-visited: #546f89;
     --site-mobile-menu-clearance: 64px;
+    --site-sidebar-width: 316px;
   }
 
   body.w3-light-grey {
     background-color: var(--site-surface) !important;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
   
   /* ===== layout: sidebar and main ===== */
   .w3-main {
-    margin-left: 300px;
+    margin-left: var(--site-sidebar-width);
     margin-top: 0;
     padding-left: 40px;
     padding-right: 40px;
     border-left: 0;
+    flex: 1 0 auto;
   }
 
   .w3-main > header.w3-container {
@@ -61,9 +67,42 @@ html, body {
     margin-top: 0;
     margin-bottom: 6px;
   }
+
+  /* ===== readable prose blocks (informational pages) ===== */
+  .readable-content {
+    --reading-measure: 78ch;
+  }
+  .readable-content > h1,
+  .readable-content > h2,
+  .readable-content > h3,
+  .readable-content > h4,
+  .readable-content > h5,
+  .readable-content > h6,
+  .readable-content > p,
+  .readable-content > ul,
+  .readable-content > ol,
+  .readable-content > blockquote {
+    max-width: var(--reading-measure);
+  }
+  .readable-content p,
+  .readable-content li {
+    -webkit-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+  /* Keep very long URLs/link text from overflowing narrow columns. */
+  .readable-content a {
+    -webkit-hyphens: manual;
+    -ms-hyphens: manual;
+    hyphens: manual;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
   
   .w3-sidebar {
-    width: 300px;
+    width: var(--site-sidebar-width);
     max-width: 80vw; /* prevent oversized sidebar on small screens */
   }
 
@@ -86,7 +125,7 @@ html, body {
 .site-desktop-sidebar-toggle {
     position: fixed;
     top: 12px;
-    left: 300px;
+    left: var(--site-sidebar-width);
     transform: translateX(-50%);
     display: inline-flex;
     align-items: center;
@@ -115,9 +154,13 @@ html, body {
   #mySidebar {
     background: var(--site-surface-2) !important;
     color: var(--site-text);
+    border: 1px solid var(--site-widget-border);
     border-right: 4px solid var(--site-card-separator);
+    border-left: 0;
+    border-radius: 0 12px 12px 0;
     padding-top: 0;
     top: 0 !important;
+    overflow: visible;
   }
   .site-sidebar .w3-container.w3-row,
   #mySidebar .w3-container.w3-row {
@@ -133,12 +176,18 @@ html, body {
     display: block;
     margin-top: 2px;
     padding-bottom: 2px;
-    font-size: 1.42rem;
+    font-size: 1.3rem;
     font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: 0.01em;
+    line-height: 1.16;
+    letter-spacing: 0.005em;
     color: var(--site-card-separator) !important;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+  .site-sidebar .site-sidebar-brand-line,
+  #mySidebar .site-sidebar-brand-line {
+    display: block;
+    margin: 0;
+    white-space: nowrap;
   }
   .site-sidebar .w3-bar-block,
   #mySidebar .w3-bar-block {
@@ -223,6 +272,8 @@ html, body {
   #siteFooter {
     width: 100%;
     margin: 0;
+    margin-top: auto;
+    flex-shrink: 0;
     background: var(--site-surface-2) !important;
     color: #465668;
     border-top: 1px solid var(--site-widget-border);
@@ -637,12 +688,13 @@ html, body {
 
     .site-sidebar .site-sidebar-brand-text,
     #mySidebar .site-sidebar-brand-text {
-      font-size: 1.26rem;
+      font-size: 1.16rem;
+      line-height: 1.14;
     }
   
     /* mobile: keep sidebar offcanvas-style (leave some backdrop visible) */
     .w3-sidebar {
-      width: 300px;
+      width: var(--site-sidebar-width);
       max-width: 85vw;
     }
   

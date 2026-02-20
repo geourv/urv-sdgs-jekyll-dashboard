@@ -1,0 +1,26 @@
+<!--
+File: _includes/shared/explainer_toggle_button.html
+Purpose: Reusable info toggle button used inside analysis/explainer panels.
+Params:
+  - button_id
+  - icon_id
+  - button_class
+  - icon_class
+  - sr_class
+  - aria_controls
+  - aria_label_show
+  - sr_text (optional)
+-->
+
+<button
+  id="{{ include.button_id }}"
+  type="button"
+  class="w3-button w3-small w3-round w3-border {{ include.button_class }}"
+  aria-controls="{{ include.aria_controls }}"
+  aria-expanded="false"
+  aria-label="{{ include.aria_label_show }}"
+  title="{{ include.aria_label_show }}"
+  hidden>
+  <i id="{{ include.icon_id }}" class="fa fa-bars {{ include.icon_class }}" aria-hidden="true"></i>
+  <span class="{{ include.sr_class }}">{{ include.sr_text | default: "Explicació" }}</span>
+</button>

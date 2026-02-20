@@ -15,6 +15,49 @@ Notes:
 (function () {
   const SIDEBAR_STATE_KEY = 'sidebar:state'; // 'open' | 'closed'
   const DESKTOP_SIDEBAR_COLLAPSE_KEY = 'sidebar:desktopCollapsed'; // '1' | '0'
+  const SHARED_FILTERS_KEY = 'sdgs:sharedFilters:v1';
+
+  function normalizeSharedFilters(raw) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    return {
+      centreCode: String(source.centreCode || '').trim(),
+      programmeKey: String(source.programmeKey || '').trim(),
+      systemId: String(source.systemId || '').trim(),
+      sectionId: String(source.sectionId || '').trim()
+    };
+  }
+
+  function readSharedFilters() {
+    try {
+      const raw = localStorage.getItem(SHARED_FILTERS_KEY);
+      if (!raw) return normalizeSharedFilters({});
+      return normalizeSharedFilters(JSON.parse(raw));
+    } catch (_) {
+      return normalizeSharedFilters({});
+    }
+  }
+
+  function writeSharedFilters(patch) {
+    const current = readSharedFilters();
+    const next = normalizeSharedFilters({ ...current, ...(patch || {}) });
+    try {
+      localStorage.setItem(SHARED_FILTERS_KEY, JSON.stringify(next));
+    } catch (_) {}
+    return next;
+  }
+
+  function clearSharedFilters() {
+    try {
+      localStorage.removeItem(SHARED_FILTERS_KEY);
+    } catch (_) {}
+  }
+
+  window.SDGFilterMemory = {
+    read: readSharedFilters,
+    write: writeSharedFilters,
+    clear: clearSharedFilters
+  };
+
   function ensureOverlay() {
     let overlay = document.getElementById('myOverlay');
     if (!overlay) {

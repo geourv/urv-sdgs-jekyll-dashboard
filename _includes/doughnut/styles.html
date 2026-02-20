@@ -1,0 +1,381 @@
+<!--
+File: _includes/doughnut/styles.html
+Purpose: Page-scoped styles for doughnut visualization shell.
+Related files:
+  - _includes/doughnut/interactive_layout.html
+  - pages/faculty-doughnut.html
+-->
+
+<style>
+.doughnut-shell {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) minmax(260px, 340px);
+  grid-template-areas: "left main panel";
+  align-items: start;
+  gap: 12px 14px;
+  --doughnut-blue: var(--site-accent, #5f7898);
+  --doughnut-blue-dark: var(--site-accent-dark, #4e6582);
+  --doughnut-card-bg: var(--site-surface-2, #e8eff7);
+  --doughnut-card-border: #cfdae6;
+  --doughnut-card-title: #1f2a36;
+  --doughnut-select-bg: #fff;
+  --doughnut-select-border: #c4d0dc;
+  --doughnut-panel-bg: var(--site-widget-surface-soft, #edf3fa);
+  --doughnut-panel-border: var(--site-widget-border, #cfdae6);
+  --doughnut-panel-text: #243242;
+}
+
+.doughnut-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.doughnut-title-row h1 {
+  margin: 0;
+}
+
+.doughnut-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doughnut-info-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  padding: 0;
+  border-radius: 999px !important;
+  border-color: var(--site-accent-dark, #334457) !important;
+  color: #fff !important;
+  background: var(--site-accent, #3f536b);
+  font-weight: 600;
+}
+
+.doughnut-info-toggle:hover,
+.doughnut-info-toggle:focus {
+  background: var(--site-accent-dark, #334457) !important;
+  border-color: var(--site-accent-dark, #334457) !important;
+  color: #fff !important;
+}
+
+.doughnut-info-toggle-icon {
+  font-size: 1.4em;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.doughnut-info-toggle[aria-expanded="true"] {
+  background: #fff !important;
+  color: var(--site-accent-dark, #334457) !important;
+  border-color: var(--site-accent, #3f536b) !important;
+}
+
+.doughnut-info-toggle[aria-expanded="true"]:hover,
+.doughnut-info-toggle[aria-expanded="true"]:focus {
+  background: #edf3fa !important;
+  color: var(--site-accent-dark, #334457) !important;
+  border-color: var(--site-accent-dark, #334457) !important;
+}
+
+.doughnut-info-toggle[aria-expanded="true"] .doughnut-info-toggle-icon {
+  transform: rotate(45deg);
+}
+
+.doughnut-panel-toggle {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  padding: 0;
+}
+
+.doughnut-panel-toggle-icon {
+  font-size: 1.28em;
+  line-height: 1;
+}
+
+.doughnut-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.doughnut-left {
+  grid-area: left;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doughnut-card {
+  background: var(--doughnut-card-bg);
+  border: 1px solid var(--doughnut-card-border);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(33, 52, 75, 0.1);
+  padding: 14px 14px 12px;
+}
+
+.doughnut-card-title {
+  margin: 0 0 10px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  color: var(--doughnut-card-title);
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.doughnut-helper {
+  margin: 0 0 0.7rem;
+  color: var(--site-text);
+  font-size: 0.93rem;
+  line-height: 1.4;
+}
+
+.doughnut-field-label {
+  display: block;
+  margin: 0.5rem 0 0.24rem;
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: var(--site-text);
+}
+
+.doughnut-shell .selector-container {
+  margin: 0;
+  gap: 8px;
+}
+
+.doughnut-shell .selector-box {
+  margin: 0;
+}
+
+.doughnut-shell .w3-select {
+  width: 100%;
+  min-width: 0;
+  background-color: var(--doughnut-select-bg);
+  color: #111;
+  border: 1px solid var(--doughnut-select-border) !important;
+  border-radius: 6px;
+  padding: 10px 36px 10px 12px;
+  min-height: 42px;
+  font-size: 1rem;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.doughnut-shell .w3-select:focus {
+  background-color: #f7fbff;
+  border-color: var(--doughnut-blue) !important;
+  box-shadow: 0 0 0 2px rgba(95, 120, 152, 0.22);
+}
+
+.doughnut-shell .w3-select:disabled {
+  background-color: #eef2f7;
+  color: #7b8a9d;
+}
+
+.doughnut-main {
+  grid-area: main;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doughnut-shell--panel-collapsed {
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  grid-template-areas: "left main";
+}
+
+.doughnut-shell--panel-minimized {
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) 58px;
+  grid-template-areas: "left main panel";
+}
+
+.doughnut-main .chart-grid {
+  padding: 0;
+  gap: 14px;
+}
+
+.doughnut-explainer {
+  grid-area: panel;
+  position: relative;
+  background: var(--doughnut-panel-bg);
+  border: 1px solid var(--doughnut-panel-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(33, 52, 75, 0.1);
+  padding: 12px 13px;
+  color: var(--doughnut-panel-text);
+  width: 100%;
+}
+
+.doughnut-explainer.doughnut-explainer--minimized {
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  padding: 6px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  justify-self: end;
+}
+
+.doughnut-explainer-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(95, 120, 152, 0.35);
+}
+
+.doughnut-explainer.doughnut-explainer--minimized .doughnut-explainer-header {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
+.doughnut-explainer-body {
+  display: block;
+  margin-top: 10px;
+}
+
+.doughnut-explainer-body[hidden] {
+  display: none !important;
+}
+
+.doughnut-explainer-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--doughnut-card-title);
+  flex: 1;
+}
+
+.doughnut-explainer.doughnut-explainer--minimized .doughnut-explainer-title {
+  display: none;
+}
+
+.doughnut-explainer.doughnut-explainer--minimized .doughnut-panel-toggle {
+  margin: 0;
+}
+
+.doughnut-explainer.doughnut-explainer--minimized .doughnut-explainer-body {
+  display: none !important;
+}
+
+.doughnut-explainer-text {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--doughnut-panel-text);
+  line-height: 1.5;
+}
+
+.doughnut-explainer-text:last-child {
+  margin-bottom: 0;
+}
+
+.doughnut-main .chart-container {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.doughnut-main .doughnut-chart-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.doughnut-main .chart-container h3 {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.3;
+  margin: 0;
+  text-align: center;
+}
+
+.doughnut-main .chart-container p {
+  margin: 0;
+  font-size: 1.02rem;
+  color: #4b5b6d;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.doughnut-main .chart-container .chart-wrapper {
+  margin-top: 0.55rem;
+}
+
+@media (max-width: 1250px) {
+  .doughnut-shell {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(240px, 300px);
+    grid-template-areas: "left main panel";
+  }
+
+  .doughnut-shell--panel-collapsed {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    grid-template-areas: "left main";
+  }
+
+  .doughnut-shell--panel-minimized {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) 58px;
+    grid-template-areas: "left main panel";
+  }
+}
+
+@media (max-width: 992px) {
+  .doughnut-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "main"
+      "panel";
+    gap: 14px;
+  }
+
+  .doughnut-shell--panel-collapsed,
+  .doughnut-shell--panel-minimized {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "main"
+      "panel";
+  }
+
+  .doughnut-explainer.doughnut-explainer--minimized {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    border-radius: 10px;
+    padding: 12px 13px;
+    justify-self: stretch;
+    align-self: stretch;
+  }
+
+  .doughnut-explainer.doughnut-explainer--minimized .doughnut-explainer-header {
+    display: flex;
+    border-bottom: 1px solid rgba(95, 120, 152, 0.35);
+    padding-bottom: 8px;
+  }
+
+  .doughnut-explainer.doughnut-explainer--minimized .doughnut-explainer-title {
+    display: block;
+  }
+}
+</style>

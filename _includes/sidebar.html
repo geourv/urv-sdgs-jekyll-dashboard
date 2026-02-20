@@ -28,20 +28,37 @@ We normalize by also building a "no .html" version.
 {%- comment -%}
 Dropdown group: include both variants (.html and trailing slash) to be safe.
 {%- endcomment -%}
-{% assign explore_urls = "/pages/wordcloud.html|/pages/wordcloud/|/pages/faculty-wordcloud.html|/pages/faculty-wordcloud/|/pages/degree-wordcloud.html|/pages/degree-wordcloud/|/pages/faculty-doughnut.html|/pages/faculty-doughnut/|/pages/degree-barchart.html|/pages/degree-barchart/|/pages/course-details.html|/pages/course-details/" | split: "|" %}
+{% assign explore_urls = "/pages/wordcloud.html|/pages/wordcloud/|/pages/faculty-wordcloud.html|/pages/faculty-wordcloud/|/pages/degree-wordcloud.html|/pages/degree-wordcloud/|/pages/faculty-doughnut.html|/pages/faculty-doughnut/|/pages/course-details.html|/pages/course-details/" | split: "|" %}
 {% assign explore_active = false %}
 {% if explore_urls contains current_url or explore_urls contains current_nohtml %}
   {% assign explore_active = true %}
 {% endif %}
+{% assign ui_lang = page.lang | default: site.lang | default: "ca" %}
+{% assign sidebar_brand_line_1 = "Els ODS" %}
+{% assign sidebar_brand_line_2 = "als ensenyaments" %}
+{% assign sidebar_brand_line_3 = "de la URV" %}
+{% if ui_lang == "es" %}
+  {% assign sidebar_brand_line_1 = "Los ODS" %}
+  {% assign sidebar_brand_line_2 = "en las enseñanzas" %}
+  {% assign sidebar_brand_line_3 = "de la URV" %}
+{% elsif ui_lang == "en" %}
+  {% assign sidebar_brand_line_1 = "The SDGs" %}
+  {% assign sidebar_brand_line_2 = "in URV degree" %}
+  {% assign sidebar_brand_line_3 = "programs" %}
+{% endif %}
 
-<nav class="w3-sidebar w3-collapse site-sidebar" style="z-index:1001;width:300px;" id="mySidebar" aria-label="Navegació lateral">
+<nav class="w3-sidebar w3-collapse site-sidebar" style="z-index:1001;" id="mySidebar" aria-label="Navegació lateral">
 
   <div class="w3-container w3-row">
     <div class="w3-col s4">
       <img src="{{ '/assets/logos/edited/cat/cat_ods_logo_cut.png' | relative_url }}" class="w3-circle logo-img" style="width:72px" alt="Logotip ODS">
     </div>
     <div class="w3-col s8 w3-bar site-sidebar-brand">
-      <span class="site-sidebar-brand-text">Els ODS <br> als ensenyaments <br>de la URV</span>
+      <span class="site-sidebar-brand-text" lang="{{ ui_lang }}">
+        <span class="site-sidebar-brand-line">{{ sidebar_brand_line_1 }}</span>
+        <span class="site-sidebar-brand-line">{{ sidebar_brand_line_2 }}</span>
+        <span class="site-sidebar-brand-line">{{ sidebar_brand_line_3 }}</span>
+      </span>
     </div>
   </div>
 
@@ -122,18 +139,6 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
             <i class="fa fa-circle fa-stack-1x" style="color:#fff; font-size:0.70em;"></i>
           </span>
           Gràfics d'anell
-        </a>
-
-        {% assign link = '/pages/degree-barchart.html' %}
-        {% assign link_nohtml = link | remove: '.html' %}
-        {% assign link_nohtml_slash = link_nohtml | append: '/' %}
-        {% assign is_active = false %}
-        {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
-          {% assign is_active = true %}
-        {% endif %}
-        <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
-          <i class="fa fa-bar-chart fa-fw" aria-hidden="true" title="Gràfics de barres"></i>
-          Gràfics de barres
         </a>
 
         {% assign link = '/pages/course-details.html' %}

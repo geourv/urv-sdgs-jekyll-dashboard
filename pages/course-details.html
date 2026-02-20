@@ -13,6 +13,138 @@ title: "ODS per assignatura"
 lang: ca
 ---
 
+<style>
+.course-controls {
+  display: block;
+  margin: 0.55rem 0 0.8rem;
+}
+
+.course-card {
+  background: var(--site-surface-2, #e8eff7);
+  border: 1px solid var(--site-widget-border, #d8e1eb);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(33, 52, 75, 0.1);
+  padding: 14px 14px 12px;
+}
+
+.course-control-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: end;
+}
+
+.course-control-item {
+  min-width: 0;
+}
+
+.course-field-label {
+  display: block;
+  margin: 0 0 0.24rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--site-text, #1f2a36);
+}
+
+.course-control-item .selector-container {
+  margin: 0;
+  gap: 8px;
+}
+
+.course-control-item .selector-box {
+  width: 100%;
+  max-width: none !important;
+  margin: 0;
+}
+
+.course-control-item .w3-select {
+  width: 100%;
+  min-width: 0;
+  background-color: #fff;
+  color: #111;
+  border: 1px solid #c4d0dc !important;
+  border-radius: 6px;
+  padding: 10px 36px 10px 12px;
+  min-height: 42px;
+  font-size: 1rem;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.course-control-item .w3-select:focus {
+  background-color: #f7fbff;
+  border-color: var(--site-accent, #5f7898) !important;
+  box-shadow: 0 0 0 2px rgba(95, 120, 152, 0.22);
+}
+
+.course-control-item .w3-select:disabled {
+  background-color: #eef2f7;
+  color: #7b8a9d;
+}
+
+#degree-info-container,
+#courses-table-container {
+  width: 100%;
+}
+
+#courses-table-container {
+  overflow-x: auto;
+}
+
+.course-toggle-col {
+  width: 64px;
+  text-align: center;
+}
+
+.course-toggle-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.course-row-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--site-accent-dark, #334457);
+  background: var(--site-accent, #3f536b);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.course-row-toggle:hover,
+.course-row-toggle:focus-visible {
+  background: var(--site-accent-dark, #334457);
+}
+
+.course-row-toggle:focus-visible {
+  outline: 2px solid rgba(63, 83, 107, 0.28);
+  outline-offset: 2px;
+}
+
+.course-row-toggle-icon {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+}
+
+.course-row-toggle[aria-expanded="true"] .course-row-toggle-icon {
+  transform: rotate(45deg);
+}
+
+@media (max-width: 768px) {
+  .course-control-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
 <!-- Header -->
   <header class="w3-container" style="padding-top:22px">
   <h5><b><i class="fa fa-eye"></i> Una primera ullada &gt; ODS per assignatura</b></h5>
@@ -27,27 +159,68 @@ lang: ca
       no necessàriament apareixen explicitats a les guies docents.</p>
 
     <!-- Selectors (homogeneous with other visualizations) -->
-    <div class="selector-container">
-      <div class="selector-box">
-        <strong>Facultat/Escola:</strong>
-        <select id="faculty-select" class="w3-select w3-border" onchange="updateDegreeSelect()" style="margin-top:0.25rem;">
-          <option value="">-- Selecciona una Facultat/Escola --</option>
-        </select>
-      </div>
-      <div class="selector-box">
-        <strong>Ensenyament:</strong>
-        <select id="degree-select" class="w3-select w3-border" onchange="updateCourseSelect()" disabled style="margin-top:0.25rem;">
-          <option value="" selected disabled>Selecciona…</option>
-        </select>
-      </div>
+    <div class="course-controls">
+      <section class="course-card" aria-label="Filtres d'ODS per assignatura">
+        <div class="course-control-grid">
+          <div class="course-control-item">
+            <label for="faculty-select" class="course-field-label">Centre</label>
+            <div class="selector-container">
+              <div class="selector-box">
+                <select id="faculty-select" class="w3-select w3-border">
+                  <option value="">-- Selecciona un centre --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-control-item">
+            <label for="degree-select" class="course-field-label">Ensenyament</label>
+            <div class="selector-container">
+              <div class="selector-box">
+                <select id="degree-select" class="w3-select w3-border" disabled>
+                  <option value="" selected disabled>Selecciona…</option>
+                  <option value="ALL">Tots</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-control-item">
+            <label for="course-system-select" class="course-field-label">Sistema de classificació</label>
+            <div class="selector-container">
+              <div class="selector-box">
+                <select id="course-system-select" class="w3-select w3-border" disabled>
+                  <option value="">Carregant sistemes...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-control-item">
+            <label for="course-section-select" class="course-field-label">Secció analitzada</label>
+            <div class="selector-container">
+              <div class="selector-box">
+                <select id="course-section-select" class="w3-select w3-border" disabled>
+                  <option value="">Carregant seccions...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
+
+    <p id="course-details-status" class="w3-small" hidden></p>
 
     <!-- Teaching Information -->
     <div id="degree-info-container" class="degree-info" style="display: none;">
       <h3 id="degree-title"></h3>
-      <p><strong>Facultat:</strong> <span id="degree-faculty"></span></p>
-      <p><strong>Any:</strong> <span id="degree-year"></span></p>
+      <p><strong>Centre:</strong> <span id="degree-faculty"></span></p>
+      <p><strong>Cursos acadèmics:</strong> <span id="academic-years"></span></p>
       <p><strong>Total d'assignatures:</strong> <span id="total-courses"></span></p>
+      <p><strong>Assignatures amb ODS:</strong> <span id="sdg-courses"></span></p>
+      <p><strong>Cobertura:</strong> <span id="sdg-ratio"></span></p>
+      <p><strong>Anàlisi aplicada:</strong> <span id="analysis-summary"></span></p>
     </div>
 
     <!-- Courses Table -->
@@ -59,8 +232,9 @@ lang: ca
             <th>Assignatura</th>
             <th>ODS identificats</th>
             <th>Crèdits</th>
-            <th>Curs</th>
+            <th>Any acadèmic</th>
             <th>Quadrimestre</th>
+            <th class="course-toggle-col">Detall</th>
           </tr>
         </thead>
         <tbody id="courses-table-body">
@@ -70,7 +244,6 @@ lang: ca
   </div>
 
 <script>
-// SDG Definitions
 const sdgDefinitions = {
   "ODS-01": "Fi de la pobresa",
   "ODS-02": "Fam zero",
@@ -91,7 +264,6 @@ const sdgDefinitions = {
   "ODS-17": "Aliança per assolir els objectius"
 };
 
-// SDG Colors
 const sdgColors = {
   "ODS-01": "#e5243b",
   "ODS-02": "#dda63a",
@@ -112,387 +284,776 @@ const sdgColors = {
   "ODS-17": "#19486a"
 };
 
-// Course Year Order
-const courseYearOrder = {
-  "Primer curs": 1,
-  "Segon curs": 2,
-  "Tercer curs": 3,
-  "Quart curs": 4,
-  "Cinquè curs": 5,
-  "Sisè curs": 6,
-  "Optatives": 7
+const SYSTEM_LABEL_OVERRIDES = {
+  "sys:any": "Qualsevol sistema (Unió)",
+  "sys:all": "Tots els sistemes (Intersecció)",
+  "sys:auckland": "Auckland",
+  "sys:aurora": "Aurora",
+  "sys:elsevier": "Elsevier",
+  "ens:equal": "Ensemble equal",
+  "ens:third": "Ensemble third",
+  "ens:triple": "Ensemble triple",
+  "sys:sdgo": "SDGO",
+  "sys:sdsn": "SDSN",
+  "sys:siris": "SIRIS"
 };
 
-// Function to transform SDG nomenclature to ODS
-function transformSDGToODS(sdgArray) {
-  if (!sdgArray || !sdgArray[0]) return [];
-  return sdgArray[0].map(sdg => sdg.replace('SDG-', 'ODS-'));
-}
+const SECTION_LABEL_OVERRIDES = {
+  "sec:any": "Totes les seccions (Unió)",
+  "sec:all": "Coincidència de totes les seccions (Intersecció)",
+  "sec:competences": "Competències",
+  "sec:course_info": "Informació de l'assignatura",
+  "sec:references": "Referències"
+};
 
-// Global variable to store data
-let facultiesData = [];
-let selectedFaculty = '';
-let selectedDegree = '';
-
-// Default selection (used across visualization pages)
+const DEFAULT_SYSTEM_ID = "sys:any";
+const DEFAULT_SECTION_ID = "sec:any";
 const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
+      "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
+    ]
+      .map((value) => String(value || "").trim().replace(/\/+$/, ""))
+      .filter(Boolean)
+  )
+);
 
-// Function to capitalize the first letter of a string
-function capitalizeFirstLetter(str) {
-  if (!str) return str;
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+const PERIOD_ORDER = {
+  "Primer quadrimestre": 1,
+  "Segon quadrimestre": 2,
+  "Anual": 3
+};
+
+const facultySelect = document.getElementById("faculty-select");
+const degreeSelect = document.getElementById("degree-select");
+const systemSelect = document.getElementById("course-system-select");
+const sectionSelect = document.getElementById("course-section-select");
+const statusEl = document.getElementById("course-details-status");
+const degreeInfoContainer = document.getElementById("degree-info-container");
+const degreeTitleEl = document.getElementById("degree-title");
+const degreeFacultyEl = document.getElementById("degree-faculty");
+const academicYearsEl = document.getElementById("academic-years");
+const totalCoursesEl = document.getElementById("total-courses");
+const sdgCoursesEl = document.getElementById("sdg-courses");
+const sdgRatioEl = document.getElementById("sdg-ratio");
+const analysisSummaryEl = document.getElementById("analysis-summary");
+const tableContainer = document.getElementById("courses-table-container");
+const tableBody = document.getElementById("courses-table-body");
+
+const state = {
+  apiBase: "",
+  apiVersion: "",
+  centres: [],
+  centreByCode: new Map(),
+  programmesByCentreCode: new Map(),
+  programmeByKey: new Map(),
+  systemOptions: [],
+  sectionOptions: [],
+  programmeCache: new Map(),
+  courseDetailCache: new Map(),
+  renderToken: 0
+};
+
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
 }
 
-// Function to load data from JSON
-async function loadData() {
-  try {
-    const response = await fetch('../data/urv-sdgs.json');
-    if (!response.ok) throw new Error('Error al cargar los datos');
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-    const data = await response.json();
+function normalizeSystemId(systemId) {
+  if (systemId === "ens:equal") return "sys:ensemble_equal";
+  if (systemId === "ens:third") return "sys:ensemble_third";
+  if (systemId === "ens:triple") return "sys:ensemble_triple";
+  return String(systemId || "");
+}
 
-    // Normalizar la estructura de datos
-    facultiesData = data.map(faculty => ({
-      ...faculty,
-      degrees: faculty.degrees.map(degree => ({
-        ...degree,
-        courses: degree.courses.map(course => ({
-          ...course,
-          // Asegurar que siempre hay arrays para sdg y features
-          sdg: course.sdg || [[]],
-          features: course.features || [[]]
-        }))
-      }))
-    }));
+function normalizeSdgCodeToOds(code) {
+  return String(code || "").replace(/^SDG-/, "ODS-");
+}
 
-    // Solo inicializar selectores si no hay selección previa
-    if (!selectedFaculty) {
-      initSelectors();
+function programmeKey(centreCode, programmeCode) {
+  return `${String(centreCode || "")}::${String(programmeCode || "")}`;
+}
+
+function addOption(selectEl, value, label) {
+  const option = document.createElement("option");
+  option.value = String(value || "");
+  option.textContent = normalizeWhitespace(label);
+  selectEl.appendChild(option);
+}
+
+function joinUrl(...parts) {
+  return parts
+    .filter((part) => part != null && String(part).trim() !== "")
+    .map((part, index) => {
+      const chunk = String(part).trim();
+      if (index === 0) return chunk.replace(/\/+$/, "");
+      return chunk.replace(/^\/+/, "");
+    })
+    .join("/");
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url, { cache: "no-cache" });
+  if (!response.ok) throw new Error(`HTTP ${response.status} (${url})`);
+  return response.json();
+}
+
+async function fetchApiJson(relativePath) {
+  return fetchJson(joinUrl(state.apiBase, relativePath));
+}
+
+async function resolveApiBaseAndVersion() {
+  let lastError = null;
+  for (const base of API_BASE_CANDIDATES) {
+    try {
+      const versions = await fetchJson(joinUrl(base, "versions.json"));
+      const latest = normalizeWhitespace(versions?.latest);
+      if (!latest) throw new Error("versions.json sense camp latest");
+      state.apiBase = base;
+      state.apiVersion = latest;
+      return;
+    } catch (err) {
+      lastError = err;
     }
-  } catch (error) {
-    console.error('Error:', error);
-    throw error;
   }
+  throw lastError || new Error("No s'ha pogut resoldre l'API.");
 }
 
-// Function to initialize selectors
-function initSelectors() {
-  // Populate the faculty selector
-  const facultySelect = document.getElementById('faculty-select');
+function readSharedFilters() {
+  const fallback = {
+    centreCode: "",
+    programmeKey: "",
+    systemId: DEFAULT_SYSTEM_ID,
+    sectionId: DEFAULT_SECTION_ID
+  };
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.read !== "function") return fallback;
+  const raw = store.read() || {};
+  return {
+    centreCode: String(raw.centreCode || ""),
+    programmeKey: String(raw.programmeKey || ""),
+    systemId: normalizeSystemId(String(raw.systemId || DEFAULT_SYSTEM_ID)) || DEFAULT_SYSTEM_ID,
+    sectionId: String(raw.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID
+  };
+}
 
-  // Sort faculties alphabetically
-  facultiesData.sort((a, b) => a.faculty_school_name.localeCompare(b.faculty_school_name));
+function writeSharedFilters(patch) {
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.write !== "function") return null;
+  const payload = { ...(patch || {}) };
+  if (Object.prototype.hasOwnProperty.call(payload, "systemId")) {
+    payload.systemId = normalizeSystemId(payload.systemId) || DEFAULT_SYSTEM_ID;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "sectionId")) {
+    payload.sectionId = String(payload.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID;
+  }
+  return store.write(payload);
+}
 
-  facultySelect.innerHTML = '<option value="">-- Selecciona una Facultat/Escola --</option>';
-  facultiesData.forEach(faculty => {
-    const option = document.createElement('option');
-    option.value = faculty.faculty_school_name;
-    option.textContent = faculty.faculty_school_name;
-    facultySelect.appendChild(option);
+function setStatus(message, isError) {
+  const normalized = normalizeWhitespace(message);
+  statusEl.textContent = normalized;
+  statusEl.hidden = normalized.length === 0;
+  statusEl.style.color = (isError && normalized) ? "#c0392b" : "#4f5f70";
+}
+
+function setControlsEnabled(enabled) {
+  facultySelect.disabled = !enabled;
+  degreeSelect.disabled = !enabled || !facultySelect.value;
+  systemSelect.disabled = !enabled;
+  sectionSelect.disabled = !enabled;
+}
+
+function getSelectedCentreCode() {
+  return String(facultySelect.value || "");
+}
+
+function getSelectedProgrammeKey() {
+  return String(degreeSelect.value || "");
+}
+
+function getSelectedSystemId() {
+  return normalizeSystemId(String(systemSelect.value || DEFAULT_SYSTEM_ID)) || DEFAULT_SYSTEM_ID;
+}
+
+function getSelectedSectionId() {
+  return String(sectionSelect.value || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID;
+}
+
+function getSelectedOptionLabel(selectEl) {
+  if (!selectEl || selectEl.selectedIndex < 0) return "";
+  return normalizeWhitespace(selectEl.options[selectEl.selectedIndex]?.textContent || "");
+}
+
+function persistSharedFiltersFromControls() {
+  writeSharedFilters({
+    centreCode: getSelectedCentreCode(),
+    programmeKey: getSelectedProgrammeKey(),
+    systemId: getSelectedSystemId(),
+    sectionId: getSelectedSectionId()
+  });
+}
+
+async function loadIndexes() {
+  const prefix = state.apiVersion;
+  const [centres, programmes, systemsJson, sectionsJson] = await Promise.all([
+    fetchApiJson(`${prefix}/index/centres.json`),
+    fetchApiJson(`${prefix}/index/programmes.json`),
+    fetchApiJson(`${prefix}/index/systems.json`),
+    fetchApiJson(`${prefix}/index/sections.json`)
+  ]);
+
+  state.centres = (Array.isArray(centres) ? centres : [])
+    .map((row) => ({
+      centre_code: String(row?.centre_code || ""),
+      centre_name: normalizeWhitespace(row?.centre_name),
+      json: String(row?.json || "")
+    }))
+    .filter((row) => row.centre_code && row.centre_name)
+    .sort((a, b) => a.centre_name.localeCompare(b.centre_name, "ca"));
+  state.centreByCode = new Map(state.centres.map((row) => [row.centre_code, row]));
+
+  state.programmesByCentreCode = new Map();
+  state.programmeByKey = new Map();
+  (Array.isArray(programmes) ? programmes : []).forEach((row) => {
+    const programme = {
+      centre_code: String(row?.centre_code || ""),
+      programme_code: String(row?.programme_code || ""),
+      programme_name: normalizeWhitespace(row?.programme_name),
+      json: String(row?.json || "")
+    };
+    if (!programme.centre_code || !programme.programme_code || !programme.programme_name || !programme.json) return;
+
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    if (!state.programmesByCentreCode.has(programme.centre_code)) {
+      state.programmesByCentreCode.set(programme.centre_code, []);
+    }
+    state.programmesByCentreCode.get(programme.centre_code).push(programme);
+    state.programmeByKey.set(key, programme);
   });
 
-  // Default to FTG (if present) to show an example without forcing a choice from scratch.
-  const ftgExists = facultiesData.some(f => f.faculty_school_name === DEFAULT_FACULTY_NAME);
-  if (ftgExists) {
-    facultySelect.value = DEFAULT_FACULTY_NAME;
-    updateDegreeSelect(true);
-  }
-}
-
-// Function to update the degree selector based on the selected faculty
-function updateDegreeSelect(applyDefaultDegree = false) {
-  const facultySelect = document.getElementById('faculty-select');
-  const degreeSelect = document.getElementById('degree-select');
-  selectedFaculty = facultySelect.value;
-
-  degreeSelect.innerHTML = '<option value="" selected disabled>Selecciona…</option>';
-  degreeSelect.disabled = !selectedFaculty;
-
-  if (selectedFaculty) {
-    const selectedFacultyData = facultiesData.find(faculty => faculty.faculty_school_name === selectedFaculty);
-
-    // Sort degrees alphabetically
-    selectedFacultyData.degrees.sort((a, b) => a.degree_name.localeCompare(b.degree_name));
-
-    selectedFacultyData.degrees.forEach(degree => {
-      const option = document.createElement('option');
-      option.value = degree.degree_name;
-      option.textContent = degree.degree_name;
-      degreeSelect.appendChild(option);
-    });
-
-    // Optional: select the first available degree to display something by default
-    if (applyDefaultDegree && selectedFacultyData.degrees.length > 0) {
-      degreeSelect.value = selectedFacultyData.degrees[0].degree_name;
-      selectedDegree = degreeSelect.value;
-      updateCourseSelect();
-      return;
-    }
+  for (const [centreCode, items] of state.programmesByCentreCode.entries()) {
+    items.sort((a, b) => a.programme_name.localeCompare(b.programme_name, "ca"));
+    state.programmesByCentreCode.set(centreCode, items);
   }
 
-  // Clear information
-  resetUI();
+  state.systemOptions = Array.isArray(systemsJson?.system_options) ? systemsJson.system_options : [];
+  state.sectionOptions = Array.isArray(sectionsJson?.section_options) ? sectionsJson.section_options : [];
 }
 
-// Function to update the course selector based on the selected degree
-function updateCourseSelect() {
-  const degreeSelect = document.getElementById('degree-select');
-  selectedDegree = degreeSelect.value;
+function populateFacultySelect(selectedCentreCode) {
+  facultySelect.innerHTML = "";
+  addOption(facultySelect, "", "-- Selecciona un centre --");
+  state.centres.forEach((centre) => addOption(facultySelect, centre.centre_code, centre.centre_name));
 
-  // Mantener visible el contenedor de la tabla
-  const tableContainer = document.getElementById('courses-table-container');
-  tableContainer.style.display = 'block';
-
-  if (selectedFaculty && selectedDegree) {
-    const facultyData = facultiesData.find(f => f.faculty_school_name === selectedFaculty);
-    const degreeData = facultyData.degrees.find(d => d.degree_name === selectedDegree);
-
-    if (degreeData && degreeData.courses) {
-      // Mostrar degree information
-      document.getElementById('degree-info-container').style.display = 'block';
-      document.getElementById('degree-title').textContent = selectedDegree;
-      document.getElementById('degree-faculty').textContent = selectedFaculty;
-      document.getElementById('degree-year').textContent = degreeData.degree_year || 'No disponible';
-      document.getElementById('total-courses').textContent = degreeData.courses.length;
-
-      // Add new fields
-      const degreeInfoContainer = document.getElementById('degree-info-container');
-
-      // Check if elements already exist to avoid duplication
-      if (!document.getElementById('sdg-courses')) {
-        const sdgCoursesP = document.createElement('p');
-        sdgCoursesP.innerHTML = '<strong>Assignatures amb ODS:</strong> <span id="sdg-courses"></span>';
-        degreeInfoContainer.appendChild(sdgCoursesP);
-      }
-
-      if (!document.getElementById('sdg-ratio')) {
-        const sdgRatioP = document.createElement('p');
-        sdgRatioP.innerHTML = '<strong>Ratio d\'assignatures amb ODS per ensenyament:</strong> <span id="sdg-ratio"></span>';
-        degreeInfoContainer.appendChild(sdgRatioP);
-      }
-
-      // Update values
-      document.getElementById('sdg-courses').textContent = degreeData.sdg_courses_degree || 'No disponible';
-      document.getElementById('sdg-ratio').textContent = degreeData.sdg_ratio_degree ?
-        `${degreeData.sdg_ratio_degree}%` : 'No disponible';
-
-      // Show courses table - ya no necesitamos cambiar la visibilidad aquí
-      showCoursesTable(degreeData.courses);
-    }
-  }
+  const selected = String(selectedCentreCode || "");
+  facultySelect.value = state.centreByCode.has(selected) ? selected : "";
 }
 
-// Function to show courses table
-function showCoursesTable(courses) {
-  const tableContainer = document.getElementById('courses-table-container');
-  const tableBody = document.getElementById('courses-table-body');
+function populateDegreeSelect(centreCode, selectedProgrammeKey) {
+  degreeSelect.innerHTML = "";
 
-  tableBody.innerHTML = '';
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Selecciona…";
+  placeholder.disabled = true;
+  degreeSelect.appendChild(placeholder);
 
-  // Verificar si hay datos
-  if (!courses || courses.length === 0) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="5" class="w3-center w3-padding">
-          No hay asignaturas disponibles
-        </td>
-      </tr>
-    `;
+  const allOption = document.createElement("option");
+  allOption.value = "ALL";
+  allOption.textContent = "Tots";
+  degreeSelect.appendChild(allOption);
+
+  const centreKey = String(centreCode || "");
+  const programmes = state.programmesByCentreCode.get(centreKey) || [];
+  const validProgrammeKeys = new Set();
+
+  programmes.forEach((programme) => {
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    validProgrammeKeys.add(key);
+    addOption(degreeSelect, key, programme.programme_name);
+  });
+
+  degreeSelect.disabled = !centreKey;
+  if (!centreKey) {
+    degreeSelect.value = "";
     return;
   }
 
-  // Ordenar las asignaturas
-  courses.sort((a, b) => {
-    const aOrder = courseYearOrder[a.year] || 8;
-    const bOrder = courseYearOrder[b.year] || 8;
-    if (aOrder !== bOrder) return aOrder - bOrder;
-    return a.course_name.localeCompare(b.course_name);
+  const selected = String(selectedProgrammeKey || "");
+  if (selected === "ALL") {
+    degreeSelect.value = "ALL";
+  } else {
+    degreeSelect.value = validProgrammeKeys.has(selected) ? selected : "";
+  }
+}
+
+function populateSystemSelect(selectedSystemId) {
+  systemSelect.innerHTML = "";
+  state.systemOptions.forEach((row) => {
+    const id = String(row?.id || "");
+    const label = SYSTEM_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
+    addOption(systemSelect, id, label);
   });
 
-  // Crear las filas de la tabla
-  courses.forEach(course => {
-    // Fila principal
-    const row = document.createElement('tr');
-    row.className = 'course-row';
-    row.setAttribute('data-course', JSON.stringify(course));
-    row.onclick = function() { toggleCourseDetails(this); };
+  const selected = normalizeSystemId(selectedSystemId);
+  const resolvedOption = state.systemOptions.find((row) => {
+    return normalizeSystemId(String(row?.id || "")) === selected;
+  });
+  const fallback = state.systemOptions[0] ? String(state.systemOptions[0].id || "") : "";
+  systemSelect.value = resolvedOption ? String(resolvedOption?.id || "") : fallback;
+}
 
-    // Nombre de la asignatura (asegurar mayúscula inicial)
-    const nameCell = document.createElement('td');
-    nameCell.textContent = capitalizeFirstLetter(course.course_name || 'Nombre no disponible');
+function populateSectionSelect(selectedSectionId) {
+  sectionSelect.innerHTML = "";
+  state.sectionOptions.forEach((row) => {
+    const id = String(row?.id || "");
+    const label = SECTION_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
+    addOption(sectionSelect, id, label);
+  });
 
-    // ODS identificados
-    const sdgsCell = document.createElement('td');
-    if (course.sdg && course.sdg.length > 0 && course.sdg[0].length > 0) {
-      const odsList = transformSDGToODS(course.sdg);
-      odsList.forEach(ods => {
-        const sdgSpan = document.createElement('span');
-        sdgSpan.className = 'course-sdg';
-        sdgSpan.title = `${ods}: ${sdgDefinitions[ods]}`;
-        sdgSpan.style.backgroundColor = sdgColors[ods];
-        sdgsCell.appendChild(sdgSpan);
-      });
-    } else {
-      sdgsCell.textContent = 'No té ODS associats';
-    }
+  const selected = String(selectedSectionId || "");
+  const fallback = state.sectionOptions[0] ? String(state.sectionOptions[0].id || "") : "";
+  const exists = state.sectionOptions.some((row) => String(row?.id || "") === selected);
+  sectionSelect.value = exists ? selected : fallback;
+}
 
-    // Créditos
-    const creditsCell = document.createElement('td');
-    creditsCell.textContent = course.credits || 'No disponible';
+async function getProgrammeDetail(programmeKeyValue) {
+  const key = String(programmeKeyValue || "");
+  if (!key) throw new Error("Ensenyament no seleccionat");
+  if (state.programmeCache.has(key)) return state.programmeCache.get(key);
 
-    // Curso
-    const yearCell = document.createElement('td');
-    yearCell.textContent = course.year || 'No disponible';
+  const programme = state.programmeByKey.get(key);
+  if (!programme?.json) throw new Error(`Ensenyament sense fitxer de detall: ${key}`);
 
-    // Cuatrimestre
-    const periodCell = document.createElement('td');
-    periodCell.textContent = course.course_period || 'No disponible';
+  const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
+  state.programmeCache.set(key, detail);
+  return detail;
+}
 
-    // Añadir celdas a la fila
+async function getCourseDetail(courseDetailPath) {
+  const key = String(courseDetailPath || "");
+  if (!key) throw new Error("Curs sense ruta de detall");
+  if (state.courseDetailCache.has(key)) return state.courseDetailCache.get(key);
+
+  const detail = await fetchApiJson(`${state.apiVersion}/${key}`);
+  state.courseDetailCache.set(key, detail);
+  return detail;
+}
+
+function normalizeSdgSelection(value) {
+  const rawList = Array.isArray(value)
+    ? value
+    : (typeof value === "string" && value ? [value] : []);
+  return Array.from(new Set(rawList
+    .map((code) => normalizeSdgCodeToOds(code))
+    .filter((code) => /^ODS-\d{2}$/.test(code))
+  )).sort((a, b) => a.localeCompare(b, "ca"));
+}
+
+function extractCourseSdgs(course, systemId, sectionId) {
+  const raw = course?.sdg_compact?.[String(systemId || "")]?.[String(sectionId || "")];
+  return normalizeSdgSelection(raw);
+}
+
+function extractFeatureRows(courseDetail, systemId, sectionId) {
+  const rows = courseDetail?.by_set?.feature?.[String(systemId || "")]?.[String(sectionId || "")];
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row) => ({
+      feature: normalizeWhitespace(row?.feature),
+      n_hits: Number(row?.n_hits || 0)
+    }))
+    .filter((row) => row.feature && row.n_hits > 0)
+    .sort((a, b) => b.n_hits - a.n_hits || a.feature.localeCompare(b.feature, "ca"));
+}
+
+function formatPercent(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "0,0";
+  return parsed.toLocaleString("ca-ES", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+}
+
+function buildAcademicYearsLabel(courses) {
+  const years = Array.from(new Set(
+    (Array.isArray(courses) ? courses : [])
+      .map((course) => normalizeWhitespace(course?.academic_year))
+      .filter(Boolean)
+  ));
+  if (!years.length) return "No disponible";
+  years.sort((a, b) => b.localeCompare(a, "ca"));
+  return years.join(", ");
+}
+
+function resetUI(message) {
+  degreeInfoContainer.style.display = "none";
+  degreeTitleEl.textContent = "";
+  degreeFacultyEl.textContent = "";
+  academicYearsEl.textContent = "";
+  totalCoursesEl.textContent = "";
+  sdgCoursesEl.textContent = "";
+  sdgRatioEl.textContent = "";
+  analysisSummaryEl.textContent = "";
+
+  tableContainer.style.display = "block";
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="6" class="w3-center w3-padding">${escapeHtml(message)}</td>
+    </tr>
+  `;
+}
+
+function renderDegreeInfo(programmeDetail, courseRows) {
+  const nCourses = courseRows.length;
+  const nWithOds = courseRows.reduce((acc, course) => acc + (course.__ods.length > 0 ? 1 : 0), 0);
+  const coveragePct = nCourses > 0 ? (nWithOds * 100) / nCourses : 0;
+
+  degreeTitleEl.textContent = normalizeWhitespace(programmeDetail?.programme?.name || "Ensenyament");
+  degreeFacultyEl.textContent = normalizeWhitespace(programmeDetail?.centre?.name || "-");
+  academicYearsEl.textContent = buildAcademicYearsLabel(courseRows);
+  totalCoursesEl.textContent = String(nCourses);
+  sdgCoursesEl.textContent = `${nWithOds} de ${nCourses}`;
+  sdgRatioEl.textContent = `${formatPercent(coveragePct)}%`;
+  analysisSummaryEl.textContent = `${getSelectedOptionLabel(systemSelect)} · ${getSelectedOptionLabel(sectionSelect)}`;
+  degreeInfoContainer.style.display = "block";
+}
+
+function getAcademicYearSortValue(value) {
+  const text = String(value || "");
+  const match = text.match(/(\d{4})/);
+  return match ? Number(match[1]) : 0;
+}
+
+function createSdgSquares(odsCodes) {
+  if (!Array.isArray(odsCodes) || !odsCodes.length) return "No té ODS associats";
+  return odsCodes.map((ods) => {
+    const title = `${ods}: ${sdgDefinitions[ods] || ods}`;
+    const color = sdgColors[ods] || "#9aa7b5";
+    return `<span class="course-sdg" title="${escapeHtml(title)}" style="background-color:${escapeHtml(color)};"></span>`;
+  }).join("");
+}
+
+function createSdgLegendItems(odsCodes) {
+  if (!Array.isArray(odsCodes) || !odsCodes.length) return "No té ODS associats.";
+  return odsCodes.map((ods) => {
+    const color = sdgColors[ods] || "#9aa7b5";
+    const label = sdgDefinitions[ods] || ods;
+    return `
+      <div class="sdg-legend-item">
+        <div class="sdg-color" style="background-color:${escapeHtml(color)};"></div>
+        <span class="sdg-code">${escapeHtml(ods)}</span>
+        <span class="sdg-name">${escapeHtml(label)}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function createFeatureChips(features) {
+  if (!Array.isArray(features) || !features.length) {
+    return "No hi ha features detectades per aquest sistema i secció.";
+  }
+  return features.slice(0, 36).map((item) => {
+    const name = escapeHtml(item.feature);
+    const hits = Number(item.n_hits || 0);
+    return `<span class="feature-item" title="${hits} deteccions">${name} (${hits})</span>`;
+  }).join("");
+}
+
+function buildCourseDetailHtml(course, odsCodes, features, systemLabel, sectionLabel) {
+  const courseName = escapeHtml(normalizeWhitespace(course?.course_name || "Assignatura"));
+  const courseCode = escapeHtml(normalizeWhitespace(course?.course_code || "-"));
+  const credits = escapeHtml(normalizeWhitespace(course?.course_credits || "-"));
+  const courseType = escapeHtml(normalizeWhitespace(course?.course_type || "-"));
+  const coursePeriod = escapeHtml(normalizeWhitespace(course?.course_period || "-"));
+  const academicYear = escapeHtml(normalizeWhitespace(course?.academic_year || "-"));
+  const sourceSystem = escapeHtml(normalizeWhitespace(course?.source_system || "-"));
+  const courseUrl = normalizeWhitespace(course?.course_url);
+
+  let html = `
+    <div class="w3-container w3-padding">
+      <h4>${courseName}</h4>
+      <div class="w3-row">
+        <div class="w3-col m6">
+          <p><strong>Codi:</strong> ${courseCode}</p>
+          <p><strong>Crèdits:</strong> ${credits}</p>
+          <p><strong>Tipus:</strong> ${courseType}</p>
+        </div>
+        <div class="w3-col m6">
+          <p><strong>Any acadèmic:</strong> ${academicYear}</p>
+          <p><strong>Quadrimestre:</strong> ${coursePeriod}</p>
+          <p><strong>Font docent:</strong> ${sourceSystem}</p>
+        </div>
+      </div>
+  `;
+
+  if (courseUrl) {
+    html += `
+      <p><strong>Guia docent:</strong>
+      <a href="${escapeHtml(courseUrl)}" target="_blank" rel="noopener noreferrer">Veure document</a></p>
+    `;
+  }
+
+  html += `
+    <div class="w3-margin-top">
+      <strong>ODS identificats (${escapeHtml(systemLabel)} · ${escapeHtml(sectionLabel)}):</strong>
+      <div class="sdg-list">
+        ${createSdgLegendItems(odsCodes)}
+      </div>
+    </div>
+
+    <div class="w3-margin-top">
+      <strong>Features detectades:</strong>
+      <div class="feature-list">
+        ${createFeatureChips(features)}
+      </div>
+    </div>
+    </div>
+  `;
+
+  return html;
+}
+
+function syncCourseToggleButtonState(toggleBtn, isExpanded) {
+  if (!toggleBtn) return;
+  const expanded = Boolean(isExpanded);
+  const label = expanded ? "Oculta el detall de l'assignatura" : "Mostra el detall de l'assignatura";
+  toggleBtn.setAttribute("aria-expanded", String(expanded));
+  toggleBtn.setAttribute("aria-label", label);
+  toggleBtn.setAttribute("title", expanded ? "Oculta el detall" : "Mostra el detall");
+}
+
+async function toggleCourseDetails(detailsRow, detailsCell, course, analysisContext, toggleBtn) {
+  const currentlyVisible = detailsRow.style.display !== "none";
+  if (currentlyVisible) {
+    detailsRow.style.display = "none";
+    detailsCell.innerHTML = "";
+    syncCourseToggleButtonState(toggleBtn, false);
+    return;
+  }
+
+  detailsRow.style.display = "table-row";
+  syncCourseToggleButtonState(toggleBtn, true);
+  detailsCell.innerHTML = `
+    <div class="w3-container w3-padding">
+      <p>Carregant detall de l'assignatura...</p>
+    </div>
+  `;
+
+  try {
+    const courseDetail = await getCourseDetail(course.detail_json);
+    const features = extractFeatureRows(courseDetail, analysisContext.systemId, analysisContext.sectionId);
+    detailsCell.innerHTML = buildCourseDetailHtml(
+      course,
+      course.__ods,
+      features,
+      analysisContext.systemLabel,
+      analysisContext.sectionLabel
+    );
+  } catch (err) {
+    console.error(err);
+    detailsCell.innerHTML = `
+      <div class="w3-container w3-padding">
+        <p><strong>No s'ha pogut carregar el detall del curs.</strong></p>
+      </div>
+    `;
+  }
+}
+
+function showCoursesTable(courseRows, analysisContext) {
+  tableBody.innerHTML = "";
+  if (!Array.isArray(courseRows) || !courseRows.length) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="w3-center w3-padding">No hi ha assignatures disponibles per aquesta selecció.</td>
+      </tr>
+    `;
+    tableContainer.style.display = "block";
+    return;
+  }
+
+  const sorted = courseRows.slice().sort((a, b) => {
+    const yearDiff = getAcademicYearSortValue(b?.academic_year) - getAcademicYearSortValue(a?.academic_year);
+    if (yearDiff !== 0) return yearDiff;
+
+    const aPeriod = PERIOD_ORDER[normalizeWhitespace(a?.course_period)] || 99;
+    const bPeriod = PERIOD_ORDER[normalizeWhitespace(b?.course_period)] || 99;
+    if (aPeriod !== bPeriod) return aPeriod - bPeriod;
+
+    return normalizeWhitespace(a?.course_name).localeCompare(normalizeWhitespace(b?.course_name), "ca");
+  });
+
+  sorted.forEach((course) => {
+    const row = document.createElement("tr");
+    row.className = "course-row";
+
+    const nameCell = document.createElement("td");
+    nameCell.textContent = normalizeWhitespace(course?.course_name || "No disponible");
+
+    const sdgsCell = document.createElement("td");
+    sdgsCell.innerHTML = createSdgSquares(course.__ods);
+
+    const creditsCell = document.createElement("td");
+    creditsCell.textContent = normalizeWhitespace(course?.course_credits || "No disponible");
+
+    const academicYearCell = document.createElement("td");
+    academicYearCell.textContent = normalizeWhitespace(course?.academic_year || "No disponible");
+
+    const periodCell = document.createElement("td");
+    periodCell.textContent = normalizeWhitespace(course?.course_period || "No disponible");
+
+    const toggleCell = document.createElement("td");
+    toggleCell.className = "course-toggle-cell";
+    const toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.className = "course-row-toggle";
+    toggleBtn.innerHTML = `<span class="course-row-toggle-icon" aria-hidden="true">+</span>`;
+    syncCourseToggleButtonState(toggleBtn, false);
+    toggleCell.appendChild(toggleBtn);
+
     row.appendChild(nameCell);
     row.appendChild(sdgsCell);
     row.appendChild(creditsCell);
-    row.appendChild(yearCell);
+    row.appendChild(academicYearCell);
     row.appendChild(periodCell);
-
-    // Añadir fila a la tabla
+    row.appendChild(toggleCell);
     tableBody.appendChild(row);
 
-    // Fila de detalles (inicialmente oculta)
-    const detailsRow = document.createElement('tr');
-    detailsRow.className = 'course-details-row';
-    detailsRow.style.display = 'none';
+    const detailsRow = document.createElement("tr");
+    detailsRow.className = "course-details-row";
+    detailsRow.style.display = "none";
 
-    const detailsCell = document.createElement('td');
-    detailsCell.colSpan = 5;
-    detailsCell.className = 'course-details-cell';
+    const detailsCell = document.createElement("td");
+    detailsCell.colSpan = 6;
+    detailsCell.className = "course-details-cell";
     detailsRow.appendChild(detailsCell);
     tableBody.appendChild(detailsRow);
+
+    toggleBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleCourseDetails(detailsRow, detailsCell, course, analysisContext, toggleBtn);
+    });
+
+    row.addEventListener("click", () => {
+      toggleCourseDetails(detailsRow, detailsCell, course, analysisContext, toggleBtn);
+    });
   });
 
-  // Mostrar la tabla
-  tableContainer.style.display = 'block';
+  tableContainer.style.display = "block";
 }
 
-function toggleCourseDetails(row) {
-  const detailsRow = row.nextElementSibling;
-  const detailsCell = detailsRow.querySelector('.course-details-cell');
+async function renderCurrentSelection() {
+  const centreCode = getSelectedCentreCode();
+  const programmeKeyValue = getSelectedProgrammeKey();
 
-  if (detailsRow.style.display === 'none') {
-    const courseData = JSON.parse(row.getAttribute('data-course'));
+  if (!centreCode) {
+    resetUI("Selecciona un centre i un ensenyament per veure el detall per assignatura.");
+    setStatus("", false);
+    return;
+  }
 
-    // Construir el contenido de detalles de manera robusta
-    let detailsHTML = `
-      <div class="w3-container w3-padding">
-        <h4>${capitalizeFirstLetter(courseData.course_name || 'Nombre no disponible')}</h4>
-        <div class="w3-row">
-          <div class="w3-col m6">
-            <p><strong>Codi:</strong> ${courseData.course_code || 'No disponible'}</p>
-            <p><strong>Crèdits:</strong> ${courseData.credits || 'No disponible'}</p>
-            <p><strong>Modalitat:</strong> ${courseData.course_delivery_mode || 'No disponible'}</p>
-          </div>
-          <div class="w3-col m6">
-            <p><strong>Quadrimestre:</strong> ${courseData.course_period || 'No disponible'}</p>
-            <p><strong>Tipus:</strong> ${courseData.course_type || 'No disponible'}</p>
-            <p><strong>Curs:</strong> ${courseData.year || 'No disponible'}</p>
-          </div>
-        </div>
-    `;
+  if (!programmeKeyValue || programmeKeyValue === "ALL") {
+    resetUI("Selecciona un ensenyament per carregar la taula d'assignatures.");
+    setStatus("", false);
+    return;
+  }
 
-    // Añadir enlace a la guía docente si está disponible
-    if (courseData.course_url) {
-      detailsHTML += `
-        <p><strong>Guia docent:</strong> <a href="${courseData.course_url}" target="_blank">Veure guia docent</a></p>
-      `;
-    }
+  const token = ++state.renderToken;
+  setStatus("Carregant dades de l'ensenyament...");
 
-    // Añadir ODS identificados
-    detailsHTML += `
-      <div class="w3-margin-top">
-        <strong>ODS identificats:</strong>
-        <div class="sdg-list">
-    `;
+  try {
+    const programmeDetail = await getProgrammeDetail(programmeKeyValue);
+    if (token !== state.renderToken) return;
 
-    if (courseData.sdg && courseData.sdg[0] && courseData.sdg[0].length > 0) {
-      const odsList = transformSDGToODS(courseData.sdg);
-      detailsHTML += odsList.map(ods => `
-        <div class="sdg-legend-item">
-          <div class="sdg-color" style="background-color: ${sdgColors[ods]};"></div>
-          <span class="sdg-code">${ods}</span>
-          <span class="sdg-name">${sdgDefinitions[ods]}</span>
-        </div>
-      `).join('');
-    } else {
-      detailsHTML += 'No té ODS associats';
-    }
+    const systemId = getSelectedSystemId();
+    const sectionId = getSelectedSectionId();
+    const systemLabel = getSelectedOptionLabel(systemSelect);
+    const sectionLabel = getSelectedOptionLabel(sectionSelect);
 
-    detailsHTML += `</div></div>`;
+    const courses = Array.isArray(programmeDetail?.courses) ? programmeDetail.courses : [];
+    const courseRows = courses.map((course) => ({
+      ...course,
+      __ods: extractCourseSdgs(course, systemId, sectionId)
+    }));
 
-    // Añadir palabras clave si están disponibles
-    if (courseData.features && courseData.features[0] && courseData.features[0].length > 0) {
-      detailsHTML += `
-        <div class="w3-margin-top">
-          <strong>Paraules clau (en anglès):</strong>
-          <div class="feature-list">
-            ${courseData.features[0].map(feature => `
-              <div class="feature-item">${feature}</div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    // Añadir descripción si está disponible
-    if (courseData.description) {
-      detailsHTML += `
-        <div class="w3-margin-top">
-          <strong>Descripció:</strong>
-          <p>${courseData.description}</p>
-        </div>
-      `;
-    }
-
-    // Añadir contenidos si están disponibles
-    if (courseData.contents) {
-      detailsHTML += `
-        <div class="w3-margin-top">
-          <strong>Continguts:</strong>
-          <p>${courseData.contents}</p>
-        </div>
-      `;
-    }
-
-    // Cerrar el contenedor
-    detailsHTML += `</div>`;
-
-    // Establecer el HTML en la celda de detalles
-    detailsCell.innerHTML = detailsHTML;
-    detailsRow.style.display = 'table-row';
-  } else {
-    detailsRow.style.display = 'none';
+    renderDegreeInfo(programmeDetail, courseRows);
+    showCoursesTable(courseRows, {
+      systemId,
+      sectionId,
+      systemLabel,
+      sectionLabel
+    });
+    setStatus("", false);
+  } catch (err) {
+    console.error(err);
+    resetUI("No s'han pogut carregar les assignatures d'aquest ensenyament.");
+    setStatus("Error carregant dades des de l'API.", true);
   }
 }
 
-// Function to reset the UI
-function resetUI() {
-  document.getElementById('degree-info-container').style.display = 'none';
+document.addEventListener("DOMContentLoaded", async () => {
+  setControlsEnabled(false);
+  resetUI("Inicialitzant dades...");
+  setStatus("Inicialitzant dades de l'API...");
 
-  // No ocultar el contenedor de la tabla, solo limpiarlo
-  const tableBody = document.getElementById('courses-table-body');
-  tableBody.innerHTML = '<tr><td colspan="5" class="w3-center w3-padding">Selecciona un ensenyament para ver las asignaturas</td></tr>';
+  try {
+    await resolveApiBaseAndVersion();
+    await loadIndexes();
 
-  // Clear new fields if they exist
-  if (document.getElementById('sdg-courses')) {
-    document.getElementById('sdg-courses').textContent = '';
+    const sharedFilters = readSharedFilters();
+    const defaultCentre = state.centres.find((centre) => centre.centre_name === DEFAULT_FACULTY_NAME);
+    const defaultCentreCode = defaultCentre?.centre_code || state.centres[0]?.centre_code || "";
+    const initialCentreCode = state.centreByCode.has(sharedFilters.centreCode)
+      ? sharedFilters.centreCode
+      : defaultCentreCode;
+    const initialProgramme = initialCentreCode ? sharedFilters.programmeKey : "";
+
+    populateFacultySelect(initialCentreCode);
+    populateDegreeSelect(initialCentreCode, initialProgramme);
+    populateSystemSelect(sharedFilters.systemId);
+    populateSectionSelect(sharedFilters.sectionId);
+    persistSharedFiltersFromControls();
+
+    setControlsEnabled(true);
+    await renderCurrentSelection();
+  } catch (err) {
+    console.error(err);
+    setControlsEnabled(false);
+    resetUI("No s'ha pogut inicialitzar la càrrega de dades.");
+    setStatus("Error inicialitzant l'API.", true);
   }
-  if (document.getElementById('sdg-ratio')) {
-    document.getElementById('sdg-ratio').textContent = '';
-  }
-}
 
-// Load data and create selectors
-document.addEventListener('DOMContentLoaded', function() {
-  // Load data from JSON
-  loadData();
+  facultySelect.addEventListener("change", async () => {
+    populateDegreeSelect(getSelectedCentreCode(), "");
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  });
+
+  degreeSelect.addEventListener("change", async () => {
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  });
+
+  systemSelect.addEventListener("change", async () => {
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  });
+
+  sectionSelect.addEventListener("change", async () => {
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  });
 });
 </script>

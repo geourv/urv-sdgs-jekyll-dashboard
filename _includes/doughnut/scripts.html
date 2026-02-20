@@ -1,0 +1,1237 @@
+<!--
+File: _includes/doughnut/scripts.html
+Purpose: Doughnut charts from the new URV SDGs API (centre/programme + system/section analysis).
+Related files:
+  - _includes/doughnut/interactive_layout.html
+  - pages/faculty-doughnut.html
+-->
+
+<script>
+const odsDefinitions = {
+  "ODS-01": "Fi de la pobresa",
+  "ODS-02": "Fam zero",
+  "ODS-03": "Salut i benestar",
+  "ODS-04": "Educació de qualitat",
+  "ODS-05": "Igualtat de gènere",
+  "ODS-06": "Aigua neta i sanejament",
+  "ODS-07": "Energia neta i assequible",
+  "ODS-08": "Treball digne i creixement econòmic",
+  "ODS-09": "Indústria, innovació i infraestructura",
+  "ODS-10": "Reducció de les desigualtats",
+  "ODS-11": "Ciutats i comunitats sostenibles",
+  "ODS-12": "Producció i consum responsables",
+  "ODS-13": "Acció climàtica",
+  "ODS-14": "Vida submarina",
+  "ODS-15": "Vida d'ecosistemes terrestres",
+  "ODS-16": "Pau, justícia i institucions sòlides",
+  "ODS-17": "Aliança per assolir els objectius"
+};
+
+const odsColors = {
+  "ODS-01": "#e5243b",
+  "ODS-02": "#dda63a",
+  "ODS-03": "#4c9f38",
+  "ODS-04": "#c5192d",
+  "ODS-05": "#ff3a21",
+  "ODS-06": "#26bde2",
+  "ODS-07": "#fcc30b",
+  "ODS-08": "#a21942",
+  "ODS-09": "#fd6925",
+  "ODS-10": "#dd1367",
+  "ODS-11": "#fd9d24",
+  "ODS-12": "#bf8b2e",
+  "ODS-13": "#3f7e44",
+  "ODS-14": "#0a97d9",
+  "ODS-15": "#56c02b",
+  "ODS-16": "#00689d",
+  "ODS-17": "#19486a"
+};
+
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
+      "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
+    ]
+      .map((v) => String(v || "").trim().replace(/\/+$/, ""))
+      .filter(Boolean)
+  )
+);
+
+const DEFAULT_SYSTEM_ID = "sys:any";
+const DEFAULT_SECTION_ID = "sec:any";
+const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
+
+const SYSTEM_LABEL_OVERRIDES = {
+  "sys:any": "Qualsevol sistema (Unió)",
+  "sys:all": "Tots els sistemes (Intersecció)",
+  "sys:auckland": "Auckland",
+  "sys:aurora": "Aurora",
+  "sys:elsevier": "Elsevier",
+  "ens:equal": "Ensemble equal",
+  "ens:third": "Ensemble third",
+  "ens:triple": "Ensemble triple",
+  "sys:sdgo": "SDGO",
+  "sys:sdsn": "SDSN",
+  "sys:siris": "SIRIS"
+};
+
+const SECTION_LABEL_OVERRIDES = {
+  "sec:any": "Totes les seccions (Unió)",
+  "sec:all": "Coincidència de totes les seccions (Intersecció)",
+  "sec:competences": "Competències",
+  "sec:course_info": "Informació de l'assignatura",
+  "sec:references": "Referències"
+};
+
+const SYSTEM_EXPLANATIONS = {
+  "sys:any": "un ODS compta si apareix en qualsevol sistema; és la lectura més inclusiva i també la més sensible a falsos positius.",
+  "sys:all": "un ODS només compta si coincideix en tots els sistemes; és més restrictiu i redueix falsos positius.",
+  "sys:ensemble_equal": "s'aplica un model ensemble de consens que equilibra cobertura i precisió.",
+  "sys:ensemble_third": "s'aplica un model ensemble amb balanç intermedi entre sensibilitat i especificitat.",
+  "sys:ensemble_triple": "s'aplica un model ensemble més prudent, amb menys deteccions límit.",
+  "sys:auckland": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat.",
+  "sys:aurora": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat.",
+  "sys:elsevier": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat.",
+  "sys:sdgo": "s'aplica un únic sistema basat en paraules clau, generalment més liberal.",
+  "sys:sdsn": "s'aplica un únic sistema basat en paraules clau, generalment més liberal.",
+  "sys:siris": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat."
+};
+
+const SECTION_EXPLANATIONS = {
+  "sec:any": "es combinen totes les seccions de la guia docent; dona una visió global però més heterogènia.",
+  "sec:all": "només es mantenen deteccions comunes a totes les seccions; és un filtre més estricte.",
+  "sec:competences": "el focus és en competències i resultats d'aprenentatge; solen aparèixer termes transversals.",
+  "sec:course_info": "el focus és en títol, descripció i temari; acostuma a reflectir millor el contingut real del curs.",
+  "sec:references": "el focus és en bibliografia i referències; pot incorporar context documental no central."
+};
+
+const facultySelect = document.getElementById("faculty-select");
+const degreeSelect = document.getElementById("degree-select");
+const systemSelect = document.getElementById("doughnut-system-select");
+const sectionSelect = document.getElementById("doughnut-section-select");
+const doughnutShellEl = document.querySelector(".doughnut-shell");
+const chartContainer = document.getElementById("chart-container");
+const explainerPanelEl = document.getElementById("doughnut-explainer");
+const explainerBodyEl = document.getElementById("doughnut-explainer-body");
+const explainerTitleEl = document.getElementById("doughnut-explainer-title");
+const explainerScopeEl = document.getElementById("doughnut-explainer-scope");
+const explainerCoverageEl = document.getElementById("doughnut-explainer-coverage");
+const explainerSystemEl = document.getElementById("doughnut-explainer-system");
+const explainerSectionEl = document.getElementById("doughnut-explainer-section");
+const explainerNotesEl = document.getElementById("doughnut-explainer-notes");
+const doughnutPanelToggleBtn = document.getElementById("doughnutPanelToggle");
+const doughnutPanelToggleIconEl = document.getElementById("doughnutPanelToggleIcon");
+
+const state = {
+  apiBase: "",
+  apiVersion: "",
+  centres: [],
+  centreByCode: new Map(),
+  programmesByCentreCode: new Map(),
+  programmeByKey: new Map(),
+  systemOptions: [],
+  sectionOptions: [],
+  centreDetailCache: new Map(),
+  programmeDetailCache: new Map(),
+  charts: [],
+  renderToken: 0,
+  panelVisible: false,
+  panelCollapsed: false
+};
+
+let doughnutHeaderSyncRafId = null;
+let doughnutLayoutResizeTimer = null;
+let doughnutSidebarClassObserver = null;
+
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function formatCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "0";
+  return parsed.toLocaleString("ca-ES");
+}
+
+function formatPercent(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "0,0";
+  return parsed.toLocaleString("ca-ES", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+}
+
+function setExplainerText(element, text) {
+  if (!element) return;
+  const normalized = normalizeWhitespace(text);
+  element.textContent = normalized;
+  element.hidden = normalized.length === 0;
+}
+
+function normalizeSystemId(systemId) {
+  if (systemId === "ens:equal") return "sys:ensemble_equal";
+  if (systemId === "ens:third") return "sys:ensemble_third";
+  if (systemId === "ens:triple") return "sys:ensemble_triple";
+  return String(systemId || "");
+}
+
+function normalizeSdgCodeToOds(code) {
+  return String(code || "").replace(/^SDG-/, "ODS-");
+}
+
+function programmeKey(centreCode, programmeCode) {
+  return `${String(centreCode || "")}::${String(programmeCode || "")}`;
+}
+
+function readSharedFilters() {
+  const fallback = {
+    centreCode: "",
+    programmeKey: "",
+    systemId: DEFAULT_SYSTEM_ID,
+    sectionId: DEFAULT_SECTION_ID
+  };
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.read !== "function") return fallback;
+  const raw = store.read() || {};
+  return {
+    centreCode: String(raw.centreCode || ""),
+    programmeKey: String(raw.programmeKey || ""),
+    systemId: normalizeSystemId(String(raw.systemId || DEFAULT_SYSTEM_ID)) || DEFAULT_SYSTEM_ID,
+    sectionId: String(raw.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID
+  };
+}
+
+function writeSharedFilters(patch) {
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.write !== "function") return null;
+  const payload = {
+    ...(patch || {})
+  };
+  if (Object.prototype.hasOwnProperty.call(payload, "systemId")) {
+    payload.systemId = normalizeSystemId(payload.systemId) || DEFAULT_SYSTEM_ID;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "sectionId")) {
+    payload.sectionId = String(payload.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID;
+  }
+  return store.write(payload);
+}
+
+function addOption(selectEl, value, label) {
+  const option = document.createElement("option");
+  option.value = String(value || "");
+  option.textContent = normalizeWhitespace(label);
+  selectEl.appendChild(option);
+}
+
+function joinUrl(...parts) {
+  return parts
+    .filter((part) => part != null && String(part).trim() !== "")
+    .map((part, idx) => {
+      const chunk = String(part).trim();
+      if (idx === 0) return chunk.replace(/\/+$/, "");
+      return chunk.replace(/^\/+/, "");
+    })
+    .join("/");
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url, { cache: "no-cache" });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} (${url})`);
+  }
+  return response.json();
+}
+
+async function fetchApiJson(relativePath) {
+  const url = joinUrl(state.apiBase, relativePath);
+  return fetchJson(url);
+}
+
+async function resolveApiBaseAndVersion() {
+  let lastError = null;
+  for (const base of API_BASE_CANDIDATES) {
+    try {
+      const versions = await fetchJson(joinUrl(base, "versions.json"));
+      const latest = normalizeWhitespace(versions?.latest);
+      if (!latest) throw new Error("versions.json sense camp latest");
+      state.apiBase = base;
+      state.apiVersion = latest;
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error("No s'ha pogut resoldre l'API.");
+}
+
+async function loadIndexes() {
+  const prefix = state.apiVersion;
+  const [centres, programmes, systemsJson, sectionsJson] = await Promise.all([
+    fetchApiJson(`${prefix}/index/centres.json`),
+    fetchApiJson(`${prefix}/index/programmes.json`),
+    fetchApiJson(`${prefix}/index/systems.json`),
+    fetchApiJson(`${prefix}/index/sections.json`)
+  ]);
+
+  state.centres = (Array.isArray(centres) ? centres : [])
+    .map((row) => ({
+      centre_code: String(row?.centre_code || ""),
+      centre_name: normalizeWhitespace(row?.centre_name),
+      json: String(row?.json || ""),
+      n_courses: Number(row?.n_courses || 0),
+      n_programmes: Number(row?.n_programmes || 0)
+    }))
+    .filter((row) => row.centre_code && row.centre_name && row.json)
+    .sort((a, b) => a.centre_name.localeCompare(b.centre_name, "ca"));
+  state.centreByCode = new Map(state.centres.map((row) => [row.centre_code, row]));
+
+  state.programmesByCentreCode = new Map();
+  state.programmeByKey = new Map();
+  (Array.isArray(programmes) ? programmes : []).forEach((row) => {
+    const programme = {
+      centre_code: String(row?.centre_code || ""),
+      centre_name: normalizeWhitespace(row?.centre_name),
+      programme_code: String(row?.programme_code || ""),
+      programme_name: normalizeWhitespace(row?.programme_name),
+      json: String(row?.json || "")
+    };
+    if (!programme.centre_code || !programme.programme_code || !programme.programme_name || !programme.json) return;
+
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    if (!state.programmesByCentreCode.has(programme.centre_code)) {
+      state.programmesByCentreCode.set(programme.centre_code, []);
+    }
+    state.programmesByCentreCode.get(programme.centre_code).push(programme);
+    state.programmeByKey.set(key, programme);
+  });
+  for (const [centreCode, items] of state.programmesByCentreCode.entries()) {
+    items.sort((a, b) => a.programme_name.localeCompare(b.programme_name, "ca"));
+    state.programmesByCentreCode.set(centreCode, items);
+  }
+
+  state.systemOptions = Array.isArray(systemsJson?.system_options) ? systemsJson.system_options : [];
+  state.sectionOptions = Array.isArray(sectionsJson?.section_options) ? sectionsJson.section_options : [];
+}
+
+function populateFacultySelect(selectedCentreCode) {
+  facultySelect.innerHTML = "";
+  addOption(facultySelect, "", "-- Selecciona un centre --");
+
+  state.centres.forEach((centre) => {
+    addOption(facultySelect, centre.centre_code, centre.centre_name);
+  });
+
+  const selected = String(selectedCentreCode || "");
+  facultySelect.value = state.centreByCode.has(selected) ? selected : "";
+}
+
+function populateDegreeSelect(centreCode, selectedProgrammeKey) {
+  degreeSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Selecciona…";
+  placeholder.disabled = true;
+  degreeSelect.appendChild(placeholder);
+
+  const allOption = document.createElement("option");
+  allOption.value = "ALL";
+  allOption.textContent = "Tots";
+  degreeSelect.appendChild(allOption);
+
+  const centreKey = String(centreCode || "");
+  const programmes = state.programmesByCentreCode.get(centreKey) || [];
+  const validProgrammeKeys = new Set();
+  programmes.forEach((programme) => {
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    validProgrammeKeys.add(key);
+    addOption(
+      degreeSelect,
+      key,
+      programme.programme_name
+    );
+  });
+
+  degreeSelect.disabled = !centreKey;
+  if (!centreKey) {
+    degreeSelect.value = "";
+    return;
+  }
+
+  const selected = String(selectedProgrammeKey || "");
+  if (selected && (selected === "ALL" || validProgrammeKeys.has(selected))) {
+    degreeSelect.value = selected;
+  } else {
+    degreeSelect.value = "";
+  }
+}
+
+function populateSystemSelect(selectedSystemId) {
+  systemSelect.innerHTML = "";
+  state.systemOptions.forEach((row) => {
+    const id = String(row?.id || "");
+    const label = SYSTEM_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
+    addOption(systemSelect, id, label);
+  });
+  const selected = normalizeSystemId(selectedSystemId);
+  const resolvedOption = state.systemOptions.find((row) => {
+    return normalizeSystemId(String(row?.id || "")) === selected;
+  });
+  const fallback = state.systemOptions[0] ? String(state.systemOptions[0].id || "") : "";
+  systemSelect.value = resolvedOption ? String(resolvedOption?.id || "") : fallback;
+}
+
+function populateSectionSelect(selectedSectionId) {
+  sectionSelect.innerHTML = "";
+  state.sectionOptions.forEach((row) => {
+    const id = String(row?.id || "");
+    const label = SECTION_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
+    addOption(sectionSelect, id, label);
+  });
+  const selected = String(selectedSectionId || "");
+  const fallback = state.sectionOptions[0] ? String(state.sectionOptions[0].id || "") : "";
+  const hasSelected = state.sectionOptions.some((row) => String(row?.id || "") === selected);
+  sectionSelect.value = hasSelected ? selected : fallback;
+}
+
+function clearCharts() {
+  state.charts.forEach((chart) => {
+    try {
+      chart.destroy();
+    } catch (_) {}
+  });
+  state.charts = [];
+}
+
+function syncDoughnutChartHeaderHeights() {
+  if (!chartContainer) return;
+  const headerEls = Array.from(chartContainer.querySelectorAll(".doughnut-chart-header"));
+  headerEls.forEach((element) => {
+    element.style.minHeight = "";
+  });
+  if (headerEls.length < 2) return;
+
+  const maxHeaderHeight = Math.max(
+    ...headerEls.map((element) => Math.ceil(element.getBoundingClientRect().height))
+  );
+  if (!Number.isFinite(maxHeaderHeight) || maxHeaderHeight <= 0) return;
+
+  headerEls.forEach((element) => {
+    element.style.minHeight = `${maxHeaderHeight}px`;
+  });
+}
+
+function scheduleDoughnutChartHeaderHeightsSync() {
+  if (doughnutHeaderSyncRafId && typeof window.cancelAnimationFrame === "function") {
+    window.cancelAnimationFrame(doughnutHeaderSyncRafId);
+  }
+
+  if (typeof window.requestAnimationFrame === "function") {
+    doughnutHeaderSyncRafId = window.requestAnimationFrame(() => {
+      doughnutHeaderSyncRafId = null;
+      syncDoughnutChartHeaderHeights();
+    });
+    return;
+  }
+
+  syncDoughnutChartHeaderHeights();
+}
+
+function resizeChartsForLayoutChange() {
+  if (!Array.isArray(state.charts) || state.charts.length === 0) return;
+  state.charts.forEach((chart) => {
+    try {
+      chart.resize();
+      if (typeof chart.update === "function") {
+        chart.update("none");
+      }
+    } catch (_) {}
+  });
+}
+
+function scheduleChartResizeForLayoutChange() {
+  const runLayoutReflow = () => {
+    resizeChartsForLayoutChange();
+    scheduleDoughnutChartHeaderHeightsSync();
+  };
+
+  if (typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(runLayoutReflow);
+    });
+  } else {
+    runLayoutReflow();
+  }
+
+  if (doughnutLayoutResizeTimer) {
+    clearTimeout(doughnutLayoutResizeTimer);
+  }
+  doughnutLayoutResizeTimer = setTimeout(() => {
+    doughnutLayoutResizeTimer = null;
+    runLayoutReflow();
+  }, 170);
+}
+
+function observeDoughnutSidebarLayoutState() {
+  if (typeof MutationObserver === "undefined" || !document.body || doughnutSidebarClassObserver) return;
+
+  let lastBodyClassName = document.body.className;
+  doughnutSidebarClassObserver = new MutationObserver(() => {
+    const currentBodyClassName = document.body.className;
+    if (currentBodyClassName === lastBodyClassName) return;
+    lastBodyClassName = currentBodyClassName;
+    scheduleChartResizeForLayoutChange();
+  });
+  doughnutSidebarClassObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+}
+
+function isCompactDoughnutLayout() {
+  return window.matchMedia("(max-width: 992px)").matches;
+}
+
+function applyExplainerPanelCollapseUi() {
+  const isCompact = isCompactDoughnutLayout();
+  const panelVisible = Boolean(state.panelVisible);
+  const panelExpanded = panelVisible && !state.panelCollapsed;
+  const panelMinimized = panelVisible && state.panelCollapsed && !isCompact;
+  const hidePanelColumn = !panelVisible;
+
+  if (doughnutShellEl) {
+    doughnutShellEl.classList.toggle("doughnut-shell--panel-collapsed", hidePanelColumn);
+    doughnutShellEl.classList.toggle("doughnut-shell--panel-minimized", panelMinimized);
+  }
+  if (explainerPanelEl) {
+    explainerPanelEl.hidden = hidePanelColumn;
+    explainerPanelEl.classList.toggle("doughnut-explainer--minimized", panelMinimized);
+  }
+  if (explainerBodyEl) {
+    explainerBodyEl.hidden = !panelExpanded;
+  }
+  if (doughnutPanelToggleBtn) {
+    const label = panelExpanded ? "Oculta l'explicació" : "Mostra l'explicació";
+    doughnutPanelToggleBtn.hidden = !panelVisible;
+    doughnutPanelToggleBtn.setAttribute("aria-expanded", String(panelExpanded));
+    doughnutPanelToggleBtn.setAttribute("aria-label", label);
+    doughnutPanelToggleBtn.setAttribute("title", label);
+  }
+  if (doughnutPanelToggleIconEl) {
+    doughnutPanelToggleIconEl.className = panelExpanded
+      ? "fa fa-times doughnut-panel-toggle-icon"
+      : "fa fa-bars doughnut-panel-toggle-icon";
+  }
+
+  scheduleChartResizeForLayoutChange();
+}
+
+function setExplainerPanelCollapsed(isCollapsed) {
+  state.panelCollapsed = Boolean(isCollapsed);
+  applyExplainerPanelCollapseUi();
+}
+
+function setExplainerPanelVisible(isVisible) {
+  state.panelVisible = Boolean(isVisible);
+  applyExplainerPanelCollapseUi();
+}
+
+function extractSdgRows(detailJson, systemId, sectionId) {
+  const rows = detailJson?.by_set?.sdg?.[String(systemId || "")]?.[String(sectionId || "")];
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row) => ({
+      sdg: normalizeSdgCodeToOds(row?.sdg),
+      n_hits: Number(row?.n_hits || 0)
+    }))
+    .filter((row) => row.sdg && Number.isFinite(row.n_hits) && row.n_hits > 0);
+}
+
+function buildDistribution(rows) {
+  const counts = {};
+  rows.forEach((row) => {
+    if (!counts[row.sdg]) counts[row.sdg] = 0;
+    counts[row.sdg] += row.n_hits;
+  });
+
+  const labels = Object.keys(counts).sort((a, b) => a.localeCompare(b, "ca"));
+  const totalHits = labels.reduce((acc, label) => acc + (counts[label] || 0), 0);
+  const percentages = {};
+  labels.forEach((label) => {
+    percentages[label] = totalHits > 0 ? Number(((counts[label] * 100) / totalHits).toFixed(1)) : 0;
+  });
+
+  return {
+    labels,
+    counts,
+    percentages,
+    totalHits
+  };
+}
+
+function hexToRgba(hexColor, alpha) {
+  const normalized = String(hexColor || "").trim().replace(/^#/, "");
+  const safeAlpha = Math.max(0, Math.min(1, Number(alpha)));
+  if (!normalized) return `rgba(127,127,127,${safeAlpha})`;
+
+  let r;
+  let g;
+  let b;
+  if (normalized.length === 3) {
+    r = parseInt(normalized[0] + normalized[0], 16);
+    g = parseInt(normalized[1] + normalized[1], 16);
+    b = parseInt(normalized[2] + normalized[2], 16);
+  } else if (normalized.length === 6) {
+    r = parseInt(normalized.slice(0, 2), 16);
+    g = parseInt(normalized.slice(2, 4), 16);
+    b = parseInt(normalized.slice(4, 6), 16);
+  } else {
+    return `rgba(127,127,127,${safeAlpha})`;
+  }
+
+  if (![r, g, b].every((value) => Number.isFinite(value))) {
+    return `rgba(127,127,127,${safeAlpha})`;
+  }
+
+  return `rgba(${r},${g},${b},${safeAlpha})`;
+}
+
+function computeCoverageFromCourses(detailJson, systemId, sectionId) {
+  const courses = Array.isArray(detailJson?.courses) ? detailJson.courses : [];
+  const totalCourses = courses.length;
+  if (!totalCourses) return null;
+
+  let coursesWithOds = 0;
+  courses.forEach((course) => {
+    const recognised = course?.sdg_compact?.[String(systemId || "")]?.[String(sectionId || "")];
+    const hasRecognised = (Array.isArray(recognised) && recognised.length > 0)
+      || (typeof recognised === "string" && normalizeWhitespace(recognised).length > 0);
+    if (hasRecognised) {
+      coursesWithOds += 1;
+    }
+  });
+
+  const coveragePct = totalCourses > 0 ? Number(((coursesWithOds * 100) / totalCourses).toFixed(1)) : 0;
+  return { totalCourses, coursesWithOds, coveragePct };
+}
+
+function getDatasetPercentByLabel(chart, dataset, dataIndex) {
+  const fullLabel = String(chart?.data?.labels?.[dataIndex] || "");
+  const code = fullLabel.split(":")[0];
+  const percentMap = dataset?.percentagesMap || {};
+  const percent = Number(percentMap[code] || 0);
+  return Number.isFinite(percent) ? percent : 0;
+}
+
+const outerRingLabelConnectorPlugin = {
+  id: "outerRingLabelConnector",
+  afterDatasetsDraw(chart, _args, pluginOptions) {
+    const options = pluginOptions || {};
+    if (!options.enabled) return;
+
+    const datasetIndex = Number.isInteger(options.datasetIndex) ? options.datasetIndex : 1;
+    const dataset = chart?.data?.datasets?.[datasetIndex];
+    const meta = chart.getDatasetMeta(datasetIndex);
+    if (!dataset || !meta || !Array.isArray(meta.data)) return;
+
+    const minPercent = Number(options.minPercent || 0);
+    const lineColor = String(options.lineColor || "rgba(35, 51, 68, 0.35)");
+    const lineWidth = Number(options.lineWidth || 1.1);
+    const radialOffset = Number(options.radialOffset || 11);
+    const horizontalOffset = Number(options.horizontalOffset || 10);
+
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = lineWidth;
+
+    meta.data.forEach((arcElement, dataIndex) => {
+      if (!chart.getDataVisibility(dataIndex)) return;
+
+      const value = Number(dataset?.data?.[dataIndex] || 0);
+      if (!Number.isFinite(value) || value <= 0) return;
+
+      const percent = getDatasetPercentByLabel(chart, dataset, dataIndex);
+      if (!Number.isFinite(percent) || percent < minPercent) return;
+
+      const props = arcElement?.getProps?.(["x", "y", "startAngle", "endAngle", "outerRadius"], true);
+      if (!props) return;
+
+      const centerX = Number(props.x);
+      const centerY = Number(props.y);
+      const startAngle = Number(props.startAngle);
+      const endAngle = Number(props.endAngle);
+      const outerRadius = Number(props.outerRadius);
+
+      if (
+        !Number.isFinite(centerX)
+        || !Number.isFinite(centerY)
+        || !Number.isFinite(startAngle)
+        || !Number.isFinite(endAngle)
+        || !Number.isFinite(outerRadius)
+        || outerRadius <= 0
+      ) {
+        return;
+      }
+
+      const midAngle = (startAngle + endAngle) / 2;
+      const cos = Math.cos(midAngle);
+      const sin = Math.sin(midAngle);
+
+      const startX = centerX + cos * outerRadius;
+      const startY = centerY + sin * outerRadius;
+      const elbowX = centerX + cos * (outerRadius + radialOffset);
+      const elbowY = centerY + sin * (outerRadius + radialOffset);
+      const endX = elbowX + (cos >= 0 ? horizontalOffset : -horizontalOffset);
+      const endY = elbowY;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(elbowX, elbowY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  }
+};
+
+function makeChartCard({ title, subtitle, distribution, compareDistribution }, mountEl) {
+  const card = document.createElement("div");
+  card.className = "chart-container";
+  const canvasId = `chart-${Math.random().toString(16).slice(2)}`;
+  card.innerHTML = `
+    <div class="doughnut-chart-header">
+      <h3 class="doughnut-chart-title">${title}</h3>
+      <p class="doughnut-chart-subtitle">${subtitle}</p>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="${canvasId}"></canvas>
+    </div>
+  `;
+  mountEl.appendChild(card);
+
+  const hasCompare = Boolean(compareDistribution && compareDistribution.labels?.length);
+  const labels = hasCompare
+    ? Array.from(new Set([...(distribution.labels || []), ...(compareDistribution.labels || [])]))
+        .sort((a, b) => a.localeCompare(b, "ca"))
+    : (distribution.labels || []);
+  const displayLabels = labels.map((code) => `${code}: ${odsDefinitions[code] || code}`);
+  const baseColors = labels.map((ods) => odsColors[ods] || "#ccc");
+  const primaryValues = labels.map((label) => Number(distribution?.counts?.[label] || 0));
+  const compareValues = labels.map((label) => Number(compareDistribution?.counts?.[label] || 0));
+  const outerLabelThreshold = 3.8;
+  const singleRingLabelThreshold = 4.5;
+  const ringThickness = 27;
+  const ringGap = 2;
+  const outerRadius = 96;
+  const outerCutout = outerRadius - ringThickness;
+  const innerRadius = outerCutout - ringGap;
+  const innerCutout = innerRadius - ringThickness;
+  const datasets = hasCompare
+    ? [
+        {
+          label: "Centre (anell interior)",
+          ringRole: "centre",
+          data: primaryValues,
+          percentagesMap: distribution.percentages || {},
+          backgroundColor: baseColors.map((color) => hexToRgba(color, 0.7)),
+          borderColor: "#fff",
+          borderWidth: 1.25,
+          hoverOffset: 4,
+          cutout: `${innerCutout}%`,
+          radius: `${innerRadius}%`
+        },
+        {
+          label: "Ensenyament (anell exterior)",
+          ringRole: "programme",
+          data: compareValues,
+          percentagesMap: compareDistribution.percentages || {},
+          backgroundColor: baseColors,
+          borderColor: "#fff",
+          borderWidth: 1.25,
+          hoverOffset: 4,
+          cutout: `${outerCutout}%`,
+          radius: `${outerRadius}%`
+        }
+      ]
+    : [
+        {
+          label: "Centre",
+          ringRole: "centre",
+          data: primaryValues,
+          percentagesMap: distribution.percentages || {},
+          backgroundColor: baseColors,
+          borderColor: "#fff",
+          borderWidth: 1.1
+        }
+      ];
+
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  const chart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: displayLabels,
+      datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: hasCompare
+        ? {
+            padding: { top: 24, right: 44, bottom: 24, left: 44 }
+          }
+        : {
+            padding: { top: 12, right: 12, bottom: 12, left: 12 }
+          },
+      cutout: hasCompare ? `${innerCutout}%` : "42%",
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const label = context.label || "";
+              const value = Number(context.parsed || 0);
+              const code = label.split(":")[0];
+              const datasetLabel = normalizeWhitespace(context?.dataset?.label || "");
+              const percentMap = context?.dataset?.percentagesMap || {};
+              const percent = Number(percentMap[code] || 0);
+              const prefix = datasetLabel ? `${datasetLabel} · ` : "";
+              return `${prefix}${label}: ${formatCount(value)} (${formatPercent(percent)}%)`;
+            }
+          }
+        },
+        datalabels: {
+          display(context) {
+            const value = Number(context?.dataset?.data?.[context.dataIndex] || 0);
+            if (!Number.isFinite(value) || value <= 0) return false;
+            if (hasCompare && context?.dataset?.ringRole !== "programme") return false;
+
+            const percent = getDatasetPercentByLabel(context.chart, context?.dataset, context.dataIndex);
+            if (!Number.isFinite(percent) || percent <= 0) return false;
+
+            if (!hasCompare) return percent >= singleRingLabelThreshold;
+            return percent >= outerLabelThreshold;
+          },
+          formatter(value, context) {
+            if (!Number.isFinite(Number(value)) || Number(value) <= 0) return "";
+            const fullLabel = context.chart.data.labels[context.dataIndex];
+            const code = fullLabel.split(":")[0];
+
+            const percent = getDatasetPercentByLabel(context.chart, context?.dataset, context.dataIndex);
+            if (hasCompare) return `${code} ${formatPercent(percent)}%`;
+            return `${code}\n${formatPercent(percent)}%`;
+          },
+          font(context) {
+            if (hasCompare) return { weight: "700", size: 10.5 };
+            return { weight: "700", size: 11 };
+          },
+          color: "#000",
+          anchor: hasCompare ? "end" : "center",
+          align(context) {
+            if (!hasCompare) return "center";
+            const meta = context?.chart?.getDatasetMeta(context.datasetIndex);
+            const arcElement = meta?.data?.[context.dataIndex];
+            const props = arcElement?.getProps?.(["startAngle", "endAngle"], true);
+            const angle = props ? ((Number(props.startAngle) + Number(props.endAngle)) / 2) : 0;
+            return Math.cos(angle) >= 0 ? "right" : "left";
+          },
+          offset: hasCompare ? 16 : 0,
+          textAlign(context) {
+            if (!hasCompare) return "center";
+            const meta = context?.chart?.getDatasetMeta(context.datasetIndex);
+            const arcElement = meta?.data?.[context.dataIndex];
+            const props = arcElement?.getProps?.(["startAngle", "endAngle"], true);
+            const angle = props ? ((Number(props.startAngle) + Number(props.endAngle)) / 2) : 0;
+            return Math.cos(angle) >= 0 ? "left" : "right";
+          },
+          clamp: !hasCompare,
+          clip: !hasCompare,
+          backgroundColor: hasCompare ? "rgba(255, 255, 255, 0.82)" : "rgba(255, 255, 255, 0.7)",
+          borderColor: "rgba(255, 255, 255, 0.9)",
+          borderWidth: hasCompare ? 1.2 : 1.4,
+          borderRadius: 4,
+          padding: hasCompare ? 4 : 3
+        },
+        outerRingLabelConnector: {
+          enabled: hasCompare,
+          datasetIndex: 1,
+          minPercent: outerLabelThreshold,
+          lineColor: "rgba(52, 69, 90, 0.45)",
+          lineWidth: 1.1,
+          radialOffset: 11,
+          horizontalOffset: 9
+        }
+      }
+    },
+    plugins: [ChartDataLabels, outerRingLabelConnectorPlugin]
+  });
+
+  state.charts.push(chart);
+}
+
+function getSelectedCentreCode() {
+  return String(facultySelect.value || "");
+}
+
+function getSelectedProgrammeKey() {
+  return String(degreeSelect.value || "");
+}
+
+function getSelectedSystemId() {
+  return normalizeSystemId(String(systemSelect.value || DEFAULT_SYSTEM_ID));
+}
+
+function getSelectedSectionId() {
+  return String(sectionSelect.value || DEFAULT_SECTION_ID);
+}
+
+function getSelectedOptionLabel(selectEl) {
+  if (!selectEl || selectEl.selectedIndex < 0) return "";
+  return normalizeWhitespace(selectEl.options[selectEl.selectedIndex]?.textContent || "");
+}
+
+function persistSharedFiltersFromControls() {
+  writeSharedFilters({
+    centreCode: getSelectedCentreCode(),
+    programmeKey: getSelectedProgrammeKey(),
+    systemId: getSelectedSystemId(),
+    sectionId: getSelectedSectionId()
+  });
+}
+
+function getCentreForRender(centreCode) {
+  return state.centreByCode.get(String(centreCode || ""));
+}
+
+function getProgrammeForRender(programmeKeyValue) {
+  return state.programmeByKey.get(String(programmeKeyValue || ""));
+}
+
+async function getCentreDetail(centreCode) {
+  const key = String(centreCode || "");
+  if (!key) throw new Error("Centre no seleccionat");
+  if (state.centreDetailCache.has(key)) return state.centreDetailCache.get(key);
+
+  const centre = state.centreByCode.get(key);
+  if (!centre?.json) throw new Error(`Centre sense fitxer de detall: ${key}`);
+  const detail = await fetchApiJson(`${state.apiVersion}/${centre.json}`);
+  state.centreDetailCache.set(key, detail);
+  return detail;
+}
+
+async function getProgrammeDetail(programmeKeyValue) {
+  const key = String(programmeKeyValue || "");
+  if (!key) throw new Error("Ensenyament no seleccionat");
+  if (state.programmeDetailCache.has(key)) return state.programmeDetailCache.get(key);
+
+  const programme = state.programmeByKey.get(key);
+  if (!programme?.json) throw new Error(`Ensenyament sense fitxer de detall: ${key}`);
+  const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
+  state.programmeDetailCache.set(key, detail);
+  return detail;
+}
+
+function buildCentreSubtitle(centre, detailJson, distribution) {
+  const nCourses = Number(detailJson?.n_courses || centre?.n_courses || 0);
+  const nHits = Number(distribution?.totalHits || 0);
+  return `${nCourses} cursos agregats · ${nHits} deteccions ODS`;
+}
+
+function buildSunburstSubtitle(centreCoverage, programmeCoverage, centreDistribution, programmeDistribution) {
+  const centreCourses = Number(centreCoverage?.totalCourses || 0);
+  const programmeCourses = Number(programmeCoverage?.totalCourses || 0);
+  const centreHits = Number(centreDistribution?.totalHits || 0);
+  const programmeHits = Number(programmeDistribution?.totalHits || 0);
+  return `Anell interior: centre (${formatCount(centreCourses)} cursos, ${formatCount(centreHits)} deteccions) · anell exterior: ensenyament (${formatCount(programmeCourses)} cursos, ${formatCount(programmeHits)} deteccions)`;
+}
+
+function updateExplainerPanel(context) {
+  const systemId = normalizeSystemId(context?.systemId || getSelectedSystemId());
+  const sectionId = String(context?.sectionId || getSelectedSectionId());
+  const systemLabel = context?.systemLabel || getSelectedOptionLabel(systemSelect) || SYSTEM_LABEL_OVERRIDES[systemId] || systemId;
+  const sectionLabel = context?.sectionLabel || getSelectedOptionLabel(sectionSelect) || SECTION_LABEL_OVERRIDES[sectionId] || sectionId;
+  const systemHelp = SYSTEM_EXPLANATIONS[systemId] || "s'aplica el criteri del sistema seleccionat.";
+  const sectionHelp = SECTION_EXPLANATIONS[sectionId] || "s'aplica el criteri de secció seleccionat.";
+
+  if (!context?.centreCode) {
+    if (explainerTitleEl) {
+      explainerTitleEl.textContent = "Com interpretar el gràfic d'anell";
+    }
+    setExplainerText(
+      explainerScopeEl,
+      "Selecciona un centre i, opcionalment, un ensenyament per veure la distribució d'ODS."
+    );
+    setExplainerText(explainerCoverageEl, "");
+    setExplainerText(explainerSystemEl, "");
+    setExplainerText(explainerSectionEl, "");
+    setExplainerText(explainerNotesEl, "");
+    return;
+  }
+
+  const compareMode = Boolean(context?.compareMode);
+  const centreName = normalizeWhitespace(context?.centreName || "Centre");
+  const programmeName = normalizeWhitespace(context?.programmeName || "Ensenyament");
+  const centreCoverage = context?.centreCoverage || null;
+  const programmeCoverage = context?.programmeCoverage || null;
+  const centreHits = Number(context?.centreHits || 0);
+  const programmeHits = Number(context?.programmeHits || 0);
+
+  if (explainerTitleEl) {
+    explainerTitleEl.textContent = compareMode
+      ? `Com interpretar la comparativa d'anell: ${centreName} vs ${programmeName}`
+      : `Com interpretar l'anell de ${centreName}`;
+  }
+
+  if (compareMode) {
+    setExplainerText(
+      explainerScopeEl,
+      `S'està comparant el centre "${centreName}" amb l'ensenyament "${programmeName}".`
+    );
+    const centreCoverageText = centreCoverage
+      ? `${formatCount(centreCoverage.coursesWithOds)} de ${formatCount(centreCoverage.totalCourses)} (${formatPercent(centreCoverage.coveragePct)}%)`
+      : "n/d";
+    const programmeCoverageText = programmeCoverage
+      ? `${formatCount(programmeCoverage.coursesWithOds)} de ${formatCount(programmeCoverage.totalCourses)} (${formatPercent(programmeCoverage.coveragePct)}%)`
+      : "n/d";
+    setExplainerText(
+      explainerCoverageEl,
+      `Cobertura ODS: centre ${centreCoverageText}; ensenyament ${programmeCoverageText}. Deteccions totals: centre ${formatCount(centreHits)}, ensenyament ${formatCount(programmeHits)}.`
+    );
+  } else {
+    const scopeText = context?.nProgrammes > 0
+      ? `Has seleccionat "${centreName}". Aquesta vista agrega ${formatCount(context.nProgrammes)} ensenyaments del centre.`
+      : `Has seleccionat "${centreName}".`;
+    setExplainerText(explainerScopeEl, scopeText);
+    const coverageText = centreCoverage
+      ? `${formatCount(centreCoverage.coursesWithOds)} de ${formatCount(centreCoverage.totalCourses)} assignatures amb ODS (${formatPercent(centreCoverage.coveragePct)}%).`
+      : "No disponible per aquesta selecció.";
+    setExplainerText(
+      explainerCoverageEl,
+      `Cobertura del centre: ${coverageText} Deteccions totals: ${formatCount(centreHits)}.`
+    );
+  }
+
+  setExplainerText(
+    explainerSystemEl,
+    `Amb "${systemLabel}", ${systemHelp}`
+  );
+  setExplainerText(
+    explainerSectionEl,
+    `A la secció "${sectionLabel}", ${sectionHelp}`
+  );
+  setExplainerText(
+    explainerNotesEl,
+    compareMode
+      ? "Comparativa en format sunburst: l'anell interior representa el centre i l'anell exterior l'ensenyament; cada anell mostra el pes relatiu intern de cada ODS."
+      : "Cada segment de l'anell representa el pes relatiu de deteccions ODS dins la selecció activa."
+  );
+}
+
+function renderEmptyState(message) {
+  chartContainer.innerHTML = `<p style="text-align:center;padding:20px;">${message}</p>`;
+  scheduleDoughnutChartHeaderHeightsSync();
+}
+
+async function render() {
+  const centreCode = getSelectedCentreCode();
+  const programmeKeyValue = getSelectedProgrammeKey();
+  const systemId = getSelectedSystemId();
+  const sectionId = getSelectedSectionId();
+  const compareMode = Boolean(programmeKeyValue) && programmeKeyValue !== "ALL";
+
+  chartContainer.innerHTML = "";
+  clearCharts();
+  if (!centreCode) {
+    renderEmptyState("Selecciona un centre per veure la distribució d'ODS.");
+    setExplainerPanelVisible(false);
+    updateExplainerPanel({
+      centreCode: "",
+      systemId,
+      sectionId,
+      systemLabel: getSelectedOptionLabel(systemSelect),
+      sectionLabel: getSelectedOptionLabel(sectionSelect)
+    });
+    return;
+  }
+
+  const token = ++state.renderToken;
+  renderEmptyState("Carregant dades...");
+
+  try {
+    const centre = getCentreForRender(centreCode);
+    const centreDetail = await getCentreDetail(centreCode);
+    const programmeDetail = compareMode ? await getProgrammeDetail(programmeKeyValue) : null;
+    if (token !== state.renderToken) return;
+
+    const centreRows = extractSdgRows(centreDetail, systemId, sectionId);
+    const centreDistribution = buildDistribution(centreRows);
+    const hasCentreData = centreDistribution.labels.length > 0;
+    const centreCoverage = computeCoverageFromCourses(centreDetail, systemId, sectionId);
+
+    let programmeDistribution = null;
+    let hasProgrammeData = false;
+    let programmeCoverage = null;
+    const programme = compareMode ? getProgrammeForRender(programmeKeyValue) : null;
+    if (compareMode && programmeDetail) {
+      const rows = extractSdgRows(programmeDetail, systemId, sectionId);
+      programmeDistribution = buildDistribution(rows);
+      hasProgrammeData = programmeDistribution.labels.length > 0;
+      programmeCoverage = computeCoverageFromCourses(programmeDetail, systemId, sectionId);
+    }
+
+    chartContainer.innerHTML = "";
+    chartContainer.className = "chart-grid one";
+
+    if (hasCentreData) {
+      const useSunburstComparison = compareMode && hasProgrammeData;
+      makeChartCard(
+        {
+          title: useSunburstComparison
+            ? `${centre?.centre_name || String(centreCode)} · ${programme?.programme_name || "Ensenyament"}`
+            : (centre?.centre_name || String(centreCode)),
+          subtitle: useSunburstComparison
+            ? buildSunburstSubtitle(centreCoverage, programmeCoverage, centreDistribution, programmeDistribution)
+            : buildCentreSubtitle(centre, centreDetail, centreDistribution),
+          distribution: centreDistribution,
+          compareDistribution: useSunburstComparison ? programmeDistribution : null
+        },
+        chartContainer
+      );
+    }
+
+    if (!hasCentreData && !hasProgrammeData) {
+      renderEmptyState("No hi ha dades ODS per aquesta combinació de sistema i secció.");
+    }
+
+    scheduleDoughnutChartHeaderHeightsSync();
+
+    updateExplainerPanel({
+      centreCode,
+      centreName: centre?.centre_name || String(centreCode),
+      programmeName: programme?.programme_name || "",
+      compareMode,
+      systemId,
+      sectionId,
+      systemLabel: getSelectedOptionLabel(systemSelect),
+      sectionLabel: getSelectedOptionLabel(sectionSelect),
+      nProgrammes: (state.programmesByCentreCode.get(String(centreCode || "")) || []).length,
+      centreCoverage,
+      programmeCoverage,
+      centreHits: centreDistribution?.totalHits || 0,
+      programmeHits: programmeDistribution?.totalHits || 0
+    });
+    setExplainerPanelVisible(true);
+  } catch (err) {
+    console.error(err);
+    chartContainer.innerHTML = `
+      <div class="w3-panel w3-red w3-round">
+        <h3>Error</h3>
+        <p>No s'han pogut carregar les dades del gràfic d'anell des de l'API nova.</p>
+      </div>`;
+    scheduleDoughnutChartHeaderHeightsSync();
+    updateExplainerPanel({
+      centreCode,
+      compareMode,
+      systemId,
+      sectionId,
+      systemLabel: getSelectedOptionLabel(systemSelect),
+      sectionLabel: getSelectedOptionLabel(sectionSelect)
+    });
+    setExplainerPanelVisible(Boolean(centreCode));
+  }
+}
+
+function setControlsEnabled(enabled) {
+  facultySelect.disabled = !enabled;
+  degreeSelect.disabled = !enabled || !facultySelect.value;
+  systemSelect.disabled = !enabled;
+  sectionSelect.disabled = !enabled;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  observeDoughnutSidebarLayoutState();
+  setControlsEnabled(false);
+  renderEmptyState("Inicialitzant dades de l'API...");
+  setExplainerPanelVisible(false);
+  setExplainerPanelCollapsed(false);
+  updateExplainerPanel({
+    centreCode: "",
+    systemId: DEFAULT_SYSTEM_ID,
+    sectionId: DEFAULT_SECTION_ID,
+    systemLabel: SYSTEM_LABEL_OVERRIDES[DEFAULT_SYSTEM_ID],
+    sectionLabel: SECTION_LABEL_OVERRIDES[DEFAULT_SECTION_ID]
+  });
+
+  if (doughnutPanelToggleBtn) {
+    doughnutPanelToggleBtn.addEventListener("click", () => {
+      setExplainerPanelCollapsed(!state.panelCollapsed);
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    applyExplainerPanelCollapseUi();
+  });
+
+  try {
+    await resolveApiBaseAndVersion();
+    await loadIndexes();
+
+    const sharedFilters = readSharedFilters();
+    const defaultCentre = state.centres.find((centre) => centre.centre_name === DEFAULT_FACULTY_NAME);
+    const defaultCentreCode = defaultCentre?.centre_code || state.centres[0]?.centre_code || "";
+    const initialCentreCode = state.centreByCode.has(sharedFilters.centreCode)
+      ? sharedFilters.centreCode
+      : defaultCentreCode;
+
+    populateFacultySelect(initialCentreCode);
+    populateDegreeSelect(initialCentreCode, sharedFilters.programmeKey);
+    populateSystemSelect(sharedFilters.systemId);
+    populateSectionSelect(sharedFilters.sectionId);
+    persistSharedFiltersFromControls();
+
+    setControlsEnabled(true);
+    await render();
+
+    facultySelect.addEventListener("change", async () => {
+      const centreCode = getSelectedCentreCode();
+      populateDegreeSelect(centreCode, "");
+      degreeSelect.disabled = !centreCode;
+      persistSharedFiltersFromControls();
+      await render();
+    });
+
+    degreeSelect.addEventListener("change", () => {
+      persistSharedFiltersFromControls();
+      render();
+    });
+    systemSelect.addEventListener("change", () => {
+      persistSharedFiltersFromControls();
+      render();
+    });
+    sectionSelect.addEventListener("change", () => {
+      persistSharedFiltersFromControls();
+      render();
+    });
+  } catch (err) {
+    console.error(err);
+    chartContainer.innerHTML = `
+      <div class="w3-panel w3-red w3-round">
+        <h3>Error</h3>
+        <p>No s'ha pogut inicialitzar el gràfic d'anell amb l'API nova.</p>
+      </div>`;
+    if (explainerTitleEl) {
+      explainerTitleEl.textContent = "Com interpretar el gràfic d'anell";
+    }
+    setExplainerText(explainerScopeEl, "No s'ha pogut inicialitzar el mòdul explicatiu del gràfic d'anell.");
+    setExplainerText(explainerCoverageEl, "");
+    setExplainerText(explainerSystemEl, "");
+    setExplainerText(explainerSectionEl, "");
+    setExplainerText(explainerNotesEl, "");
+    setExplainerPanelVisible(false);
+    setControlsEnabled(false);
+  }
+});
+</script>

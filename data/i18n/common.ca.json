@@ -22,7 +22,9 @@
     "error_loading_sections": "Error carregant seccions",
     "empty_state_select_prompt": "Selecciona un centre i, opcionalment, un ensenyament als selectors de l'esquerra.",
     "scraping_date_label": "Data de l'scraping",
-    "scraping_date_unknown": "desconeguda"
+    "scraping_date_unknown": "desconeguda",
+    "panel_toggle_show": "Mostra l'explicació",
+    "panel_toggle_hide": "Oculta l'explicació"
   },
   "methodology": {
     "systems_summary": "Els sistemes de classificació no són equivalents: canvien en sensibilitat, especificitat i risc de falsos positius.",

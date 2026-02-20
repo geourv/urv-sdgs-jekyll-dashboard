@@ -6,23 +6,25 @@ Related files:
   - _includes/wordcloud/scripts.html
 Safe edits:
   - OK: text and labels
-  - Careful: keep ids used by JS (wordcloudIntroToggle, wordcloudIntroPanel)
+  - Careful: keep ids used by JS (wordcloudIntroToggle, wordcloudIntroPanel, selectionPanelToggle)
 -->
 
 <div class="w3-container">
   <div class="wordcloud-title-row">
     <h1>Una vista amb núvols de paraules</h1>
-    <button
-      id="wordcloudIntroToggle"
-      type="button"
-      class="w3-button w3-small w3-round w3-border wordcloud-info-toggle"
-      aria-controls="wordcloudIntroPanel"
-      aria-expanded="false"
-      aria-label="Mostra o oculta la descripció de la visualització"
-      title="Mostra o oculta la descripció de la visualització">
-      <i class="fa fa-plus wordcloud-info-toggle-icon" aria-hidden="true"></i>
-      <span class="wordcloud-sr-only">Info</span>
-    </button>
+    <div class="wordcloud-title-actions">
+      <button
+        id="wordcloudIntroToggle"
+        type="button"
+        class="w3-button w3-small w3-round w3-border wordcloud-info-toggle"
+        aria-controls="wordcloudIntroPanel"
+        aria-expanded="false"
+        aria-label="Mostra o oculta la descripció de la visualització"
+        title="Mostra o oculta la descripció de la visualització">
+        <i class="fa fa-plus wordcloud-info-toggle-icon" aria-hidden="true"></i>
+        <span class="wordcloud-sr-only">Info</span>
+      </button>
+    </div>
   </div>
 
   <div id="wordcloudIntroPanel" class="wordcloud-intro-panel" hidden>

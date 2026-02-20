@@ -10,7 +10,6 @@ const wordLimitRange = document.getElementById("wordLimitRange");
 const wordLimitValue = document.getElementById("wordLimitValue");
 const recolorBtn = document.getElementById("recolorBtn");
 const statusEl = document.getElementById("wordcloudStatus");
-const apiInfoEl = document.getElementById("apiInfo");
 const selectionPanelTitleEl = document.getElementById("selectionPanelTitle");
 const selectionPanelScopeEl = document.getElementById("selectionPanelScope");
 const selectionPanelCoursesEl = document.getElementById("selectionPanelCourses");
@@ -18,6 +17,9 @@ const selectionPanelSystemEl = document.getElementById("selectionPanelSystem");
 const selectionPanelSectionEl = document.getElementById("selectionPanelSection");
 const selectionPanelFeaturesEl = document.getElementById("selectionPanelFeatures");
 const selectionPanelEl = document.getElementById("selectionPanel");
+const selectionPanelBodyEl = document.getElementById("selectionPanelBody");
+const selectionPanelToggleBtn = document.getElementById("selectionPanelToggle");
+const selectionPanelToggleIconEl = document.getElementById("selectionPanelToggleIcon");
 const selectionCardTitleEl = document.getElementById("wordcloudSelectionCardTitle");
 const analysisCardTitleEl = document.getElementById("wordcloudAnalysisCardTitle");
 const systemLabelEl = document.getElementById("wordcloudSystemLabel");
@@ -35,8 +37,6 @@ const mobileCloudHintEl = document.getElementById("mobileCloudHint");
 const wordcloudLayoutEl = document.querySelector(".wordcloud-layout");
 const cloudZoneEl = document.getElementById("wordcloudCloudZone");
 const cloudEmptyStateEl = document.getElementById("wordcloudEmptyState");
-const cloudEmptyCueEl = document.getElementById("wordcloudEmptyCue");
-const cloudEmptyArrowEl = document.getElementById("wordcloudEmptyArrow");
 const primaryCloudTitleEl = document.getElementById("wordcloudPrimaryTitle");
 const primaryCloudSubtitleEl = document.getElementById("wordcloudPrimarySubtitle");
 const secondaryCloudTitleEl = document.getElementById("wordcloudSecondaryTitle");
@@ -47,6 +47,7 @@ const secondaryCanvas = document.getElementById("wordcloudSecondary");
 
 const DEFAULT_SYSTEM_ID = "sys:any";
 const DEFAULT_SECTION_ID = "sec:any";
+const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
 const DEFAULT_WORDS_TO_RENDER = 70;
 const MIN_WORDS_TO_RENDER = 20;
 const MAX_WORDS_TO_RENDER = 95;
@@ -159,7 +160,9 @@ const DEFAULT_UI_STRINGS = {
     error_loading_sections: "Error carregant seccions",
     empty_state_select_prompt: "Selecciona un centre i, opcionalment, un ensenyament als selectors de l'esquerra.",
     scraping_date_label: "Data de l'scraping",
-    scraping_date_unknown: "desconeguda"
+    scraping_date_unknown: "desconeguda",
+    panel_toggle_show: "Mostra l'explicació",
+    panel_toggle_hide: "Oculta l'explicació"
   },
   templates: {
     title_centre: "Explicació del núvol de paraules de {centre}",
@@ -279,12 +282,16 @@ const state = {
   lastRenderContext: null,
   paletteIndex: 0,
   wordLimit: DEFAULT_WORDS_TO_RENDER,
+  panelCollapsed: false,
+  panelVisible: false,
   uiStrings: DEFAULT_UI_STRINGS
 };
 
 let resizeDebounceTimer = null;
 let wordLimitDebounceTimer = null;
 let sidebarLayoutDebounceTimer = null;
+let panelLayoutDebounceTimer = null;
+let cloudHeadingSyncRafId = null;
 let pendingMobileAutoScroll = false;
 
 function setStatus(message, isError) {
@@ -593,8 +600,50 @@ function setComparisonViewEnabled(isEnabled) {
   if (wordcloudLayoutEl) {
     wordcloudLayoutEl.classList.toggle("wordcloud-layout--compare", compareMode);
   }
+  applySelectionPanelCollapseUi();
+  scheduleCloudHeadingMinHeightsSync();
+}
+
+function applySelectionPanelCollapseUi() {
+  const panelVisible = Boolean(state.panelVisible);
+  const panelExpanded = panelVisible && !state.panelCollapsed;
+  const panelMinimized = panelVisible && state.panelCollapsed && !isCompactWordcloudLayout();
+  const hidePanelColumn = !panelVisible;
+
+  if (wordcloudLayoutEl) {
+    wordcloudLayoutEl.classList.toggle("wordcloud-layout--panel-collapsed", hidePanelColumn);
+    wordcloudLayoutEl.classList.toggle("wordcloud-layout--panel-minimized", panelMinimized);
+  }
   if (selectionPanelEl) {
-    selectionPanelEl.classList.toggle("wordcloud-selection-panel--wide", compareMode);
+    selectionPanelEl.hidden = hidePanelColumn;
+    selectionPanelEl.classList.toggle("wordcloud-selection-panel--minimized", panelMinimized);
+  }
+  if (selectionPanelBodyEl) {
+    selectionPanelBodyEl.hidden = !panelExpanded;
+  }
+  if (selectionPanelToggleBtn) {
+    const showLabel = getFilterString("panel_toggle_show", "Mostra l'explicació");
+    const hideLabel = getFilterString("panel_toggle_hide", "Oculta l'explicació");
+    const label = panelExpanded ? hideLabel : showLabel;
+    selectionPanelToggleBtn.hidden = !panelVisible;
+    selectionPanelToggleBtn.setAttribute("aria-expanded", String(panelExpanded));
+    selectionPanelToggleBtn.setAttribute("aria-label", label);
+    selectionPanelToggleBtn.setAttribute("title", label);
+  }
+  if (selectionPanelToggleIconEl) {
+    selectionPanelToggleIconEl.className = panelExpanded
+      ? "fa fa-times wordcloud-panel-toggle-icon"
+      : "fa fa-bars wordcloud-panel-toggle-icon";
+  }
+}
+
+function setSelectionPanelCollapsed(isCollapsed) {
+  const nextCollapsed = Boolean(isCollapsed);
+  const hasChanged = state.panelCollapsed !== nextCollapsed;
+  state.panelCollapsed = nextCollapsed;
+  applySelectionPanelCollapseUi();
+  if (hasChanged) {
+    scheduleWordcloudReflowForPanelLayoutChange();
   }
 }
 
@@ -602,58 +651,6 @@ function setCloudEmptyStateVisible(isVisible) {
   const shouldShow = Boolean(isVisible);
   if (cloudEmptyStateEl) {
     cloudEmptyStateEl.hidden = !shouldShow;
-  }
-  if (!shouldShow) return;
-  updateEmptyCuePosition();
-  triggerEmptyCueAnimation();
-}
-
-function triggerEmptyCueAnimation() {
-  if (!cloudEmptyArrowEl || isCompactWordcloudLayout()) return;
-  cloudEmptyArrowEl.classList.remove("wordcloud-empty-arrow--animate");
-  // Force reflow so finite animation restarts when empty state is shown again.
-  void cloudEmptyArrowEl.offsetWidth;
-  cloudEmptyArrowEl.classList.add("wordcloud-empty-arrow--animate");
-}
-
-function updateEmptyCuePosition() {
-  if (!cloudEmptyCueEl || !cloudZoneEl || !facultySelect) return;
-  if (isCompactWordcloudLayout()) {
-    cloudEmptyCueEl.style.left = "";
-    cloudEmptyCueEl.style.top = "";
-    return;
-  }
-
-  const zoneRect = cloudZoneEl.getBoundingClientRect();
-  const facultyRect = facultySelect.getBoundingClientRect();
-  if (!zoneRect.height || !facultyRect.height) return;
-
-  const cueX = facultyRect.right - zoneRect.left + 8;
-  const clampedX = clamp(cueX, -54, 18);
-  const cueY = facultyRect.top + (facultyRect.height / 2) - zoneRect.top;
-  const clampedY = clamp(cueY, 24, Math.max(24, zoneRect.height - 24));
-  cloudEmptyCueEl.style.left = `${Math.round(clampedX)}px`;
-  cloudEmptyCueEl.style.top = `${Math.round(clampedY)}px`;
-}
-
-function syncEmptyCueIfVisible() {
-  if (!cloudEmptyStateEl || cloudEmptyStateEl.hidden) return;
-  updateEmptyCuePosition();
-}
-
-function scheduleEmptyCueSync() {
-  window.requestAnimationFrame(syncEmptyCueIfVisible);
-  window.requestAnimationFrame(syncEmptyCueIfVisible);
-}
-
-function observeFacultySelectLayout() {
-  if (!facultySelect || typeof ResizeObserver === "undefined") return;
-  const observer = new ResizeObserver(() => {
-    scheduleEmptyCueSync();
-  });
-  observer.observe(facultySelect);
-  if (facultySelect.parentElement) {
-    observer.observe(facultySelect.parentElement);
   }
 }
 
@@ -679,7 +676,6 @@ function observeSidebarLayoutState() {
 function rerenderWordcloudFromCacheAfterLayoutChange() {
   if (!state.lastRenderData) {
     syncWordcloudWrapperHeight();
-    scheduleEmptyCueSync();
     return;
   }
 
@@ -688,12 +684,33 @@ function rerenderWordcloudFromCacheAfterLayoutChange() {
     updateCloudSubtitles(state.lastRenderContext, renderResult);
     updateSelectionPanel(state.lastRenderContext);
   }
-  scheduleEmptyCueSync();
+}
+
+function scheduleWordcloudReflowForPanelLayoutChange() {
+  if (typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        rerenderWordcloudFromCacheAfterLayoutChange();
+      });
+    });
+  } else {
+    rerenderWordcloudFromCacheAfterLayoutChange();
+  }
+
+  if (panelLayoutDebounceTimer) clearTimeout(panelLayoutDebounceTimer);
+  panelLayoutDebounceTimer = setTimeout(() => {
+    panelLayoutDebounceTimer = null;
+    rerenderWordcloudFromCacheAfterLayoutChange();
+  }, 170);
 }
 
 function setSelectionPanelVisible(isVisible) {
-  if (selectionPanelEl) {
-    selectionPanelEl.hidden = !Boolean(isVisible);
+  const nextVisible = Boolean(isVisible);
+  const hasChanged = state.panelVisible !== nextVisible;
+  state.panelVisible = nextVisible;
+  applySelectionPanelCollapseUi();
+  if (hasChanged) {
+    scheduleWordcloudReflowForPanelLayoutChange();
   }
 }
 
@@ -702,6 +719,58 @@ function setCloudSubtitle(element, text) {
   const normalized = normalizeWhitespace(text);
   element.textContent = normalized;
   element.hidden = normalized.length === 0;
+}
+
+function resetCloudHeadingMinHeights() {
+  [primaryCloudTitleEl, secondaryCloudTitleEl, primaryCloudSubtitleEl, secondaryCloudSubtitleEl]
+    .forEach((element) => {
+      if (element) element.style.minHeight = "";
+    });
+}
+
+function syncCloudHeadingMinHeights() {
+  resetCloudHeadingMinHeights();
+  const compareMode = Boolean(secondaryCloudCardEl && !secondaryCloudCardEl.hidden);
+  if (!compareMode) return;
+
+  const titleEls = [primaryCloudTitleEl, secondaryCloudTitleEl]
+    .filter((element) => element && !element.hidden);
+  const subtitleEls = [primaryCloudSubtitleEl, secondaryCloudSubtitleEl]
+    .filter((element) => element && !element.hidden);
+
+  if (titleEls.length > 1) {
+    const maxTitleHeight = Math.max(...titleEls.map((element) => Math.ceil(element.getBoundingClientRect().height)));
+    if (Number.isFinite(maxTitleHeight) && maxTitleHeight > 0) {
+      titleEls.forEach((element) => {
+        element.style.minHeight = `${maxTitleHeight}px`;
+      });
+    }
+  }
+
+  if (subtitleEls.length > 1) {
+    const maxSubtitleHeight = Math.max(...subtitleEls.map((element) => Math.ceil(element.getBoundingClientRect().height)));
+    if (Number.isFinite(maxSubtitleHeight) && maxSubtitleHeight > 0) {
+      subtitleEls.forEach((element) => {
+        element.style.minHeight = `${maxSubtitleHeight}px`;
+      });
+    }
+  }
+}
+
+function scheduleCloudHeadingMinHeightsSync() {
+  if (cloudHeadingSyncRafId && typeof window.cancelAnimationFrame === "function") {
+    window.cancelAnimationFrame(cloudHeadingSyncRafId);
+  }
+
+  if (typeof window.requestAnimationFrame === "function") {
+    cloudHeadingSyncRafId = window.requestAnimationFrame(() => {
+      cloudHeadingSyncRafId = null;
+      syncCloudHeadingMinHeights();
+    });
+    return;
+  }
+
+  syncCloudHeadingMinHeights();
 }
 
 function isCompactWordcloudLayout() {
@@ -767,12 +836,14 @@ function updateCloudTitles(context) {
   }
 
   setComparisonViewEnabled(compareMode);
+  scheduleCloudHeadingMinHeightsSync();
 }
 
 function updateCloudSubtitles(context, renderResult) {
   if (!context) {
     setCloudSubtitle(primaryCloudSubtitleEl, "");
     setCloudSubtitle(secondaryCloudSubtitleEl, "");
+    scheduleCloudHeadingMinHeightsSync();
     return;
   }
 
@@ -789,6 +860,7 @@ function updateCloudSubtitles(context, renderResult) {
 
   if (!compareMode) {
     setCloudSubtitle(secondaryCloudSubtitleEl, "");
+    scheduleCloudHeadingMinHeightsSync();
     return;
   }
 
@@ -798,6 +870,7 @@ function updateCloudSubtitles(context, renderResult) {
     ? `${formatCount(programmeCourses)} cursos · ${formatCount(programmeRendered)}/${formatCount(programmeTotal)} termes`
     : `${formatCount(programmeCourses)} cursos`;
   setCloudSubtitle(secondaryCloudSubtitleEl, programmeSubtitle);
+  scheduleCloudHeadingMinHeightsSync();
 }
 
 function updateSelectionPanel(context) {
@@ -1440,11 +1513,14 @@ function populateDegreeSelect(centreCode, selectedProgrammeKey) {
   addOption(degreeSelect, "ALL", getFilterString("degree_option_all", "Tots"));
 
   const programmes = state.programmesByCentreCode.get(String(centreCode)) || [];
+  const validProgrammeKeys = new Set();
   programmes.forEach(p => {
-    addOption(degreeSelect, programmeKey(p.centre_code, p.programme_code), p.programme_name);
+    const key = programmeKey(p.centre_code, p.programme_code);
+    validProgrammeKeys.add(key);
+    addOption(degreeSelect, key, p.programme_name);
   });
 
-  if (selectedProgrammeKey && selectedProgrammeKey !== "ALL" && state.programmeByKey.has(selectedProgrammeKey)) {
+  if (selectedProgrammeKey && selectedProgrammeKey !== "ALL" && validProgrammeKeys.has(selectedProgrammeKey)) {
     degreeSelect.value = selectedProgrammeKey;
   } else if (selectedProgrammeKey === "ALL") {
     degreeSelect.value = "ALL";
@@ -1458,8 +1534,12 @@ function populateSystemSelect(selectedId) {
   state.systemOptions.forEach(opt => {
     addOption(systemSelect, opt.id, getLocalizedOptionLabel("system", opt.id, opt.label));
   });
+  const normalizedSelectedId = normalizeSystemId(selectedId);
+  const resolvedOption = state.systemOptions.find((opt) => {
+    return normalizeSystemId(opt?.id) === normalizedSelectedId;
+  });
   const fallback = state.systemOptions[0] ? state.systemOptions[0].id : "";
-  systemSelect.value = state.systemOptions.some(opt => opt.id === selectedId) ? selectedId : fallback;
+  systemSelect.value = resolvedOption ? String(resolvedOption.id || "") : fallback;
 }
 
 function populateSectionSelect(selectedId) {
@@ -1486,12 +1566,65 @@ function normalizeSystemId(systemId) {
   if (systemId === "ens:equal") return "sys:ensemble_equal";
   if (systemId === "ens:third") return "sys:ensemble_third";
   if (systemId === "ens:triple") return "sys:ensemble_triple";
-  return systemId;
+  return String(systemId || "");
 }
 
-function resetAnalysisFiltersToDefaults() {
-  populateSystemSelect(DEFAULT_SYSTEM_ID);
-  populateSectionSelect(DEFAULT_SECTION_ID);
+function readSharedFilters() {
+  const fallback = {
+    centreCode: "",
+    programmeKey: "",
+    systemId: DEFAULT_SYSTEM_ID,
+    sectionId: DEFAULT_SECTION_ID
+  };
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.read !== "function") return fallback;
+  const raw = store.read() || {};
+  return {
+    centreCode: String(raw.centreCode || ""),
+    programmeKey: String(raw.programmeKey || ""),
+    systemId: normalizeSystemId(String(raw.systemId || DEFAULT_SYSTEM_ID)) || DEFAULT_SYSTEM_ID,
+    sectionId: String(raw.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID
+  };
+}
+
+function writeSharedFilters(patch) {
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.write !== "function") return null;
+  const payload = {
+    ...(patch || {})
+  };
+  if (Object.prototype.hasOwnProperty.call(payload, "systemId")) {
+    payload.systemId = normalizeSystemId(payload.systemId) || DEFAULT_SYSTEM_ID;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "sectionId")) {
+    payload.sectionId = String(payload.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID;
+  }
+  return store.write(payload);
+}
+
+function getSelectedCentreCode() {
+  return String(facultySelect.value || "");
+}
+
+function getSelectedProgrammeKey() {
+  return String(degreeSelect.value || "");
+}
+
+function getSelectedSystemId() {
+  return normalizeSystemId(String(systemSelect.value || DEFAULT_SYSTEM_ID)) || DEFAULT_SYSTEM_ID;
+}
+
+function getSelectedSectionId() {
+  return String(sectionSelect.value || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID;
+}
+
+function persistSharedFiltersFromControls() {
+  writeSharedFilters({
+    centreCode: getSelectedCentreCode(),
+    programmeKey: getSelectedProgrammeKey(),
+    systemId: getSelectedSystemId(),
+    sectionId: getSelectedSectionId()
+  });
 }
 
 function extractScrapingPlatforms(metaJson) {
@@ -1642,19 +1775,6 @@ async function loadIndexes() {
     : [];
 }
 
-function renderApiInfo() {
-  const scrapingDate = state.apiScrapingDate || state.apiVersionMeta?.generated_at || null;
-  const parsedDate = parseDateCandidate(scrapingDate);
-  const lang = String(document.documentElement?.lang || "ca").toLowerCase();
-  const locale = lang.startsWith("es") ? "es-ES" : (lang.startsWith("en") ? "en-GB" : "ca-ES");
-  const scrapingDateLabel = parsedDate
-    ? parsedDate.toLocaleString(locale)
-    : getFilterString("scraping_date_unknown", "desconeguda");
-  const label = getFilterString("scraping_date_label", "Data de l'scraping");
-
-  apiInfoEl.textContent = `${label}: ${scrapingDateLabel}`;
-}
-
 async function getCentreDetail(centreCode) {
   const key = String(centreCode || "");
   if (!key) throw new Error("Centre no seleccionat");
@@ -1704,6 +1824,8 @@ function renderCloudsFromRenderData(renderData) {
   } else {
     clearWordCloud(secondaryCanvas);
   }
+
+  scheduleCloudHeadingMinHeightsSync();
 
   return {
     compareMode,
@@ -1849,7 +1971,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (mobileCloudHintEl) {
     mobileCloudHintEl.addEventListener("click", scrollToWordcloud);
   }
-  observeFacultySelectLayout();
   observeSidebarLayoutState();
 
   setIntroPanelExpanded(false);
@@ -1864,7 +1985,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   state.paletteIndex = randomIndex(WORDCLOUD_PALETTES.length);
   syncWordLimitUi();
   setSelectionPanelVisible(false);
+  setSelectionPanelCollapsed(false);
   renderSelectionPanelEmpty();
+
+  if (selectionPanelToggleBtn) {
+    selectionPanelToggleBtn.addEventListener("click", () => {
+      setSelectionPanelCollapsed(!state.panelCollapsed);
+    });
+  }
 
   setSelectorsDisabled(true);
   setRecolorButtonEnabled(false);
@@ -1874,16 +2002,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     await resolveApiBaseAndVersion();
     await loadUiStrings();
     applyLocalizedStaticLabels();
+    applySelectionPanelCollapseUi();
     renderSelectionPanelEmpty();
     await loadIndexes();
 
-    resetAnalysisFiltersToDefaults();
+    const sharedFilters = readSharedFilters();
+    const defaultCentre = state.centres.find((centre) => centre.centre_name === DEFAULT_FACULTY_NAME);
+    const defaultCentreCode = defaultCentre?.centre_code || state.centres[0]?.centre_code || "";
+    const initialCentreCode = state.centreByCode.has(sharedFilters.centreCode)
+      ? sharedFilters.centreCode
+      : defaultCentreCode;
+    const initialProgrammeKey = initialCentreCode ? sharedFilters.programmeKey : "";
 
-    populateFacultySelect("");
-    populateDegreeSelect("", "");
-    scheduleEmptyCueSync();
+    populateFacultySelect(initialCentreCode);
+    populateDegreeSelect(initialCentreCode, initialProgrammeKey);
+    populateSystemSelect(sharedFilters.systemId);
+    populateSectionSelect(sharedFilters.sectionId);
+    persistSharedFiltersFromControls();
 
-    renderApiInfo();
     setSelectorsDisabled(false);
     await renderCurrentSelection();
   } catch (err) {
@@ -1895,22 +2031,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   facultySelect.addEventListener("change", () => {
     pendingMobileAutoScroll = Boolean(String(facultySelect.value || "")) && isCompactWordcloudLayout();
     populateDegreeSelect(facultySelect.value, "");
-    resetAnalysisFiltersToDefaults();
-    scheduleEmptyCueSync();
+    persistSharedFiltersFromControls();
     renderCurrentSelection();
   });
 
   degreeSelect.addEventListener("change", () => {
-    resetAnalysisFiltersToDefaults();
-    scheduleEmptyCueSync();
+    persistSharedFiltersFromControls();
     renderCurrentSelection();
   });
 
   systemSelect.addEventListener("change", () => {
+    persistSharedFiltersFromControls();
     renderCurrentSelection();
   });
 
   sectionSelect.addEventListener("change", () => {
+    persistSharedFiltersFromControls();
     renderCurrentSelection();
   });
 
@@ -1944,7 +2080,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   window.addEventListener("resize", () => {
     updateMobileCloudHintVisibility();
-    scheduleEmptyCueSync();
+    applySelectionPanelCollapseUi();
+    scheduleCloudHeadingMinHeightsSync();
 
     if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
     resizeDebounceTimer = setTimeout(() => {

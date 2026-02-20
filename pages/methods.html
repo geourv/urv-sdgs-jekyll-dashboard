@@ -31,305 +31,355 @@ head_inline: |
   </script>
 ---
 
+<style>
+.methods-page {
+  --reading-measure: 92ch;
+}
+
+.methods-page > h1,
+.methods-page > h2,
+.methods-page > p,
+.methods-page > section,
+.methods-page > div,
+.methods-page > ol,
+.methods-page > ul {
+  max-width: none;
+}
+
+.methods-page > h1 {
+  margin-bottom: 0.8rem;
+}
+
+.methods-diagram-wrap {
+  background: var(--site-widget-surface-soft);
+  border: 1px solid var(--site-widget-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 0.7rem 0 1rem;
+}
+
+.methods-diagram-wrap .mermaid {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.methods-diagram-caption {
+  margin-top: 8px;
+  font-style: italic;
+  color: #4f5f70;
+  text-align: center;
+}
+
+.methods-flow-list {
+  list-style: none;
+  counter-reset: method-step;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.methods-flow-list > li {
+  counter-increment: method-step;
+  background: var(--site-widget-surface-soft);
+  border: 1px solid var(--site-widget-border);
+  border-top: 3px solid var(--site-card-separator);
+  border-radius: 10px;
+  padding: 12px 13px;
+}
+
+.methods-flow-list > li > h4 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  line-height: 1.35;
+}
+
+.methods-flow-list > li > h4::before {
+  content: "Pas " counter(method-step) ". ";
+  color: var(--site-accent-dark);
+  font-weight: 800;
+}
+
+.methods-flow-list p {
+  margin: 0 0 0.52rem;
+  font-size: 0.95rem;
+  line-height: 1.38;
+}
+
+.methods-flow-list p:last-child {
+  margin-bottom: 0;
+}
+
+.methods-flow-list ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.methods-flow-list ul li {
+  margin: 0 0 0.36rem;
+  font-size: 0.93rem;
+  line-height: 1.34;
+}
+
+.methods-section {
+  margin-top: 1rem;
+}
+
+.methods-tools-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.methods-tools-grid > li {
+  background: var(--site-widget-surface-soft);
+  border: 1px solid var(--site-widget-border);
+  border-radius: 10px;
+  padding: 11px 12px;
+}
+
+.methods-tools-grid > li > strong {
+  display: block;
+  margin-bottom: 0.32rem;
+}
+
+.methods-tools-grid > li > p {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.35;
+}
+
+.methods-lower-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.methods-section-card {
+  background: var(--site-widget-surface-soft);
+  border: 1px solid var(--site-widget-border);
+  border-radius: 10px;
+  padding: 12px 13px;
+}
+
+.methods-section-card > h2 {
+  margin-top: 0;
+}
+
+.methods-section-card p {
+  max-width: none;
+}
+
+.methods-guide-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0.7rem 0 0.75rem;
+}
+
+.methods-guide-image {
+  text-align: center;
+}
+
+.methods-guide-image img {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+}
+
+.methods-guide-image figcaption {
+  font-size: 0.84rem;
+  color: #58697c;
+  margin-top: 5px;
+}
+
+.methods-improvements {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.methods-improvements li {
+  margin: 0 0 0.7rem;
+}
+
+.methods-improvements li:last-child {
+  margin-bottom: 0;
+}
+
+.methods-improvements p {
+  margin: 0;
+}
+
+@media screen and (max-width: 1500px) {
+  .methods-flow-list,
+  .methods-tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .methods-lower-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media screen and (max-width: 760px) {
+  .methods-flow-list,
+  .methods-tools-grid,
+  .methods-guide-images {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
 <!-- Header -->
-  <header class="w3-container" style="padding-top:22px">
-    <h5><b><i class="fa fa-cog"></i> Què hem fet?</b></h5>
-  </header>
+<header class="w3-container" style="padding-top:22px">
+  <h5><b><i class="fa fa-cog"></i> Què hem fet?</b></h5>
+</header>
 
-  <div class="w3-container">
-    <h1>Metodologia</h1>
+<div class="w3-container readable-content methods-page">
+  <h1>Metodologia</h1>
 
-    <p>Amb l'objectiu d'avaluar la presència dels ODS als ensenyaments de la Universitat Rovira i Virgili, 
-        s'ha emprat la següent metodologia: En primer lloc, s'han utilitzat tècniques de web scraping i 
-        mineria de textos a fi d'extreure els continguts de les guies docents. 
-        Tot seguit, es tradueixen a l'anglès per a poder-se sotmetre a estudi i, finalment, 
-        es realitza una anàlisi de dades en R per avaluar els termes relacionats amb els ODS i 
-        definir la presència d'aquests als ensenyaments de la URV.</p>
+  <p>Amb l'objectiu d'avaluar la presència dels ODS als ensenyaments de la Universitat Rovira i Virgili, s'ha emprat la metodologia següent: en primer lloc, tècniques de web scraping i mineria de textos per extreure els continguts de les guies docents; després, traducció a l'anglès per facilitar l'anàlisi; finalment, anàlisi de dades en R per identificar termes relacionats amb els ODS i estimar-ne la presència als ensenyaments de la URV.</p>
 
-    <h2>Flux de treball per a l'anàlisi de les guies docents</h2>
-    
-    <div class="w3-center w3-margin-bottom">
-    <div class="w3-center">
+  <h2>Flux de treball per a l'anàlisi de les guies docents</h2>
+
+  <div class="methods-diagram-wrap">
     <div class="mermaid">
-    flowchart TD
-    %% Classes de colors
-    classDef fase fill:#f9f,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
-    classDef process fill:#ffeb99,stroke:#333,stroke-width:1px,color:#000;
-    classDef data fill:#bbf,stroke:#333,stroke-width:1px,color:#000,font-style:italic;
-    classDef output fill:#bfb,stroke:#333,stroke-width:1px,color:#000;
+flowchart TD
+%% Classes de colors
+classDef fase fill:#f9f,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
+classDef process fill:#ffeb99,stroke:#333,stroke-width:1px,color:#000;
+classDef data fill:#bbf,stroke:#333,stroke-width:1px,color:#000,font-style:italic;
+classDef output fill:#bfb,stroke:#333,stroke-width:1px,color:#000;
 
-    %% FASE 1: Recopilació
-    A[📥 1. Recopilació de guies docents]:::fase --> 
-    A1[🔗 Web-scraping de guies docents]:::process
-    A1 --> A3{📑 Estàndard 
-    de la guia?}:::process
-    A3 -->|DOCnet 93%| A4[🖥 Accés a iframe DOCnet]:::process
-    A3 -->|GUIDO 7%| B
-    A4 --> B
+%% FASE 1: Recopilació
+A[📥 1. Recopilació de guies docents]:::fase -->
+A1[🔗 Web-scraping de guies docents]:::process
+A1 --> A3{📑 Estàndard de la guia?}:::process
+A3 -->|DOCnet 93%| A4[🖥 Accés a iframe DOCnet]:::process
+A3 -->|GUIDO 7%| B
+A4 --> B
 
-    %% FASE 2, 3 i 4: Processament, anàlisi i visualització
-    B[📝 2. Processament i extracció de dades]:::fase --> B1[📊 Extracció del contingut de les guies docents]
-    B1 --> C[🔍 3. Anàlisi de termes ODS]:::fase
-    C --> C1["🌐 Traducció a l'anglès (LibreTranslate o Apertium)"]
-    C1 --> C2["🧮 Identificació dels ODS amb text2SDG (R)"]
-    C2 --> D[📊 4. Generació de visualitzacions i informes]:::fase
+%% FASES 2, 3 i 4
+B[📝 2. Processament i extracció de dades]:::fase --> B1[📊 Extracció del contingut de les guies docents]
+B1 --> C[🔍 3. Anàlisi de termes ODS]:::fase
+C --> C1[🌐 Traducció a l'anglès (LibreTranslate o Apertium)]
+C1 --> C2[🧮 Identificació dels ODS amb text2SDG (R)]
+C2 --> D[📊 4. Generació de visualitzacions i informes]:::fase
 
-    %% Sortida JSON i resultats finals
-    D --> JSON[💾 JSON estructurat]:::data
-    JSON --> Web[🌐 Pàgina web interactiva]:::output
-
+%% Sortida
+D --> JSON[💾 JSON estructurat]:::data
+JSON --> Web[🌐 Pàgina web interactiva]:::output
     </div>
-    </div>
-    <div class="w3-text-grey w3-italic">Elaboració propia</div>
+    <div class="methods-diagram-caption">Elaboració pròpia</div>
   </div>
 
-  <ol>
-  <!--1. Course Data Extraction Section -->
-  <li>
-  <h4>Recopilar les guies docents de les assignatures de grau i màster de la URV des de la web pública.</h4>
-  <p>Per obtenir el contingut dels ensenyaments, cal extreure les dades de les guies docents 
-    de les assignatures de l'ensenyament corresponent.
-    Això s'ha aconseguit mitjançant múltiples processos de <i>webscrapping</i> - mitjançant l'eina 
-    <strong>Firefox WebScraper Plugin</strong>- 
-    dirigits a accedir al contingut de les guies.
-    Inicialment, s'han extret els enllaços des les assignatures a partir dels enllaços a les facultats i escoles de la URV.
-    Després d'accedir a aquests enllaços, s'ha extret informació detallada dels ensenyaments (tant de grau com de màster).
-    Per exemple, un d'aquests enllaços seria: 
-    <a href=https://guiadocent.urv.cat/guido/public/centres/503/ensenyaments/3475/detall target="_blank">
-      https://guiadocent.urv.cat/guido/public/centres/503/ensenyaments/3475/detall</a>
-    on "503" fa referència al codi de la facultat o escola, 
-    en aquest cas Facultat de Turisme i Geografia, i "3475" a l'ensenyament, 
-    Grau en Geografia, Anàlisi Territorial i Sostenibilitat.
-  </li>
+  <ol class="methods-flow-list">
+    <li>
+      <h4>Recopilar les guies docents de grau i màster des de la web pública</h4>
+      <p>Per obtenir el contingut dels ensenyaments, s'extreuen dades de les guies docents de les assignatures corresponents mitjançant múltiples processos de <i>web scraping</i> (Firefox WebScraper Plugin).</p>
+      <p>Un exemple d'enllaç d'ensenyament és: <a href="https://guiadocent.urv.cat/guido/public/centres/503/ensenyaments/3475/detall" target="_blank" rel="noopener noreferrer">https://guiadocent.urv.cat/guido/public/centres/503/ensenyaments/3475/detall</a>.</p>
+      <p>En aquest cas, "503" identifica el centre (Facultat de Turisme i Geografia) i "3475" l'ensenyament (Grau en Geografia, Anàlisi Territorial i Sostenibilitat).</p>
+    </li>
 
-  <!--3. Course Guide Management and Data Extraction Section -->
-  <li>
-  <h4>Processar les dades per extreure els textos rellevants (títol, descripció, competències, bibliografia, etc).</h4>
-  <p>La informació s'extreu en dos estàndards: <strong>DOCnet</strong> i 
-    <strong>GUIDO</strong>. DOCnet és una aplicació web pensada perquè el professorat 
-    pugui planificar l'assignatura seguint els paràmetres definits pel procés de Bolonya i realitzar-ne la guia docent. 
-    DOCnet és l'estàndard anterior i temporal, ja que actualment s'està duent a terme una migració de les guies docents
-    DOCnet a la nova apliació anomenada GUIDO. 
-    Tot i així, DOCnet és encara l'estàndard present en moltes guies docents. 
-    GUIDO és el nou estàndard que ha d'incorporar-se properament a totes les guies docents, 
-    tot i que solament el disposen els nous ensenyaments o ensenyaments renovats recentment.</p>
+    <li>
+      <h4>Processar les dades i extreure textos rellevants</h4>
+      <p>La informació es recupera en dos estàndards: <strong>DOCnet</strong> i <strong>GUIDO</strong>. DOCnet és encara present en moltes guies, mentre que GUIDO s'està desplegant progressivament.</p>
+      <p>Per a DOCnet cal obtenir l'enllaç de l’<i>iframe</i>; per exemple: <a href="https://guiadocent.urv.cat/docnet/guia_docent/assignatures/print/?centre=21&ensenyament=2123&assignatura=21234114&any_academic=2025_26&idioma=cat" target="_blank" rel="noopener noreferrer">Enllaç DOCnet</a>.</p>
+      <p>Per a GUIDO, l'accés és per apartats; per exemple: <a href="https://guiadocent.urv.cat/guido/public/centres/498/ensenyaments/3545/assignatures/116896/guia_docent" target="_blank" rel="noopener noreferrer">Enllaç GUIDO</a>.</p>
+      <p>S'extreuen descripció, contingut, resultats d'aprenentatge, competències i referències, i s'organitzen en un <i>dataframe</i> amb el context de curs, ensenyament i centre.</p>
+    </li>
 
-  <p>Per accedir a les guies DOCnet, ha estat necessari obtenir l’enllaç a l’iframe que les conté. 
-    Un exemple d'aquest enllaç seria: 
-    <em><a href="https://guiadocent.urv.cat/docnet/guia_docent/assignatures/print/?centre=21&ensenyament=2123&assignatura=21234114&any_academic=2025_26&idioma=cat" target="_blank">
-      Enllaç DOCnet</a></em>.</p>
+    <li>
+      <h4>Identificar termes ODS als textos</h4>
+      <p>L'anàlisi per identificar i quantificar ODS es basa en detecció de termes i mètodes del paquet <strong>text2SDG</strong> en R. El contingut original en català es tradueix a l'anglès (LibreTranslate, i de suport Apertium).</p>
+      <p>Es van revisar diverses fonts de paraules clau i mètodes:</p>
+      <ul>
+        <li>University of Toronto SDGs Keywords.</li>
+        <li>Institut Teknologi Sepuluh Nopember.</li>
+        <li>University of Auckland SDG mapping.</li>
+        <li>JRC SDG Mapper.</li>
+        <li>text2SDG (Meier, Mata i Wulff, 2022).</li>
+      </ul>
+      <p>Finalment, text2SDG es va escollir per utilitat i eficiència en grans volums de text.</p>
+    </li>
 
-  <p>En l'estàndard GUIDO, s'extreuen dades similars, amb la diferència que les competències 
-    s'integren amb els resultats d’aprenentatge, i l'accés visual a les dades requereix accedir a 
-    apartat per apartat. Utilitzant l'exemple d'enllaç següent: 
-    <em><a href="https://guiadocent.urv.cat/guido/public/centres/498/ensenyaments/3545/assignatures/116896/guia_docent" target="_blank">
-      Enllaç GUIDO</a></em>.</p>
-
-  <p>En ambdós estàndards s'han extret els coordinadors, els professors, la descripció, el contingut, 
-    els resultats d'aprenentatge, les competències i les referències 
-    (tenint en compte que a GUIDO les competències s'integren al contingut de resultats d'aprenentatge). 
-    Posteriorment, la informació extreta s'ha organitzat en un <i>dataframe</i> 
-    que integra el detall de la guia docent de l'assignatura, ensenyament, i Facultat o Escola corresponents.</p>
-  </li>    
-
-  <!--3. SDG Analysis and Identification Section -->
-  <li>
-  <h4>Analitzar els textos per identificar termes relacionats amb els Objectius de Desenvolupament Sostenible (ODS).</h4>
-  <p>L’anàlisi metodològica que s’ha utilitzat per identificar i 
-    quantificar els Objectius de Desenvolupament Sostenible (ODS) 
-    en el contingut de les guies docents dels ensenyaments s’ha basat 
-    en la detecció de paraules clau relacionades amb els ODS.</p>
-
-  <p>Per assolir aquest objectiu, s’han identificat diverses fonts que proporcionaven 
-    conjunts de paraules clau associades als ODS.
-    Com que tot el contingut era originalment en català, 
-    primer s’ha traduït automàticament a l’anglès mitjançant LibreTranslate i 
-    complementàriament també s'ha emprat Apertium, 
-    tot i que s'han triat les traduccions del primer.</p>
-  <ul>
-      <li><strong>Sustainable Development Goals (SDGs) Keywords</strong> 
-        (2022) de la University of Toronto: Aquesta font ofereix una llista 
-        detallada de 388 paraules clau en anglès relacionades amb els ODS. 
-        <a href="https://sustainability.utoronto.ca/inventories/sustainable-development-goals-sdgs-keywords/" target="_blank">
-          Més informació</a>.</li><br>
-
-      <li><strong>Institut Teknologi Sepuluh Nopember</strong>: 
-        Aquest Institut classifica centenars de termes en llengua anglesa relacionats amb els ODS. 
-        <a href="https://www.its.ac.id/drpm/wp-content/uploads/sites/71/2021/04/Daftar-keywords-Sustainable-Development-Goals.pdf" target="_blank">
-          Més informació</a>.</li><br>
-
-      <li><strong>University of Auckland</strong>: 
-        Ofereix un mapa de paraules clau dels 17 ODS permetent la seva descàrrega en anglès. 
-        <a href="https://www.sdgmapping.auckland.ac.nz/" target="_blank">Més informació</a>.</li><br>
-
-      <li><strong>Joint Research Centre de la UE</strong> i la seva eina <strong>SDG Mapper</strong>: 
-        Aquesta eina permet localitzar els ODS en texts. <a href="https://knowsdgs.jrc.ec.europa.eu/sdgmapper" target="_blank">
-          Més informació</a>.</li><br>
-
-      <li><strong>text2SDG</strong>: Una eina d'anàlisi de codi obert en R desenvolupada per Meier, Mata i Wulff (2022), 
-        que permet identificar i quantificar els ODS en textos. 
-        <a href="https://www.text2sdg.io/reference/text2sdg.html" target="_blank">
-          Més informació</a>.</li><br>
-    </ul>
-    
-
-  <p>Entre aquestes fonts, finalment s’ha emprat <strong>text2SDG</strong>, 
-    un paquet d’anàlisi de codi obert en el llenguatge de programació R, 
-    per identificar els ODS i les paraules relacionades amb els ODS 
-    als continguts de les assignatures dels ensenyaments de la URV.
-
-    Aquesta eina ha permès identificar els ODS en textos mitjançant sistemes de consulta científica. 
-    El model ha estat desenvolupat per Meier, Mata i Wulff (2022).
-    
-    Tot i que totes les fonts identificades han proporcionat 
-    un conjunt extens de paraules classificades segons els 17 ODS, 
-    s’ha considerat que l’eina de codi obert text2SDG és especialment avantatjosa 
-    per la seva utilitat i eficiència en la identificació automàtica dels ODS 
-    en grans volums de text.</p>
-  </li>
-
-  <!--4. Dashboards and Report Generation -->
-  <li>
-  <h4>Generar visualitzacions i informes basats en l'anàlisi dels termes ODS per facultat, escola i assignatura</h4>
-  <p>Els ODS s'han identificat i la informació s'ha sintetitzat 
-    juntament amb les dades detallades de les assignatures. 
-    Aquesta síntesi s'ha organitzat en un format JSON estructurat per facultats, 
-    cursos, assignatures, els ODS associats al seu contingut i 
-    els termes relacionats amb els ODS. 
-    Aquest format permet una consulta ràpida i iterativa dels resultats, 
-    facilitant la identificació de les facultats o escoles, ensenyaments i 
-    assignatures més alineades amb els ODS.</p>
-  </li>
+    <li>
+      <h4>Generar visualitzacions i informes</h4>
+      <p>Els ODS detectats es fusionen amb les metadades de les assignatures i s'exporten en un format JSON estructurat per centres, ensenyaments i cursos.</p>
+      <p>Aquest format permet consultes ràpides i iteratives per analitzar quins centres, programes i assignatures mostren major alineació amb els ODS.</p>
+    </li>
   </ol>
-  </div>  
-  
 
+  <section class="methods-section">
     <h2>Eines utilitzades</h2>
-
-    <ul>
-    <li>
-      <strong>Docker i Docker Compose</strong>
-      <p>Desplegament i gestió del servei de neteja, transformació, traducció i anàlisi de les dades extretes del procés de gratat de webs.</p>
-    </li>
-
-    <li>
-      <strong>Firefox WebScraper Plugin</strong>
-      <p>Extracció automatitzada mitjançant <i>scrape</i> o gratat dels continguts de les guies docents en format web. Es generen arxius de dades estructurades que es processen posteriorment amb R.</p>
-    </li>
-
-    <li>
-      <strong>R - paquets: dplyr, tidyr, stringr, readr, corpustools, purr.</strong>
-      <p>Neteja, transformació i anàlisi de les dades extretes del procés de gratat de webs; preparació del text per a la identificació dels ODS i generació d'arxius amb dades per a la pàgina web i l'informe final.</p>
-    </li>
-
-    <li>
-      <strong>R - paquet text2sdg </strong>
-      <p>Identificació i avaluació de termes relacionats amb els Objectius de Desenvolupament Sostenible (ODS) dins les descripcions.</p>
-    </li>
-
-    <li>
-      <strong>LibreTranslate (conteneritzat)</strong>
-      <p>Servei de traducció automàtica de les descripcions a l'anglès, executat en un contenidor gestionat per Docker Compose.</p>
-    </li>
+    <ul class="methods-tools-grid">
+      <li>
+        <strong>Docker i Docker Compose</strong>
+        <p>Desplegament i gestió dels serveis de neteja, transformació, traducció i anàlisi.</p>
+      </li>
+      <li>
+        <strong>Firefox WebScraper Plugin</strong>
+        <p>Extracció automatitzada del contingut web de les guies docents.</p>
+      </li>
+      <li>
+        <strong>R (dplyr, tidyr, stringr, readr, corpustools, purrr)</strong>
+        <p>Neteja i preparació de dades, i construcció de sortides per a web i informes.</p>
+      </li>
+      <li>
+        <strong>R - text2sdg</strong>
+        <p>Identificació i avaluació dels ODS i dels termes associats dins els textos.</p>
+      </li>
+      <li>
+        <strong>LibreTranslate (contenidor)</strong>
+        <p>Traducció automàtica de les descripcions a l'anglès dins el flux de processament.</p>
+      </li>
     </ul>
+  </section>
 
-    <h2>Dificultats i limitacions</h2>
+  <div class="methods-lower-grid">
+    <section class="methods-section methods-section-card">
+      <h2>Dificultats i limitacions</h2>
+      <p>La variabilitat entre DOCnet i GUIDO complica l'extracció uniforme. Les diferències de format i d'accés a continguts (especialment l’<i>iframe</i> de DOCnet) han obligat a mantenir fluxos de processament diferenciats.</p>
+      <p>També s'han detectat dades incompletes o mal formatejades (referències, competències i resultats), que en alguns casos requereixen revisió manual per garantir qualitat.</p>
 
-    <p>La variabilitat entre els estàndards DOCnet i 
-    GUIDO ha complicat l'extracció uniforme de dades, 
-    especialment en la fase de mineria de dades
-    o <i>web mining</i>. 
-    Aquesta diferència ha requerit la creació de dos models de codis d'obtenció
-    automatitzada de dades per assegurar que les dades 
-    s'extreguessin correctament en cada estàndard. 
-    Per una banda, la principal diferència és l'esctructura de la guia docent,
-    ja que els continguts es distribueixen de manera diferent segons l'estàndard utilitzat.
-    D'altra banda, també hi ha diferències en la manera d'accedir als continguts de les guies docents.
-    En concret, l'estàndard DOCnet mostra els continguts en un <i>iframe</i>
-    l'enllaç del qual s'ha hagut d'extreure mitjançant un pas addicional 
-    al procés d'extracció, mentre que l'estàndard GUIDO permet 
-    l'accés i extracció directa de la informació.
-    Una variació significativa és la redacció de competències i resultats d'aprenentatge,
-    ja que a l'estàndard GUIDO ambdós continguts s'agrupen a l'apartat
-    de resultats d'aprenentatge mentre que a l'estàndard DOCnet, previ a GUIDO, 
-    aquesta informació rau en dos apartats diferents.</li></p>
-
-    <div class="w3-center" style="display: flex; justify-content: center; gap: 40px; margin: 20px 0;">
-    <!-- Primera imatge -->
-    <div style="text-align: center;">
-      <img src="../assets/logos/templates/guido.png" 
-          alt="Guia docent en format GUIDO" 
-          style="max-width: 100%; height: auto;">
-      <div style="font-size: 12px; margin-top: 8px; color: #555;">
-        Guia docent en format GUIDO
+      <div class="methods-guide-images">
+        <figure class="methods-guide-image">
+          <img src="../assets/logos/templates/guido.png" alt="Guia docent en format GUIDO">
+          <figcaption>Guia docent en format GUIDO</figcaption>
+        </figure>
+        <figure class="methods-guide-image">
+          <img src="../assets/logos/templates/docnet.png" alt="Guia docent en format DOCnet">
+          <figcaption>Guia docent en format DOCnet</figcaption>
+        </figure>
       </div>
-    </div>
 
-    <!-- Segona imatge -->
-    <div style="text-align: center;">
-      <img src="../assets/logos/templates/docnet.png" 
-          alt="Guia docent en format DocNet" 
-          style="max-width: 100%; height: auto;">
-      <div style="font-size: 12px; margin-top: 8px; color: #555;">
-        Guia docent en format DocNet
-      </div>
-    </div>
+      <p>En alguns ensenyaments també hi ha continguts ubicats en seccions no previstes de la guia docent, cosa que pot reduir coherència en la detecció ODS.</p>
+    </section>
+
+    <section class="methods-section methods-section-card">
+      <h2>Possibles millores i treball futur</h2>
+      <ul class="methods-improvements">
+        <li>
+          <p>Millorar el procés de scraping amb eines natives d'R (<i>rvest</i>, <i>httr</i>) per guanyar control i traçabilitat del flux d'extracció.</p>
+        </li>
+        <li>
+          <p>Reforçar la qualitat de traducció de termes tècnics i compostos incorporant preprocés contextual abans de l'enviament al traductor.</p>
+        </li>
+        <li>
+          <p>Evolucionar les visualitzacions per facilitar una lectura més immediata de la cobertura i les diferències per sistema/secció.</p>
+        </li>
+        <li>
+          <p>Ampliar la cobertura de dades a més programes universitaris per millorar representativitat i robustesa analítica.</p>
+        </li>
+      </ul>
+    </section>
   </div>
-
-  <p>Una altra dificultat detectada, ha estat la presència de dades incompletes o 
-  mal formatejades. Aquesta situació ha requerit una revisió manual, afectant l'eficiència del procés. 
-  Aquestes dades poden incloure caselles buides, caràcters estranys o referències mal espaiades, 
-  que s’haurien de revisar per assignatura per garantir la qualitat de l'anàlisi. 
-  Casos d'aquest tipus s'han donat especialment als continguts de referències bibliogràfiques o 
-  competències i resultats d'aprenentatge.</li></p>
-
-  <p> 
-  També s'ha detectat la presència equivocada de continguts en ubicacions o 
-  caselles de la guia docent on no els pertoca. 
-  Aquest fet suposa que en determinats ensenyaments la detecció dels ODS 
-  no sigui del tot coherent amb la realitat.</li></p>
-
-  <h2>Possibles millores i treball futur</h2>
-
-  <ul>
-    <li><p>Per millorar el procés de gratat de web per extreure els
-      continguts de les guies docents, seria recomanable explorar
-      eines de web scraping integrades a R, com <i>rvest</i> o <i>httr</i>,
-      que permetrien una major flexibilitat i control sobre el procés d'extracció
-      de dades, així com una millor integració al fluxe de treball.
-    </p></li>
-    
-    <li><p>És important garantir fiabilitat en les traduccions 
-    ja que és un pas essencial per obtenir la correcta 
-    identificació dels termes relacionats amb els ODS. 
-    Tot i que s'han utilitzat diverses eines de traducció, 
-    LibreTranslate i Apertium, la precisió en la traducció de termes tècnics i 
-    específics ha presentat dificultats en algunes ocasions. 
-    En el cas del paquet Apertium, la traducció dels mots compostos, 
-    anglicismes o tecnicismes no ha estat del tot fiable, 
-    mentre que amb LibreTranslate s'han pogut garantir millors traduccions. 
-    No obstant això, s'han realitzat canvis de format al contingut 
-    (incorporant salts de línia a les referències bibliogràfiques o 
-    context als noms de les assignatures) per fer possible una traducció més íntegra.
-    Seria necessari revisar els continguts abans de realitzar la traducció
-    a partir de la incorporació de texts contextuals o caracters que permetin una
-    interpretació del text més fidedigna per part de l'eina de traducció.
-    </p></li>
-    
-    <p><li>
-    També seria convenient millorar les visualitzacions generades 
-    per representar de manera més clara les ocurrències dels 
-    termes ODS, permetent una interpretació més immediata dels 
-    resultats i facilitant la presa de decisions basades en les
-    dades.
-    </p></li>
-
-    <p><li>
-    Finalment, es podria ampliar la cobertura del conjunt de dades
-    per incloure més programes universitaris, augmentant així la
-    representativitat i robustesa de l'anàlisi, i permetent
-    extreure conclusions més generals sobre la presència de
-    termes relacionats amb els ODS.
-    </p></li>
-  </ul>
-  </div>
+</div>

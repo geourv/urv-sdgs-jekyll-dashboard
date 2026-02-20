@@ -22,7 +22,9 @@
     "error_loading_sections": "Error al cargar secciones",
     "empty_state_select_prompt": "Selecciona un centro y, opcionalmente, una enseñanza en los selectores de la izquierda.",
     "scraping_date_label": "Fecha del scraping",
-    "scraping_date_unknown": "desconocida"
+    "scraping_date_unknown": "desconocida",
+    "panel_toggle_show": "Mostrar explicación",
+    "panel_toggle_hide": "Ocultar explicación"
   },
   "methodology": {
     "systems_summary": "Los sistemas de clasificación no son equivalentes: cambian en sensibilidad, especificidad y riesgo de falsos positivos.",

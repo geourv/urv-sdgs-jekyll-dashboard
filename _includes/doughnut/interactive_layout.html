@@ -1,0 +1,87 @@
+<!--
+File: _includes/doughnut/interactive_layout.html
+Purpose: Interactive shell for the doughnut chart view.
+Related files:
+  - _includes/doughnut/scripts.html
+  - _includes/doughnut/styles.html
+-->
+
+<div class="w3-container">
+  <div class="interactive-chart-container doughnut-shell">
+    <aside class="doughnut-left">
+      <section class="doughnut-card">
+        <p class="doughnut-helper">Selecciona un centre i, opcionalment, un ensenyament per comparar la distribució d'ODS.</p>
+
+        <label for="faculty-select" class="doughnut-field-label">Centre</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="faculty-select" class="w3-select w3-border">
+              <option value="">-- Selecciona un centre --</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="degree-select" class="doughnut-field-label">Ensenyament (opcional)</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="degree-select" class="w3-select w3-border" disabled>
+              <option value="" selected disabled>Selecciona…</option>
+              <option value="ALL">Tots</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="doughnut-card">
+        <p class="doughnut-helper">Ajusta la selecció de sistema i secció per recalcular la distribució d'ODS.</p>
+
+        <label for="doughnut-system-select" class="doughnut-field-label">Sistema de classificació</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="doughnut-system-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant sistemes...</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="doughnut-section-select" class="doughnut-field-label">Secció analitzada</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="doughnut-section-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant seccions...</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="doughnut-main">
+      <div id="chart-container" class="chart-grid">
+        <!-- Dynamic chart cards -->
+      </div>
+    </section>
+
+    <aside id="doughnut-explainer" class="doughnut-explainer" aria-live="polite" hidden>
+      <div class="doughnut-explainer-header">
+        <h3 id="doughnut-explainer-title" class="doughnut-explainer-title">Com interpretar el gràfic d'anell</h3>
+        {% include shared/explainer_toggle_button.html
+          button_id="doughnutPanelToggle"
+          icon_id="doughnutPanelToggleIcon"
+          button_class="doughnut-info-toggle doughnut-panel-toggle"
+          icon_class="doughnut-panel-toggle-icon"
+          sr_class="doughnut-sr-only"
+          aria_controls="doughnut-explainer-body"
+          aria_label_show="Mostra l'explicació de l'anàlisi"
+          sr_text="Explicació"
+        %}
+      </div>
+      <div id="doughnut-explainer-body" class="doughnut-explainer-body">
+        <p id="doughnut-explainer-scope" class="doughnut-explainer-text"></p>
+        <p id="doughnut-explainer-coverage" class="doughnut-explainer-text"></p>
+        <p id="doughnut-explainer-system" class="doughnut-explainer-text"></p>
+        <p id="doughnut-explainer-section" class="doughnut-explainer-text"></p>
+        <p id="doughnut-explainer-notes" class="doughnut-explainer-text"></p>
+      </div>
+    </aside>
+  </div>
+</div>

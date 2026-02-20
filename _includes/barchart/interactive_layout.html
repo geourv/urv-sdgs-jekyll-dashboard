@@ -1,0 +1,115 @@
+<!--
+File: _includes/barchart/interactive_layout.html
+Purpose: Interactive shell for the bar chart view.
+Related files:
+  - _includes/barchart/scripts.html
+  - _includes/barchart/styles.html
+-->
+
+<div class="w3-container">
+  <div class="interactive-chart-container barchart-shell">
+    <aside class="barchart-left">
+      <section class="barchart-card">
+        <h2 class="barchart-card-title">Selecció de centre i ensenyament</h2>
+
+        <label for="faculty-select" class="barchart-field-label">Centre</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="faculty-select" class="w3-select w3-border">
+              <option value="">-- Selecciona un centre --</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="degree-select" class="barchart-field-label">Ensenyament</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="degree-select" class="w3-select w3-border" disabled>
+              <option value="" selected disabled>Selecciona…</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="barchart-card">
+        <h2 class="barchart-card-title">Anàlisi</h2>
+        <p class="barchart-helper">Ajusta el sistema i la secció per recalcular els percentatges d'ODS amb l'API nova.</p>
+
+        <label for="barchart-system-select" class="barchart-field-label">Sistema de classificació</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="barchart-system-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant sistemes...</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="barchart-section-select" class="barchart-field-label">Secció analitzada</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="barchart-section-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant seccions...</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="barchart-main">
+      <div id="degree-hint" class="w3-panel w3-pale-blue w3-leftbar w3-border-blue barchart-chart-hint" style="display:none;">
+        Per defecte es mostren els valors del <strong>centre</strong>. Selecciona un <strong>ensenyament</strong> per comparar els dos gràfics.
+      </div>
+
+      <div id="barchart-empty-state" class="w3-panel w3-pale-blue barchart-empty-state" hidden></div>
+
+      <div id="barchart-grid" class="chart-grid one">
+        <section id="barchart-primary-card" class="barchart-chart-card">
+          <h3 id="barchart-primary-title" class="barchart-chart-title"></h3>
+          <div id="barchart-primary-meta" class="barchart-chart-meta"></div>
+          <div class="chart-canvas-box barchart-chart-canvas-box">
+            <canvas id="interactive-bar-chart-primary"></canvas>
+          </div>
+        </section>
+
+        <section id="barchart-secondary-card" class="barchart-chart-card" hidden>
+          <h3 id="barchart-secondary-title" class="barchart-chart-title"></h3>
+          <div id="barchart-secondary-meta" class="barchart-chart-meta"></div>
+          <div class="chart-canvas-box barchart-chart-canvas-box">
+            <canvas id="interactive-bar-chart-secondary"></canvas>
+          </div>
+        </section>
+
+        <section id="barchart-stacked-card" class="barchart-chart-card barchart-chart-card--stacked" hidden>
+          <h3 id="barchart-stacked-title" class="barchart-chart-title"></h3>
+          <div id="barchart-stacked-meta" class="barchart-chart-meta"></div>
+          <div class="chart-canvas-box barchart-chart-canvas-box">
+            <canvas id="interactive-bar-chart-stacked"></canvas>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <aside id="barchart-explainer" class="barchart-explainer" aria-live="polite" hidden>
+      <div class="barchart-explainer-header">
+        <h3 id="barchart-explainer-title" class="barchart-explainer-title">Com interpretar el gràfic de barres</h3>
+        {% include shared/explainer_toggle_button.html
+          button_id="barchartPanelToggle"
+          icon_id="barchartPanelToggleIcon"
+          button_class="barchart-info-toggle barchart-panel-toggle"
+          icon_class="barchart-panel-toggle-icon"
+          sr_class="barchart-sr-only"
+          aria_controls="barchart-explainer-body"
+          aria_label_show="Mostra l'explicació de l'anàlisi"
+          sr_text="Explicació"
+        %}
+      </div>
+      <div id="barchart-explainer-body" class="barchart-explainer-body">
+        <p id="barchart-explainer-scope" class="barchart-explainer-text"></p>
+        <p id="barchart-explainer-coverage" class="barchart-explainer-text"></p>
+        <p id="barchart-explainer-system" class="barchart-explainer-text"></p>
+        <p id="barchart-explainer-section" class="barchart-explainer-text"></p>
+        <p id="barchart-explainer-notes" class="barchart-explainer-text"></p>
+      </div>
+    </aside>
+  </div>
+</div>

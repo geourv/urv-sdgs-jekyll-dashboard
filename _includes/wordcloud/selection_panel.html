@@ -9,10 +9,24 @@ Safe edits:
 -->
 
 <aside id="selectionPanel" class="wordcloud-selection-panel" aria-live="polite" hidden>
-  <h3 id="selectionPanelTitle" class="wordcloud-selection-title wordcloud-card-title"></h3>
-  <p id="selectionPanelScope" class="wordcloud-selection-text"></p>
-  <p id="selectionPanelCourses" class="wordcloud-selection-text"></p>
-  <p id="selectionPanelSystem" class="wordcloud-selection-text"></p>
-  <p id="selectionPanelSection" class="wordcloud-selection-text"></p>
-  <p id="selectionPanelFeatures" class="wordcloud-selection-text"></p>
+  <div class="wordcloud-selection-header">
+    <h3 id="selectionPanelTitle" class="wordcloud-selection-title wordcloud-card-title"></h3>
+    {% include shared/explainer_toggle_button.html
+      button_id="selectionPanelToggle"
+      icon_id="selectionPanelToggleIcon"
+      button_class="wordcloud-info-toggle wordcloud-panel-toggle"
+      icon_class="wordcloud-panel-toggle-icon"
+      sr_class="wordcloud-sr-only"
+      aria_controls="selectionPanelBody"
+      aria_label_show="Mostra l'explicació de l'anàlisi"
+      sr_text="Explicació"
+    %}
+  </div>
+  <div id="selectionPanelBody" class="wordcloud-selection-body">
+    <p id="selectionPanelScope" class="wordcloud-selection-text"></p>
+    <p id="selectionPanelCourses" class="wordcloud-selection-text"></p>
+    <p id="selectionPanelSystem" class="wordcloud-selection-text"></p>
+    <p id="selectionPanelSection" class="wordcloud-selection-text"></p>
+    <p id="selectionPanelFeatures" class="wordcloud-selection-text"></p>
+  </div>
 </aside>
