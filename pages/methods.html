@@ -20,13 +20,76 @@ head_inline: |
     document.addEventListener('DOMContentLoaded', function() {
       mermaid.initialize({
         startOnLoad: true,
-        theme: 'default',
+        theme: 'base',
+        themeVariables: {
+          background: 'transparent',
+          lineColor: '#2f4963',
+          primaryTextColor: '#0f2b46',
+          tertiaryTextColor: '#0f2b46',
+          edgeLabelBackground: '#e7eef6',
+          fontFamily: '"Noto Sans", "Segoe UI", sans-serif'
+        },
         flowchart: {
           useMaxWidth: true,
           htmlLabels: true,
           curve: 'basis'
         }
       });
+
+      function syncMethodsDiagramSize() {
+        var layout = document.querySelector('.methods-flow-layout');
+        if (!layout) return;
+
+        var list = layout.querySelector('.methods-flow-list');
+        var wrap = layout.querySelector('.methods-diagram-wrap');
+        var mermaidHost = wrap ? wrap.querySelector('.mermaid') : null;
+        var svg = mermaidHost ? mermaidHost.querySelector('svg') : null;
+        if (!list || !wrap || !svg) return;
+
+        var listHeight = Math.floor(list.getBoundingClientRect().height);
+        var maxSvgHeight = Math.max(180, listHeight);
+
+        var wrapRect = wrap.getBoundingClientRect();
+        var availableWidth = Math.max(240, Math.floor(wrapRect.width));
+
+        var aspectRatio = 0;
+        var viewBox = svg.getAttribute('viewBox');
+        if (viewBox) {
+          var parts = viewBox.trim().split(/\s+/);
+          if (parts.length === 4) {
+            var vbWidth = parseFloat(parts[2]);
+            var vbHeight = parseFloat(parts[3]);
+            if (vbWidth > 0 && vbHeight > 0) {
+              aspectRatio = vbWidth / vbHeight;
+            }
+          }
+        }
+        if (!aspectRatio) aspectRatio = 0.62;
+
+        var targetWidth = Math.floor(Math.min(availableWidth, maxSvgHeight * aspectRatio));
+        targetWidth = Math.max(220, targetWidth);
+
+        wrap.style.setProperty('--methods-steps-height', listHeight + 'px');
+        wrap.style.setProperty('--methods-diagram-max-height', maxSvgHeight + 'px');
+        wrap.style.setProperty('--methods-diagram-target-width', targetWidth + 'px');
+      }
+
+      function scheduleSync() {
+        window.requestAnimationFrame(syncMethodsDiagramSize);
+      }
+
+      scheduleSync();
+      window.setTimeout(scheduleSync, 160);
+      window.setTimeout(scheduleSync, 520);
+      window.setTimeout(scheduleSync, 1200);
+      window.addEventListener('load', scheduleSync);
+      window.addEventListener('resize', scheduleSync);
+
+      var mermaidHost = document.querySelector('.methods-diagram-wrap .mermaid');
+      if (mermaidHost && 'MutationObserver' in window) {
+        var observer = new MutationObserver(scheduleSync);
+        observer.observe(mermaidHost, { childList: true, subtree: true, attributes: true });
+      }
     });
   </script>
 ---
@@ -51,72 +114,214 @@ head_inline: |
 }
 
 .methods-diagram-wrap {
-  background: var(--site-widget-surface-soft);
-  border: 1px solid var(--site-widget-border);
-  border-radius: 10px;
-  padding: 12px;
-  margin: 0.7rem 0 1rem;
+  --methods-steps-height: none;
+  --methods-diagram-max-height: none;
+  --methods-diagram-target-width: 500px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  max-height: var(--methods-steps-height);
+  justify-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
 }
 
 .methods-diagram-wrap .mermaid {
   width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  background: transparent !important;
 }
 
-.methods-diagram-caption {
-  margin-top: 8px;
-  font-style: italic;
-  color: #4f5f70;
-  text-align: center;
+.methods-diagram-wrap .mermaid svg {
+  display: block;
+  width: min(100%, var(--methods-diagram-target-width));
+  max-width: min(100%, var(--methods-diagram-target-width));
+  max-height: var(--methods-diagram-max-height);
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
+  background: transparent !important;
+}
+
+.methods-diagram-wrap .mermaid svg .edgePath .path {
+  stroke: #2f4963 !important;
+  stroke-width: 2px !important;
+}
+
+.methods-diagram-wrap .mermaid svg marker path {
+  fill: #2f4963 !important;
+  stroke: #2f4963 !important;
+}
+
+.methods-diagram-wrap .mermaid svg .edgeLabel .labelBkg,
+.methods-diagram-wrap .mermaid svg .edgeLabel rect {
+  fill: rgba(231, 238, 246, 0.96) !important;
+}
+
+.methods-diagram-wrap .mermaid svg .edgeLabel text,
+.methods-diagram-wrap .mermaid svg .label text {
+  fill: #102b45 !important;
+}
+
+.methods-flow-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+  gap: 16px 24px;
+  align-items: start;
+}
+
+.methods-flow-layout .methods-flow-list {
+  margin: 0;
+}
+
+.methods-flow-layout .methods-diagram-wrap {
+  align-self: start;
+  position: relative;
+}
+
+.methods-flow-layout .methods-diagram-wrap::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(88, 112, 134, 0) 0%,
+    var(--site-column-divider, rgba(88, 112, 134, 0.26)) 14%,
+    var(--site-column-divider, rgba(88, 112, 134, 0.26)) 86%,
+    rgba(88, 112, 134, 0) 100%
+  );
+  pointer-events: none;
 }
 
 .methods-flow-list {
+  --methods-step-gap: 56px;
+  --methods-connector-shaft-width: 12px;
+  --methods-connector-shaft-height: 24px;
+  --methods-connector-head-half-width: 21px;
+  --methods-connector-head-height: 22px;
+  --methods-connector-overlap: 2px;
+  --methods-connector-total-height: calc(
+    var(--methods-connector-shaft-height) +
+    var(--methods-connector-head-height) -
+    var(--methods-connector-overlap)
+  );
   list-style: none;
-  counter-reset: method-step;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--methods-step-gap);
 }
 
-.methods-flow-list > li {
-  counter-increment: method-step;
+.methods-step-card {
+  position: relative;
   background: var(--site-widget-surface-soft);
   border: 1px solid var(--site-widget-border);
   border-top: 3px solid var(--site-card-separator);
-  border-radius: 10px;
-  padding: 12px 13px;
+  border-radius: 12px;
+  padding: 13px 14px;
+  box-shadow: 0 2px 0 rgba(32, 53, 79, 0.05);
 }
 
-.methods-flow-list > li > h4 {
-  margin: 0 0 0.55rem;
-  font-size: 1.02rem;
-  line-height: 1.35;
+.methods-step-card:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(
+    100% + (var(--methods-step-gap) - var(--methods-connector-total-height)) / 2
+  );
+  transform: translateX(-50%);
+  width: var(--methods-connector-shaft-width);
+  height: var(--methods-connector-shaft-height);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3f5978 0%, #5f7896 100%);
 }
 
-.methods-flow-list > li > h4::before {
-  content: "Pas " counter(method-step) ". ";
-  color: var(--site-accent-dark);
+.methods-step-card:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(
+    100% +
+    (var(--methods-step-gap) - var(--methods-connector-total-height)) / 2 +
+    var(--methods-connector-shaft-height) -
+    var(--methods-connector-overlap)
+  );
+  transform: translateX(-50%);
+  border-left: var(--methods-connector-head-half-width) solid transparent;
+  border-right: var(--methods-connector-head-half-width) solid transparent;
+  border-top: var(--methods-connector-head-height) solid #4f6a87;
+  filter: drop-shadow(0 3px 1px rgba(44, 65, 91, 0.22));
+}
+
+.methods-step-header {
+  margin: 0 0 0.66rem;
+}
+
+.methods-step-title {
+  margin: 0;
+  font-size: 1.04rem;
+  line-height: 1.34;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.48rem;
+}
+
+.methods-step-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #2b4767;
+  color: #fff;
+  font-size: 0.78rem;
   font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
-.methods-flow-list p {
+.methods-step-title-text {
+  font-weight: 700;
+  color: #0f2b46;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 223, 131, 0.92) 0%,
+    rgba(255, 223, 131, 0.92) 62%,
+    rgba(255, 223, 131, 0) 62%
+  );
+  padding: 0 0.12rem;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.methods-step-body p {
   margin: 0 0 0.52rem;
   font-size: 0.95rem;
   line-height: 1.38;
 }
 
-.methods-flow-list p:last-child {
+.methods-step-body p:last-child {
   margin-bottom: 0;
 }
 
-.methods-flow-list ul {
+.methods-step-body ul {
   margin: 0.35rem 0 0;
   padding-left: 1.15rem;
 }
 
-.methods-flow-list ul li {
+.methods-step-body ul li {
   margin: 0 0 0.36rem;
   font-size: 0.93rem;
   line-height: 1.34;
@@ -135,45 +340,91 @@ head_inline: |
   gap: 12px;
 }
 
-.methods-tools-grid > li {
+.methods-tool-card {
   background: var(--site-widget-surface-soft);
   border: 1px solid var(--site-widget-border);
   border-radius: 10px;
-  padding: 11px 12px;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
-.methods-tools-grid > li > strong {
+.methods-tool-card:hover {
+  border-color: #b8c8d9;
+  box-shadow: 0 2px 8px rgba(31, 51, 72, 0.14);
+}
+
+.methods-tool-card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.62rem;
+  min-height: 100%;
+  padding: 12px 13px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.methods-tool-card-link:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.methods-tool-card-link:focus-visible {
+  outline: 2px solid var(--site-accent-dark);
+  outline-offset: -2px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.methods-tool-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 58px;
+}
+
+.methods-tool-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #ccd6e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.methods-tool-logo img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
   display: block;
-  margin-bottom: 0.32rem;
 }
 
-.methods-tools-grid > li > p {
+.methods-tool-title {
+  display: block;
+  line-height: 1.25;
+}
+
+.methods-tool-description {
   margin: 0;
   font-size: 0.94rem;
   line-height: 1.35;
+  max-width: none;
 }
 
-.methods-lower-grid {
+.methods-lower-stack {
   margin-top: 1rem;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
 }
 
-.methods-section-card {
-  background: var(--site-widget-surface-soft);
-  border: 1px solid var(--site-widget-border);
-  border-radius: 10px;
-  padding: 12px 13px;
-}
-
-.methods-section-card > h2 {
+.methods-lower-stack > .methods-section {
   margin-top: 0;
 }
 
-.methods-section-card p {
-  max-width: none;
+.methods-lower-stack > .methods-section + .methods-section {
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--site-column-divider, rgba(88, 112, 134, 0.26));
 }
 
 .methods-guide-images {
@@ -184,13 +435,30 @@ head_inline: |
 }
 
 .methods-guide-image {
+  margin: 0;
   text-align: center;
+}
+
+.methods-guide-image-link {
+  display: block;
 }
 
 .methods-guide-image img {
   width: 100%;
-  max-width: 260px;
+  max-width: 100%;
+  max-height: 520px;
   height: auto;
+  object-fit: contain;
+  object-position: top center;
+  background: #fff;
+  border: 1px solid #d8e1eb;
+  border-radius: 6px;
+}
+
+.methods-guide-image-link:focus-visible {
+  outline: 2px solid var(--site-accent-dark, #334457);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 .methods-guide-image figcaption {
@@ -200,37 +468,72 @@ head_inline: |
 }
 
 .methods-improvements {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-.methods-improvements li {
-  margin: 0 0 0.7rem;
-}
-
-.methods-improvements li:last-child {
-  margin-bottom: 0;
+  margin: 0.15rem 0 0;
 }
 
 .methods-improvements p {
-  margin: 0;
+  margin: 0 0 0.8rem;
+}
+
+.methods-improvements p:last-child {
+  margin-bottom: 0;
 }
 
 @media screen and (max-width: 1500px) {
-  .methods-flow-list,
   .methods-tools-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media screen and (max-width: 1100px) {
-  .methods-lower-grid {
+  .methods-flow-layout {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .methods-flow-layout .methods-diagram-wrap::before {
+    content: none;
+  }
+
+  .methods-diagram-wrap {
+    width: 100%;
+    max-width: 660px;
+    justify-self: center;
+    overflow: hidden;
+  }
+
+  .methods-diagram-wrap .mermaid {
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  .methods-diagram-wrap .mermaid svg {
+    width: min(100%, var(--methods-diagram-target-width));
+    max-width: min(100%, 660px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .methods-lower-stack > .methods-section + .methods-section {
+    margin-top: 0.9rem;
+    padding-top: 0.85rem;
   }
 }
 
 @media screen and (max-width: 760px) {
-  .methods-flow-list,
+  .methods-flow-list {
+    --methods-step-gap: 44px;
+    --methods-connector-shaft-width: 9px;
+    --methods-connector-shaft-height: 18px;
+    --methods-connector-head-half-width: 16px;
+    --methods-connector-head-height: 16px;
+    --methods-connector-overlap: 2px;
+  }
+
+  .methods-step-card {
+    padding: 12px;
+  }
+
   .methods-tools-grid,
   .methods-guide-images {
     grid-template-columns: 1fr;
@@ -250,55 +553,21 @@ head_inline: |
 
   <h2>Flux de treball per a l'anàlisi de les guies docents</h2>
 
-  <div class="methods-diagram-wrap">
-    <div class="mermaid">
-flowchart TD
-%% Classes de colors
-classDef fase fill:#f9f,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
-classDef process fill:#ffeb99,stroke:#333,stroke-width:1px,color:#000;
-classDef data fill:#bbf,stroke:#333,stroke-width:1px,color:#000,font-style:italic;
-classDef output fill:#bfb,stroke:#333,stroke-width:1px,color:#000;
-
-%% FASE 1: Recopilació
-A[📥 1. Recopilació de guies docents]:::fase -->
-A1[🔗 Web-scraping de guies docents]:::process
-A1 --> A3{📑 Estàndard de la guia?}:::process
-A3 -->|DOCnet 93%| A4[🖥 Accés a iframe DOCnet]:::process
-A3 -->|GUIDO 7%| B
-A4 --> B
-
-%% FASES 2, 3 i 4
-B[📝 2. Processament i extracció de dades]:::fase --> B1[📊 Extracció del contingut de les guies docents]
-B1 --> C[🔍 3. Anàlisi de termes ODS]:::fase
-C --> C1[🌐 Traducció a l'anglès (LibreTranslate o Apertium)]
-C1 --> C2[🧮 Identificació dels ODS amb text2SDG (R)]
-C2 --> D[📊 4. Generació de visualitzacions i informes]:::fase
-
-%% Sortida
-D --> JSON[💾 JSON estructurat]:::data
-JSON --> Web[🌐 Pàgina web interactiva]:::output
-    </div>
-    <div class="methods-diagram-caption">Elaboració pròpia</div>
-  </div>
-
-  <ol class="methods-flow-list">
-    <li>
-      <h4>Recopilar les guies docents de grau i màster des de la web pública</h4>
+  <div class="methods-flow-layout">
+    {% capture methods_step_1 %}
       <p>Per obtenir el contingut dels ensenyaments, s'extreuen dades de les guies docents de les assignatures corresponents mitjançant múltiples processos de <i>web scraping</i> (Firefox WebScraper Plugin).</p>
       <p>Un exemple d'enllaç d'ensenyament és: <a href="https://guiadocent.urv.cat/guido/public/centres/503/ensenyaments/3475/detall" target="_blank" rel="noopener noreferrer">https://guiadocent.urv.cat/guido/public/centres/503/ensenyaments/3475/detall</a>.</p>
       <p>En aquest cas, "503" identifica el centre (Facultat de Turisme i Geografia) i "3475" l'ensenyament (Grau en Geografia, Anàlisi Territorial i Sostenibilitat).</p>
-    </li>
+    {% endcapture %}
 
-    <li>
-      <h4>Processar les dades i extreure textos rellevants</h4>
+    {% capture methods_step_2 %}
       <p>La informació es recupera en dos estàndards: <strong>DOCnet</strong> i <strong>GUIDO</strong>. DOCnet és encara present en moltes guies, mentre que GUIDO s'està desplegant progressivament.</p>
       <p>Per a DOCnet cal obtenir l'enllaç de l’<i>iframe</i>; per exemple: <a href="https://guiadocent.urv.cat/docnet/guia_docent/assignatures/print/?centre=21&ensenyament=2123&assignatura=21234114&any_academic=2025_26&idioma=cat" target="_blank" rel="noopener noreferrer">Enllaç DOCnet</a>.</p>
       <p>Per a GUIDO, l'accés és per apartats; per exemple: <a href="https://guiadocent.urv.cat/guido/public/centres/498/ensenyaments/3545/assignatures/116896/guia_docent" target="_blank" rel="noopener noreferrer">Enllaç GUIDO</a>.</p>
       <p>S'extreuen descripció, contingut, resultats d'aprenentatge, competències i referències, i s'organitzen en un <i>dataframe</i> amb el context de curs, ensenyament i centre.</p>
-    </li>
+    {% endcapture %}
 
-    <li>
-      <h4>Identificar termes ODS als textos</h4>
+    {% capture methods_step_3 %}
       <p>L'anàlisi per identificar i quantificar ODS es basa en detecció de termes i mètodes del paquet <strong>text2SDG</strong> en R. El contingut original en català es tradueix a l'anglès (LibreTranslate, i de suport Apertium).</p>
       <p>Es van revisar diverses fonts de paraules clau i mètodes:</p>
       <ul>
@@ -309,77 +578,124 @@ JSON --> Web[🌐 Pàgina web interactiva]:::output
         <li>text2SDG (Meier, Mata i Wulff, 2022).</li>
       </ul>
       <p>Finalment, text2SDG es va escollir per utilitat i eficiència en grans volums de text.</p>
-    </li>
+    {% endcapture %}
 
-    <li>
-      <h4>Generar visualitzacions i informes</h4>
+    {% capture methods_step_4 %}
       <p>Els ODS detectats es fusionen amb les metadades de les assignatures i s'exporten en un format JSON estructurat per centres, ensenyaments i cursos.</p>
       <p>Aquest format permet consultes ràpides i iteratives per analitzar quins centres, programes i assignatures mostren major alineació amb els ODS.</p>
-    </li>
-  </ol>
+    {% endcapture %}
+
+    <ol class="methods-flow-list">
+      {% include methods/step_card.html step="1" title="Recopilar les guies docents de grau i màster des de la web pública" body=methods_step_1 %}
+      {% include methods/step_card.html step="2" title="Processar les dades i extreure textos rellevants" body=methods_step_2 %}
+      {% include methods/step_card.html step="3" title="Identificar termes ODS als textos" body=methods_step_3 %}
+      {% include methods/step_card.html step="4" title="Generar visualitzacions i informes" body=methods_step_4 %}
+    </ol>
+
+    <aside class="methods-diagram-wrap" aria-label="Diagrama de flux metodològic">
+      <div class="mermaid">
+flowchart TB
+%% Classes de colors
+classDef fase fill:#f9f,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
+classDef process fill:#ffeb99,stroke:#333,stroke-width:1px,color:#000;
+classDef data fill:#bbf,stroke:#333,stroke-width:1px,color:#000,font-style:italic;
+classDef output fill:#bfb,stroke:#333,stroke-width:1px,color:#000;
+
+%% FASE 1: Recopilació
+A["1. Recopilació de guies docents"]:::fase --> A1["Web scraping de guies docents"]:::process
+A1 --> A3{📑 Estàndard de la guia?}:::process
+A3 -->|DOCnet 93%| A4["Accés a iframe DOCnet"]:::process
+A3 -->|GUIDO 7%| B["2. Processament i extracció de dades"]:::fase
+A4 --> B
+
+%% FASES 2, 3 i 4
+B --> B1["Extracció del contingut de les guies docents"]:::process
+B1 --> C["3. Anàlisi de termes ODS"]:::fase
+C --> C1["Traducció a l'anglès (LibreTranslate o Apertium)"]:::process
+C1 --> C2["Identificació dels ODS amb text2SDG (R)"]:::process
+C2 --> D["4. Generació de visualitzacions i informes"]:::fase
+
+%% Sortida
+D --> JSON["JSON estructurat"]:::data
+JSON --> Web["Pàgina web interactiva"]:::output
+      </div>
+    </aside>
+  </div>
 
   <section class="methods-section">
     <h2>Eines utilitzades</h2>
     <ul class="methods-tools-grid">
-      <li>
-        <strong>Docker i Docker Compose</strong>
-        <p>Desplegament i gestió dels serveis de neteja, transformació, traducció i anàlisi.</p>
-      </li>
-      <li>
-        <strong>Firefox WebScraper Plugin</strong>
-        <p>Extracció automatitzada del contingut web de les guies docents.</p>
-      </li>
-      <li>
-        <strong>R (dplyr, tidyr, stringr, readr, corpustools, purrr)</strong>
-        <p>Neteja i preparació de dades, i construcció de sortides per a web i informes.</p>
-      </li>
-      <li>
-        <strong>R - text2sdg</strong>
-        <p>Identificació i avaluació dels ODS i dels termes associats dins els textos.</p>
-      </li>
-      <li>
-        <strong>LibreTranslate (contenidor)</strong>
-        <p>Traducció automàtica de les descripcions a l'anglès dins el flux de processament.</p>
-      </li>
+      {% include methods/tool_card.html
+        title="Docker i Docker Compose"
+        description="Desplegament i gestió dels serveis de neteja, transformació, traducció i anàlisi."
+        logo_src="../assets/logos/tools/docker.svg"
+        logo_alt="Logo de Docker"
+        info_url="https://www.docker.com/"
+      %}
+      {% include methods/tool_card.html
+        title="Firefox WebScraper Plugin"
+        description="Extracció automatitzada del contingut web de les guies docents."
+        logo_src="../assets/logos/tools/webscraper.svg"
+        logo_alt="Logo de Web Scraper"
+        info_url="https://webscraper.io/"
+      %}
+      {% include methods/tool_card.html
+        title="R (dplyr, tidyr, stringr, readr, corpustools, purrr)"
+        description="Neteja i preparació de dades, i construcció de sortides per a web i informes."
+        logo_src="../assets/logos/tools/r.svg"
+        logo_alt="Logo de R"
+        info_url="https://www.r-project.org/"
+      %}
+      {% include methods/tool_card.html
+        title="R - text2sdg"
+        description="Identificació i avaluació dels ODS i dels termes associats dins els textos."
+        logo_src="../assets/logos/tools/text2sdg.png"
+        logo_alt="Logo oficial de text2sdg"
+        info_url="https://www.text2sdg.io/"
+      %}
+      {% include methods/tool_card.html
+        title="LibreTranslate (contenidor)"
+        description="Traducció automàtica de les descripcions a l'anglès dins el flux de processament."
+        logo_src="../assets/logos/tools/libretranslate.svg"
+        logo_alt="Logo de LibreTranslate"
+        info_url="https://libretranslate.com/"
+      %}
     </ul>
   </section>
 
-  <div class="methods-lower-grid">
-    <section class="methods-section methods-section-card">
+  <div class="methods-lower-stack">
+    <section class="methods-section">
       <h2>Dificultats i limitacions</h2>
       <p>La variabilitat entre DOCnet i GUIDO complica l'extracció uniforme. Les diferències de format i d'accés a continguts (especialment l’<i>iframe</i> de DOCnet) han obligat a mantenir fluxos de processament diferenciats.</p>
-      <p>També s'han detectat dades incompletes o mal formatejades (referències, competències i resultats), que en alguns casos requereixen revisió manual per garantir qualitat.</p>
 
       <div class="methods-guide-images">
         <figure class="methods-guide-image">
-          <img src="../assets/logos/templates/guido.png" alt="Guia docent en format GUIDO">
+          <a class="methods-guide-image-link" href="https://guiadocent.urv.cat/guido/public/centres/498/ensenyaments/3545/assignatures/116896/guia_docent" target="_blank" rel="noopener noreferrer" aria-label="Obrir exemple de guia docent GUIDO">
+            <img src="../assets/logos/templates/guido.png" alt="Guia docent en format GUIDO">
+          </a>
           <figcaption>Guia docent en format GUIDO</figcaption>
         </figure>
         <figure class="methods-guide-image">
-          <img src="../assets/logos/templates/docnet.png" alt="Guia docent en format DOCnet">
+          <a class="methods-guide-image-link" href="https://guiadocent.urv.cat/docnet/guia_docent/assignatures/print/?centre=21&amp;ensenyament=2123&amp;assignatura=21234114&amp;any_academic=2025_26&amp;idioma=cat" target="_blank" rel="noopener noreferrer" aria-label="Obrir exemple de guia docent DOCnet">
+            <img src="../assets/logos/templates/docnet.png" alt="Guia docent en format DOCnet">
+          </a>
           <figcaption>Guia docent en format DOCnet</figcaption>
         </figure>
       </div>
 
+      <p>També s'han detectat dades incompletes o mal formatejades (referències, competències i resultats), que en alguns casos requereixen revisió manual per garantir qualitat.</p>
       <p>En alguns ensenyaments també hi ha continguts ubicats en seccions no previstes de la guia docent, cosa que pot reduir coherència en la detecció ODS.</p>
     </section>
 
-    <section class="methods-section methods-section-card">
+    <section class="methods-section">
       <h2>Possibles millores i treball futur</h2>
-      <ul class="methods-improvements">
-        <li>
-          <p>Millorar el procés de scraping amb eines natives d'R (<i>rvest</i>, <i>httr</i>) per guanyar control i traçabilitat del flux d'extracció.</p>
-        </li>
-        <li>
-          <p>Reforçar la qualitat de traducció de termes tècnics i compostos incorporant preprocés contextual abans de l'enviament al traductor.</p>
-        </li>
-        <li>
-          <p>Evolucionar les visualitzacions per facilitar una lectura més immediata de la cobertura i les diferències per sistema/secció.</p>
-        </li>
-        <li>
-          <p>Ampliar la cobertura de dades a més programes universitaris per millorar representativitat i robustesa analítica.</p>
-        </li>
-      </ul>
+      <div class="methods-improvements">
+        <p>El treball futur es pot articular en dues línies complementàries. D'una banda, cal continuar amb millores tècniques del pipeline: reforçar l'extracció amb eines natives d'R (<i>rvest</i>, <i>httr</i>) per millorar traçabilitat i control d'errors, incorporar preprocés contextual abans de la traducció per reduir ambigüitats en termes tècnics i compostos, i consolidar visualitzacions que permetin comparar de manera més directa cobertures i diferències entre sistemes i seccions.</p>
+
+        <p>De l'altra, hi ha una feina conceptual i metodològica igualment rellevant. Una revisió manual de mostres de resultats hauria de servir per estimar falsos positius i falsos negatius, i per orientar millor la selecció dels criteris d'anàlisi. En lloc d'assumir un únic sistema òptim per a tots els casos, convé estudiar quina combinació de sistema i secció és més robusta per a cada ODS, amb criteris explícits de qualitat i interpretabilitat.</p>
+
+        <p>A partir d'aquesta validació, es podria elaborar un conjunt de recomanacions pràctiques per a la redacció de guies docents, orientades a fer més clara i consistent la descripció de competències, continguts i referències vinculables als ODS. En paral·lel, seria pertinent construir un diccionari propi de termes ODS adaptat al context URV i utilitzar-lo per entrenar o ajustar un model/sistema de classificació específic, més alineat amb el llenguatge real de les titulacions analitzades.</p>
+      </div>
     </section>
   </div>
 </div>

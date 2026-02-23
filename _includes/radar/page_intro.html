@@ -1,0 +1,32 @@
+<!--
+File: _includes/radar/page_intro.html
+Purpose: Intro text for the radar chart page.
+Related files:
+  - pages/radar.html
+-->
+
+<div class="w3-container">
+  <div class="radar-title-row">
+    <h1>Una vista amb gràfics de radar</h1>
+    <div class="radar-title-actions">
+      <button
+        id="radarIntroToggle"
+        type="button"
+        class="w3-button w3-small w3-round w3-border explainer-toggle-button radar-info-toggle"
+        aria-controls="radarIntroPanel"
+        aria-expanded="false"
+        aria-label="Mostra o oculta la descripció de la visualització"
+        title="Mostra o oculta la descripció de la visualització">
+        <i class="fa fa-plus explainer-toggle-icon radar-info-toggle-icon" aria-hidden="true"></i>
+        <span class="radar-sr-only">Info</span>
+      </button>
+    </div>
+  </div>
+  <div id="radarIntroPanel" class="radar-intro-panel" hidden>
+    <p>
+      Aquesta visualització mostra, per a cada ODS, el percentatge d'assignatures on s'ha detectat.
+      Pots veure el centre complet i, si tries un ensenyament, comparar-lo en un segon radar.
+      El càlcul es recalcula segons el sistema de classificació i la secció analitzada.
+    </p>
+  </div>
+</div>

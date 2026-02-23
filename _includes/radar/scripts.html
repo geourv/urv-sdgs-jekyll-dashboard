@@ -1,9 +1,9 @@
 <!--
-File: _includes/doughnut/scripts.html
-Purpose: Doughnut charts from the new URV SDGs API (centre/programme + system/section analysis).
+File: _includes/radar/scripts.html
+Purpose: Radar charts from the new URV SDGs API (centre/programme + system/section analysis).
 Related files:
-  - _includes/doughnut/interactive_layout.html
-  - pages/doughnut.html
+  - _includes/radar/interactive_layout.html
+  - pages/radar.html
 -->
 
 <script>
@@ -46,6 +46,8 @@ const odsColors = {
   "ODS-16": "#00689d",
   "ODS-17": "#19486a"
 };
+
+const ODS_ORDER = Object.keys(odsDefinitions).sort((a, b) => a.localeCompare(b, "ca"));
 
 const API_BASE_CANDIDATES = Array.from(
   new Set(
@@ -110,25 +112,25 @@ const SECTION_EXPLANATIONS = {
 
 const facultySelect = document.getElementById("faculty-select");
 const degreeSelect = document.getElementById("degree-select");
-const systemSelect = document.getElementById("doughnut-system-select");
-const sectionSelect = document.getElementById("doughnut-section-select");
-const doughnutShellEl = document.querySelector(".doughnut-shell");
+const systemSelect = document.getElementById("radar-system-select");
+const sectionSelect = document.getElementById("radar-section-select");
+const radarShellEl = document.querySelector(".radar-shell");
 const chartContainer = document.getElementById("chart-container");
-const explainerPanelEl = document.getElementById("doughnut-explainer");
-const explainerBodyEl = document.getElementById("doughnut-explainer-body");
-const explainerTitleEl = document.getElementById("doughnut-explainer-title");
-const explainerScopeEl = document.getElementById("doughnut-explainer-scope");
-const explainerCoverageEl = document.getElementById("doughnut-explainer-coverage");
-const explainerSystemEl = document.getElementById("doughnut-explainer-system");
-const explainerSectionEl = document.getElementById("doughnut-explainer-section");
-const explainerNotesEl = document.getElementById("doughnut-explainer-notes");
-const doughnutPanelToggleBtn = document.getElementById("doughnutPanelToggle");
-const doughnutPanelToggleIconEl = document.getElementById("doughnutPanelToggleIcon");
-const doughnutIntroToggleBtn = document.getElementById("doughnutIntroToggle");
-const doughnutIntroToggleIconEl = doughnutIntroToggleBtn
-  ? doughnutIntroToggleBtn.querySelector(".doughnut-info-toggle-icon")
+const explainerPanelEl = document.getElementById("radar-explainer");
+const explainerBodyEl = document.getElementById("radar-explainer-body");
+const explainerTitleEl = document.getElementById("radar-explainer-title");
+const explainerScopeEl = document.getElementById("radar-explainer-scope");
+const explainerCoverageEl = document.getElementById("radar-explainer-coverage");
+const explainerSystemEl = document.getElementById("radar-explainer-system");
+const explainerSectionEl = document.getElementById("radar-explainer-section");
+const explainerNotesEl = document.getElementById("radar-explainer-notes");
+const radarPanelToggleBtn = document.getElementById("radarPanelToggle");
+const radarPanelToggleIconEl = document.getElementById("radarPanelToggleIcon");
+const radarIntroToggleBtn = document.getElementById("radarIntroToggle");
+const radarIntroToggleIconEl = radarIntroToggleBtn
+  ? radarIntroToggleBtn.querySelector(".radar-info-toggle-icon")
   : null;
-const doughnutIntroPanelEl = document.getElementById("doughnutIntroPanel");
+const radarIntroPanelEl = document.getElementById("radarIntroPanel");
 
 const state = {
   apiBase: "",
@@ -141,15 +143,16 @@ const state = {
   sectionOptions: [],
   centreDetailCache: new Map(),
   programmeDetailCache: new Map(),
+  centreCoursesCache: new Map(),
   charts: [],
   renderToken: 0,
   panelVisible: false,
   panelCollapsed: false
 };
 
-let doughnutHeaderSyncRafId = null;
-let doughnutLayoutResizeTimer = null;
-let doughnutSidebarClassObserver = null;
+let radarHeaderSyncRafId = null;
+let radarLayoutResizeTimer = null;
+let radarSidebarClassObserver = null;
 
 function normalizeWhitespace(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -186,16 +189,12 @@ function resolveCourseCount(detailJson, fallbackValue) {
 
   for (let index = 0; index < candidates.length; index += 1) {
     const parsed = Number(candidates[index]);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return Math.floor(parsed);
-    }
+    if (Number.isFinite(parsed) && parsed > 0) return Math.floor(parsed);
   }
 
   for (let index = 0; index < candidates.length; index += 1) {
     const parsed = Number(candidates[index]);
-    if (Number.isFinite(parsed) && parsed >= 0) {
-      return Math.floor(parsed);
-    }
+    if (Number.isFinite(parsed) && parsed >= 0) return Math.floor(parsed);
   }
 
   return 0;
@@ -244,9 +243,7 @@ function readSharedFilters() {
 function writeSharedFilters(patch) {
   const store = window.SDGFilterMemory;
   if (!store || typeof store.write !== "function") return null;
-  const payload = {
-    ...(patch || {})
-  };
+  const payload = { ...(patch || {}) };
   if (Object.prototype.hasOwnProperty.call(payload, "systemId")) {
     payload.systemId = normalizeSystemId(payload.systemId) || DEFAULT_SYSTEM_ID;
   }
@@ -276,15 +273,12 @@ function joinUrl(...parts) {
 
 async function fetchJson(url) {
   const response = await fetch(url, { cache: "no-cache" });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} (${url})`);
-  }
+  if (!response.ok) throw new Error(`HTTP ${response.status} (${url})`);
   return response.json();
 }
 
 async function fetchApiJson(relativePath) {
-  const url = joinUrl(state.apiBase, relativePath);
-  return fetchJson(url);
+  return fetchJson(joinUrl(state.apiBase, relativePath));
 }
 
 async function resolveApiBaseAndVersion() {
@@ -345,6 +339,7 @@ async function loadIndexes() {
     state.programmesByCentreCode.get(programme.centre_code).push(programme);
     state.programmeByKey.set(key, programme);
   });
+
   for (const [centreCode, items] of state.programmesByCentreCode.entries()) {
     items.sort((a, b) => a.programme_name.localeCompare(b.programme_name, "ca"));
     state.programmesByCentreCode.set(centreCode, items);
@@ -357,10 +352,7 @@ async function loadIndexes() {
 function populateFacultySelect(selectedCentreCode) {
   facultySelect.innerHTML = "";
   addOption(facultySelect, "", FACULTY_PLACEHOLDER_LABEL);
-
-  state.centres.forEach((centre) => {
-    addOption(facultySelect, centre.centre_code, centre.centre_name);
-  });
+  state.centres.forEach((centre) => addOption(facultySelect, centre.centre_code, centre.centre_name));
 
   const selected = String(selectedCentreCode || "");
   facultySelect.value = state.centreByCode.has(selected) ? selected : "";
@@ -383,14 +375,11 @@ function populateDegreeSelect(centreCode, selectedProgrammeKey) {
   const centreKey = String(centreCode || "");
   const programmes = state.programmesByCentreCode.get(centreKey) || [];
   const validProgrammeKeys = new Set();
+
   programmes.forEach((programme) => {
     const key = programmeKey(programme.centre_code, programme.programme_code);
     validProgrammeKeys.add(key);
-    addOption(
-      degreeSelect,
-      key,
-      programme.programme_name
-    );
+    addOption(degreeSelect, key, programme.programme_name);
   });
 
   degreeSelect.disabled = !centreKey;
@@ -414,10 +403,9 @@ function populateSystemSelect(selectedSystemId) {
     const label = SYSTEM_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
     addOption(systemSelect, id, label);
   });
+
   const selected = normalizeSystemId(selectedSystemId);
-  const resolvedOption = state.systemOptions.find((row) => {
-    return normalizeSystemId(String(row?.id || "")) === selected;
-  });
+  const resolvedOption = state.systemOptions.find((row) => normalizeSystemId(String(row?.id || "")) === selected);
   const fallback = state.systemOptions[0] ? String(state.systemOptions[0].id || "") : "";
   systemSelect.value = resolvedOption ? String(resolvedOption?.id || "") : fallback;
 }
@@ -429,6 +417,7 @@ function populateSectionSelect(selectedSectionId) {
     const label = SECTION_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
     addOption(sectionSelect, id, label);
   });
+
   const selected = String(selectedSectionId || "");
   const fallback = state.sectionOptions[0] ? String(state.sectionOptions[0].id || "") : "";
   const hasSelected = state.sectionOptions.some((row) => String(row?.id || "") === selected);
@@ -444,9 +433,9 @@ function clearCharts() {
   state.charts = [];
 }
 
-function syncDoughnutChartHeaderHeights() {
+function syncRadarChartHeaderHeights() {
   if (!chartContainer) return;
-  const headerEls = Array.from(chartContainer.querySelectorAll(".doughnut-chart-header"));
+  const headerEls = Array.from(chartContainer.querySelectorAll(".radar-chart-header"));
   headerEls.forEach((element) => {
     element.style.minHeight = "";
   });
@@ -462,20 +451,20 @@ function syncDoughnutChartHeaderHeights() {
   });
 }
 
-function scheduleDoughnutChartHeaderHeightsSync() {
-  if (doughnutHeaderSyncRafId && typeof window.cancelAnimationFrame === "function") {
-    window.cancelAnimationFrame(doughnutHeaderSyncRafId);
+function scheduleRadarChartHeaderHeightsSync() {
+  if (radarHeaderSyncRafId && typeof window.cancelAnimationFrame === "function") {
+    window.cancelAnimationFrame(radarHeaderSyncRafId);
   }
 
   if (typeof window.requestAnimationFrame === "function") {
-    doughnutHeaderSyncRafId = window.requestAnimationFrame(() => {
-      doughnutHeaderSyncRafId = null;
-      syncDoughnutChartHeaderHeights();
+    radarHeaderSyncRafId = window.requestAnimationFrame(() => {
+      radarHeaderSyncRafId = null;
+      syncRadarChartHeaderHeights();
     });
     return;
   }
 
-  syncDoughnutChartHeaderHeights();
+  syncRadarChartHeaderHeights();
 }
 
 function resizeChartsForLayoutChange() {
@@ -493,7 +482,7 @@ function resizeChartsForLayoutChange() {
 function scheduleChartResizeForLayoutChange() {
   const runLayoutReflow = () => {
     resizeChartsForLayoutChange();
-    scheduleDoughnutChartHeaderHeightsSync();
+    scheduleRadarChartHeaderHeightsSync();
   };
 
   if (typeof window.requestAnimationFrame === "function") {
@@ -504,64 +493,64 @@ function scheduleChartResizeForLayoutChange() {
     runLayoutReflow();
   }
 
-  if (doughnutLayoutResizeTimer) {
-    clearTimeout(doughnutLayoutResizeTimer);
+  if (radarLayoutResizeTimer) {
+    clearTimeout(radarLayoutResizeTimer);
   }
-  doughnutLayoutResizeTimer = setTimeout(() => {
-    doughnutLayoutResizeTimer = null;
+  radarLayoutResizeTimer = setTimeout(() => {
+    radarLayoutResizeTimer = null;
     runLayoutReflow();
   }, 170);
 }
 
-function observeDoughnutSidebarLayoutState() {
-  if (typeof MutationObserver === "undefined" || !document.body || doughnutSidebarClassObserver) return;
+function observeRadarSidebarLayoutState() {
+  if (typeof MutationObserver === "undefined" || !document.body || radarSidebarClassObserver) return;
 
   let lastBodyClassName = document.body.className;
-  doughnutSidebarClassObserver = new MutationObserver(() => {
+  radarSidebarClassObserver = new MutationObserver(() => {
     const currentBodyClassName = document.body.className;
     if (currentBodyClassName === lastBodyClassName) return;
     lastBodyClassName = currentBodyClassName;
     scheduleChartResizeForLayoutChange();
   });
-  doughnutSidebarClassObserver.observe(document.body, {
+  radarSidebarClassObserver.observe(document.body, {
     attributes: true,
     attributeFilter: ["class"]
   });
 }
 
-function isCompactDoughnutLayout() {
+function isCompactRadarLayout() {
   return window.matchMedia("(max-width: 992px)").matches;
 }
 
 function applyExplainerPanelCollapseUi() {
-  const isCompact = isCompactDoughnutLayout();
+  const isCompact = isCompactRadarLayout();
   const panelVisible = Boolean(state.panelVisible);
   const panelExpanded = panelVisible && !state.panelCollapsed;
   const panelMinimized = panelVisible && state.panelCollapsed && !isCompact;
   const hidePanelColumn = !panelVisible;
 
-  if (doughnutShellEl) {
-    doughnutShellEl.classList.toggle("doughnut-shell--panel-collapsed", hidePanelColumn);
-    doughnutShellEl.classList.toggle("doughnut-shell--panel-minimized", panelMinimized);
+  if (radarShellEl) {
+    radarShellEl.classList.toggle("radar-shell--panel-collapsed", hidePanelColumn);
+    radarShellEl.classList.toggle("radar-shell--panel-minimized", panelMinimized);
   }
   if (explainerPanelEl) {
     explainerPanelEl.hidden = hidePanelColumn;
-    explainerPanelEl.classList.toggle("doughnut-explainer--minimized", panelMinimized);
+    explainerPanelEl.classList.toggle("radar-explainer--minimized", panelMinimized);
   }
   if (explainerBodyEl) {
     explainerBodyEl.hidden = !panelExpanded;
   }
-  if (doughnutPanelToggleBtn) {
+  if (radarPanelToggleBtn) {
     const label = panelExpanded ? "Oculta l'explicació" : "Mostra l'explicació";
-    doughnutPanelToggleBtn.hidden = !panelVisible;
-    doughnutPanelToggleBtn.setAttribute("aria-expanded", String(panelExpanded));
-    doughnutPanelToggleBtn.setAttribute("aria-label", label);
-    doughnutPanelToggleBtn.setAttribute("title", label);
+    radarPanelToggleBtn.hidden = !panelVisible;
+    radarPanelToggleBtn.setAttribute("aria-expanded", String(panelExpanded));
+    radarPanelToggleBtn.setAttribute("aria-label", label);
+    radarPanelToggleBtn.setAttribute("title", label);
   }
-  if (doughnutPanelToggleIconEl) {
-    doughnutPanelToggleIconEl.className = panelExpanded
-      ? "fa fa-minus explainer-toggle-icon doughnut-panel-toggle-icon"
-      : "fa fa-plus explainer-toggle-icon doughnut-panel-toggle-icon";
+  if (radarPanelToggleIconEl) {
+    radarPanelToggleIconEl.className = panelExpanded
+      ? "fa fa-minus explainer-toggle-icon radar-panel-toggle-icon"
+      : "fa fa-plus explainer-toggle-icon radar-panel-toggle-icon";
   }
 
   scheduleChartResizeForLayoutChange();
@@ -577,50 +566,235 @@ function setExplainerPanelVisible(isVisible) {
   applyExplainerPanelCollapseUi();
 }
 
-function setDoughnutIntroPanelExpanded(isExpanded) {
-  if (!doughnutIntroToggleBtn || !doughnutIntroPanelEl) return;
+function setRadarIntroPanelExpanded(isExpanded) {
+  if (!radarIntroToggleBtn || !radarIntroPanelEl) return;
   const expanded = Boolean(isExpanded);
-  doughnutIntroPanelEl.hidden = !expanded;
-  doughnutIntroToggleBtn.setAttribute("aria-expanded", String(expanded));
-  if (doughnutIntroToggleIconEl) {
-    doughnutIntroToggleIconEl.className = expanded
-      ? "fa fa-minus explainer-toggle-icon doughnut-info-toggle-icon"
-      : "fa fa-plus explainer-toggle-icon doughnut-info-toggle-icon";
+  radarIntroPanelEl.hidden = !expanded;
+  radarIntroToggleBtn.setAttribute("aria-expanded", String(expanded));
+  if (radarIntroToggleIconEl) {
+    radarIntroToggleIconEl.className = expanded
+      ? "fa fa-minus explainer-toggle-icon radar-info-toggle-icon"
+      : "fa fa-plus explainer-toggle-icon radar-info-toggle-icon";
   }
 }
 
-function extractSdgRows(detailJson, systemId, sectionId) {
-  const rows = detailJson?.by_set?.sdg?.[String(systemId || "")]?.[String(sectionId || "")];
-  if (!Array.isArray(rows)) return [];
-  return rows
-    .map((row) => ({
-      sdg: normalizeSdgCodeToOds(row?.sdg),
-      n_hits: Number(row?.n_hits || 0)
-    }))
-    .filter((row) => row.sdg && Number.isFinite(row.n_hits) && row.n_hits > 0);
+function getCourseOdsSet(course, systemId, sectionId) {
+  const recognised = course?.sdg_compact?.[String(systemId || "")]?.[String(sectionId || "")];
+  const rawList = Array.isArray(recognised)
+    ? recognised
+    : (typeof recognised === "string" && normalizeWhitespace(recognised) ? [recognised] : []);
+
+  const normalized = rawList
+    .map((code) => normalizeSdgCodeToOds(code))
+    .filter((code) => Object.prototype.hasOwnProperty.call(odsDefinitions, code));
+
+  return new Set(normalized);
 }
 
-function buildDistribution(rows) {
+function buildRadarDistributionFromCourses(coursesInput, systemId, sectionId) {
+  const courses = Array.isArray(coursesInput) ? coursesInput : [];
+  const totalCourses = courses.length;
+
   const counts = {};
-  rows.forEach((row) => {
-    if (!counts[row.sdg]) counts[row.sdg] = 0;
-    counts[row.sdg] += row.n_hits;
+  ODS_ORDER.forEach((odsCode) => {
+    counts[odsCode] = 0;
   });
 
-  const labels = Object.keys(counts).sort((a, b) => a.localeCompare(b, "ca"));
-  const totalHits = labels.reduce((acc, label) => acc + (counts[label] || 0), 0);
+  let coursesWithOds = 0;
+  courses.forEach((course) => {
+    const odsSet = getCourseOdsSet(course, systemId, sectionId);
+    if (odsSet.size > 0) coursesWithOds += 1;
+    odsSet.forEach((odsCode) => {
+      if (Object.prototype.hasOwnProperty.call(counts, odsCode)) {
+        counts[odsCode] += 1;
+      }
+    });
+  });
+
   const percentages = {};
-  labels.forEach((label) => {
-    percentages[label] = totalHits > 0 ? Number(((counts[label] * 100) / totalHits).toFixed(1)) : 0;
+  ODS_ORDER.forEach((odsCode) => {
+    percentages[odsCode] = totalCourses > 0
+      ? Number(((counts[odsCode] * 100) / totalCourses).toFixed(1))
+      : 0;
   });
 
+  const coveragePct = totalCourses > 0 ? Number(((coursesWithOds * 100) / totalCourses).toFixed(1)) : 0;
   return {
-    labels,
+    labels: ODS_ORDER.slice(),
     counts,
     percentages,
-    totalHits
+    totalCourses,
+    coursesWithOds,
+    coveragePct
   };
 }
+
+function buildRadarDistribution(detailJson, systemId, sectionId) {
+  const courses = Array.isArray(detailJson?.courses) ? detailJson.courses : [];
+  return buildRadarDistributionFromCourses(courses, systemId, sectionId);
+}
+
+function getDistributionMaxPercentage(distribution) {
+  const labels = Array.isArray(distribution?.labels) ? distribution.labels : [];
+  if (!labels.length) return 0;
+  return labels.reduce((maxValue, odsCode) => {
+    const value = Number(distribution?.percentages?.[odsCode] || 0);
+    if (!Number.isFinite(value)) return maxValue;
+    return Math.max(maxValue, value);
+  }, 0);
+}
+
+function getNiceRadarStep(rawStep) {
+  const parsed = Number(rawStep);
+  if (!Number.isFinite(parsed) || parsed <= 1) return 1;
+  if (parsed <= 2) return 2;
+  if (parsed <= 5) return 5;
+  if (parsed <= 10) return 10;
+  if (parsed <= 20) return 20;
+  return 25;
+}
+
+function buildSharedRadarScale(distributions) {
+  const valid = (Array.isArray(distributions) ? distributions : []).filter(Boolean);
+  if (!valid.length) {
+    return { min: 0, max: 100, stepSize: 20 };
+  }
+
+  const maxDetected = valid.reduce((maxValue, distribution) => {
+    return Math.max(maxValue, getDistributionMaxPercentage(distribution));
+  }, 0);
+  const clampedMaxDetected = Math.max(0, Math.min(100, maxDetected));
+  const paddedTarget = clampedMaxDetected > 0
+    ? Math.min(100, clampedMaxDetected * 1.12)
+    : 5;
+
+  const rawStep = paddedTarget / 5;
+  const stepSize = getNiceRadarStep(rawStep);
+  let axisMax = Math.ceil(Math.max(paddedTarget, clampedMaxDetected) / stepSize) * stepSize;
+
+  axisMax = Math.max(5, Math.min(100, axisMax));
+  if (axisMax < stepSize) {
+    axisMax = stepSize;
+  }
+
+  return {
+    min: 0,
+    max: axisMax,
+    stepSize
+  };
+}
+
+function getRadarPointLabelBoxes(chart) {
+  const scale = chart?.scales?.r;
+  const labels = Array.isArray(chart?.data?.labels) ? chart.data.labels : [];
+  if (!scale || !labels.length) return [];
+
+  const boxes = [];
+  const ctx = chart?.ctx;
+  if (!ctx) return [];
+
+  const originalFont = ctx.font;
+  const pointLabelFont = scale?._pointLabelFont?.string;
+  if (pointLabelFont) ctx.font = pointLabelFont;
+
+  const padding = Number(scale?.options?.pointLabels?.padding || 0);
+  labels.forEach((label, idx) => {
+    const text = String(label || "");
+    const textWidth = Number(ctx.measureText(text).width || 0);
+    const fontSize = Number(scale?._pointLabelFont?.size || scale?.options?.pointLabels?.font?.size || 12);
+    const metrics = ctx.measureText(text);
+    const ascent = Number(metrics.actualBoundingBoxAscent || fontSize * 0.72);
+    const descent = Number(metrics.actualBoundingBoxDescent || fontSize * 0.28);
+    const boxHeight = Math.max(fontSize + 8, ascent + descent + 8);
+    const boxWidth = Math.max(46, textWidth + 18);
+    const radialDistance = Number(scale.drawingArea || 0) + padding + 6;
+    const anchor = typeof scale.getPointPosition === "function"
+      ? scale.getPointPosition(idx, radialDistance)
+      : null;
+    if (!anchor || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return;
+    boxes.push({
+      index: idx,
+      left: anchor.x - (boxWidth / 2),
+      right: anchor.x + (boxWidth / 2),
+      top: anchor.y - (boxHeight / 2),
+      bottom: anchor.y + (boxHeight / 2)
+    });
+  });
+
+  ctx.font = originalFont;
+  return boxes;
+}
+
+function findRadarPointLabelIndexAtEvent(chart, event, extraPadding) {
+  if (!chart || !event) return -1;
+  const x = Number(event.x);
+  const y = Number(event.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return -1;
+
+  const pad = Number(extraPadding || 0);
+  const boxes = getRadarPointLabelBoxes(chart);
+  for (let idx = 0; idx < boxes.length; idx += 1) {
+    const box = boxes[idx];
+    if (!box) continue;
+    if (
+      x >= (Number(box.left) - pad)
+      && x <= (Number(box.right) + pad)
+      && y >= (Number(box.top) - pad)
+      && y <= (Number(box.bottom) + pad)
+    ) {
+      return Number(box.index);
+    }
+  }
+  return -1;
+}
+
+const radarPointLabelTooltipPlugin = {
+  id: "radarPointLabelTooltipPlugin",
+  afterEvent(chart, args) {
+    const event = args?.event;
+    if (!event) return;
+
+    const eventType = String(event.type || "");
+    const validEvents = new Set(["mousemove", "touchmove", "click", "mouseout", "touchend", "touchcancel"]);
+    if (!validEvents.has(eventType)) return;
+
+    const datasetMeta = chart.getDatasetMeta(0);
+    const points = Array.isArray(datasetMeta?.data) ? datasetMeta.data : [];
+    if (!points.length) return;
+
+    const hoverState = chart.$radarPointLabelHoverState || { forced: false, index: -1 };
+    chart.$radarPointLabelHoverState = hoverState;
+
+    const labelIndex = eventType === "mouseout"
+      ? -1
+      : findRadarPointLabelIndexAtEvent(chart, event, 12);
+
+    if (labelIndex >= 0 && labelIndex < points.length) {
+      if (!hoverState.forced || hoverState.index !== labelIndex) {
+        const pointEl = points[labelIndex];
+        const anchor = {
+          x: Number(event?.x || pointEl?.x || 0),
+          y: Number(event?.y || pointEl?.y || 0)
+        };
+        const active = [{ datasetIndex: 0, index: labelIndex }];
+        chart.setActiveElements(active);
+        chart.tooltip.setActiveElements(active, anchor);
+        hoverState.forced = true;
+        hoverState.index = labelIndex;
+        args.changed = true;
+      }
+      return;
+    }
+
+    if (hoverState.forced) {
+      hoverState.forced = false;
+      hoverState.index = -1;
+      chart.setActiveElements([]);
+      chart.tooltip.setActiveElements([], { x: Number(event?.x || 0), y: Number(event?.y || 0) });
+      args.changed = true;
+    }
+  }
+};
 
 function hexToRgba(hexColor, alpha) {
   const normalized = String(hexColor || "").trim().replace(/^#/, "");
@@ -649,147 +823,14 @@ function hexToRgba(hexColor, alpha) {
   return `rgba(${r},${g},${b},${safeAlpha})`;
 }
 
-function computeCoverageFromCourses(detailJson, systemId, sectionId) {
-  const courses = Array.isArray(detailJson?.courses) ? detailJson.courses : [];
-  const totalCourses = courses.length;
-  if (!totalCourses) return null;
-
-  let coursesWithOds = 0;
-  courses.forEach((course) => {
-    const recognised = course?.sdg_compact?.[String(systemId || "")]?.[String(sectionId || "")];
-    const hasRecognised = (Array.isArray(recognised) && recognised.length > 0)
-      || (typeof recognised === "string" && normalizeWhitespace(recognised).length > 0);
-    if (hasRecognised) {
-      coursesWithOds += 1;
-    }
-  });
-
-  const coveragePct = totalCourses > 0 ? Number(((coursesWithOds * 100) / totalCourses).toFixed(1)) : 0;
-  return { totalCourses, coursesWithOds, coveragePct };
-}
-
-function getDatasetPercentByLabel(chart, dataset, dataIndex) {
-  const fullLabel = String(chart?.data?.labels?.[dataIndex] || "");
-  const code = fullLabel.split(":")[0];
-  const percentMap = dataset?.percentagesMap || {};
-  const percent = Number(percentMap[code] || 0);
-  return Number.isFinite(percent) ? percent : 0;
-}
-
-function getOutermostDatasetIndex(chart) {
-  const datasets = Array.isArray(chart?.data?.datasets) ? chart.data.datasets : [];
-  if (!datasets.length) return 0;
-
-  let outermostIndex = 0;
-  let maxOuterRadius = -Infinity;
-
-  datasets.forEach((_dataset, datasetIndex) => {
-    const meta = chart.getDatasetMeta(datasetIndex);
-    if (!meta || meta.hidden || !Array.isArray(meta.data)) return;
-
-    const arcElement = meta.data.find((entry) => Boolean(entry));
-    const props = arcElement?.getProps?.(["outerRadius"], true);
-    const outerRadius = Number(props?.outerRadius);
-    if (!Number.isFinite(outerRadius) || outerRadius <= 0) return;
-
-    if (outerRadius > maxOuterRadius) {
-      maxOuterRadius = outerRadius;
-      outermostIndex = datasetIndex;
-    }
-  });
-
-  if (Number.isFinite(maxOuterRadius) && maxOuterRadius > 0) {
-    return outermostIndex;
-  }
-
-  const preferredIndex = datasets.findIndex((dataset) => dataset?.ringRole === "programme");
-  if (preferredIndex >= 0) return preferredIndex;
-  return 0;
-}
-
-const outerRingLabelConnectorPlugin = {
-  id: "outerRingLabelConnector",
-  afterDatasetsDraw(chart, _args, pluginOptions) {
-    const options = pluginOptions || {};
-    if (!options.enabled) return;
-
-    const datasetIndex = Number.isInteger(options.datasetIndex)
-      ? options.datasetIndex
-      : getOutermostDatasetIndex(chart);
-    const dataset = chart?.data?.datasets?.[datasetIndex];
-    const meta = chart.getDatasetMeta(datasetIndex);
-    if (!dataset || !meta || !Array.isArray(meta.data)) return;
-
-    const minPercent = Number(options.minPercent || 0);
-    const lineColor = String(options.lineColor || "rgba(35, 51, 68, 0.35)");
-    const lineWidth = Number(options.lineWidth || 1.1);
-    const radialOffset = Number(options.radialOffset || 11);
-    const horizontalOffset = Number(options.horizontalOffset || 10);
-
-    const ctx = chart.ctx;
-    ctx.save();
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = lineWidth;
-
-    meta.data.forEach((arcElement, dataIndex) => {
-      if (!chart.getDataVisibility(dataIndex)) return;
-
-      const value = Number(dataset?.data?.[dataIndex] || 0);
-      if (!Number.isFinite(value) || value <= 0) return;
-
-      const percent = getDatasetPercentByLabel(chart, dataset, dataIndex);
-      if (!Number.isFinite(percent) || percent < minPercent) return;
-
-      const props = arcElement?.getProps?.(["x", "y", "startAngle", "endAngle", "outerRadius"], true);
-      if (!props) return;
-
-      const centerX = Number(props.x);
-      const centerY = Number(props.y);
-      const startAngle = Number(props.startAngle);
-      const endAngle = Number(props.endAngle);
-      const outerRadius = Number(props.outerRadius);
-
-      if (
-        !Number.isFinite(centerX)
-        || !Number.isFinite(centerY)
-        || !Number.isFinite(startAngle)
-        || !Number.isFinite(endAngle)
-        || !Number.isFinite(outerRadius)
-        || outerRadius <= 0
-      ) {
-        return;
-      }
-
-      const midAngle = (startAngle + endAngle) / 2;
-      const cos = Math.cos(midAngle);
-      const sin = Math.sin(midAngle);
-
-      const startX = centerX + cos * outerRadius;
-      const startY = centerY + sin * outerRadius;
-      const elbowX = centerX + cos * (outerRadius + radialOffset);
-      const elbowY = centerY + sin * (outerRadius + radialOffset);
-      const endX = elbowX + (cos >= 0 ? horizontalOffset : -horizontalOffset);
-      const endY = elbowY;
-
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(elbowX, elbowY);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
-    });
-
-    ctx.restore();
-  }
-};
-
-function makeChartCard({ title, subtitle, distribution, compareDistribution }, mountEl) {
+function makeRadarChartCard({ title, subtitle, distribution, seriesLabel, lineColor, axisScale }, mountEl) {
   const card = document.createElement("div");
   card.className = "chart-container";
-  const canvasId = `chart-${Math.random().toString(16).slice(2)}`;
+  const canvasId = `radar-chart-${Math.random().toString(16).slice(2)}`;
   card.innerHTML = `
-    <div class="doughnut-chart-header">
-      <h3 class="doughnut-chart-title">${title}</h3>
-      <p class="doughnut-chart-subtitle">${subtitle}</p>
+    <div class="radar-chart-header">
+      <h3 class="radar-chart-title">${title}</h3>
+      <p class="radar-chart-subtitle">${subtitle}</p>
     </div>
     <div class="chart-wrapper">
       <canvas id="${canvasId}"></canvas>
@@ -797,153 +838,102 @@ function makeChartCard({ title, subtitle, distribution, compareDistribution }, m
   `;
   mountEl.appendChild(card);
 
-  const hasCompare = Boolean(compareDistribution && compareDistribution.labels?.length);
-  const labels = hasCompare
-    ? Array.from(new Set([...(distribution.labels || []), ...(compareDistribution.labels || [])]))
-        .sort((a, b) => a.localeCompare(b, "ca"))
-    : (distribution.labels || []);
-  const displayLabels = labels.map((code) => `${code}: ${odsDefinitions[code] || code}`);
-  const baseColors = labels.map((ods) => odsColors[ods] || "#ccc");
-  const primaryValues = labels.map((label) => Number(distribution?.counts?.[label] || 0));
-  const compareValues = labels.map((label) => Number(compareDistribution?.counts?.[label] || 0));
-  const outerLabelThreshold = 0;
-  const compareRingWeight = 1;
-  const datasets = hasCompare
-    ? [
-        {
-          label: "Ensenyament (anell exterior)",
-          ringRole: "programme",
-          data: compareValues,
-          percentagesMap: compareDistribution.percentages || {},
-          backgroundColor: baseColors,
-          borderColor: "#fff",
-          borderWidth: 1.25,
-          hoverOffset: 4,
-          weight: compareRingWeight
-        },
-        {
-          label: "Centre (anell interior)",
-          ringRole: "centre",
-          data: primaryValues,
-          percentagesMap: distribution.percentages || {},
-          backgroundColor: baseColors,
-          borderColor: "#fff",
-          borderWidth: 1.25,
-          hoverOffset: 4,
-          weight: compareRingWeight
-        }
-      ]
-    : [
-        {
-          label: "Centre",
-          ringRole: "centre",
-          data: primaryValues,
-          percentagesMap: distribution.percentages || {},
-          backgroundColor: baseColors,
-          borderColor: "#fff",
-          borderWidth: 1.1
-        }
-      ];
+  const labels = distribution.labels || [];
+  const values = labels.map((odsCode) => Number(distribution?.percentages?.[odsCode] || 0));
+  const resolvedScale = axisScale && Number.isFinite(axisScale.max) && Number.isFinite(axisScale.stepSize)
+    ? axisScale
+    : { min: 0, max: 100, stepSize: 20 };
 
   const ctx = document.getElementById(canvasId).getContext("2d");
   const chart = new Chart(ctx, {
-    type: "doughnut",
+    type: "radar",
+    plugins: [radarPointLabelTooltipPlugin],
     data: {
-      labels: displayLabels,
-      datasets
+      labels,
+      datasets: [
+        {
+          label: seriesLabel,
+          data: values,
+          countsMap: distribution.counts || {},
+          totalCourses: Number(distribution.totalCourses || 0),
+          borderColor: lineColor,
+          backgroundColor: hexToRgba(lineColor, 0.2),
+          pointBackgroundColor: labels.map((odsCode) => odsColors[odsCode] || lineColor),
+          pointBorderColor: "#ffffff",
+          pointHoverBackgroundColor: "#ffffff",
+          pointHoverBorderColor: lineColor,
+          borderWidth: 2.3,
+          pointRadius: 3.4,
+          pointHoverRadius: 4.6,
+          fill: true
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: hasCompare
-        ? {
-            padding: { top: 30, right: 88, bottom: 30, left: 88 }
-          }
-        : {
-            padding: { top: 12, right: 12, bottom: 12, left: 12 }
+      elements: {
+        line: {
+          tension: 0.2
+        }
+      },
+      scales: {
+        r: {
+          min: Number(resolvedScale.min || 0),
+          max: Number(resolvedScale.max || 100),
+          ticks: {
+            stepSize: Number(resolvedScale.stepSize || 20),
+            color: "#4f6074",
+            backdropColor: "rgba(255,255,255,0)",
+            callback(value) {
+              return `${value}%`;
+            }
           },
-      cutout: hasCompare ? "40%" : "42%",
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label(context) {
-              const label = context.label || "";
-              const value = Number(context.parsed || 0);
-              const code = label.split(":")[0];
-              const datasetLabel = normalizeWhitespace(context?.dataset?.label || "");
-              const percentMap = context?.dataset?.percentagesMap || {};
-              const percent = Number(percentMap[code] || 0);
-              const prefix = datasetLabel ? `${datasetLabel} · ` : "";
-              return `${prefix}${label}: ${formatCount(value)} (${formatPercent(percent)}%)`;
+          grid: {
+            color: "rgba(69, 89, 112, 0.22)"
+          },
+          angleLines: {
+            color: "rgba(69, 89, 112, 0.2)"
+          },
+          pointLabels: {
+            color: "#273648",
+            font: {
+              size: 11,
+              weight: "700"
             }
           }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
         },
-        datalabels: {
-          display(context) {
-            const value = Number(context?.dataset?.data?.[context.dataIndex] || 0);
-            if (!Number.isFinite(value) || value <= 0) return false;
-
-            const outerDatasetIndex = getOutermostDatasetIndex(context.chart);
-            if (context.datasetIndex !== outerDatasetIndex) return false;
-
-            const percent = getDatasetPercentByLabel(context.chart, context?.dataset, context.dataIndex);
-            if (!Number.isFinite(percent) || percent <= 0) return false;
-
-            return true;
-          },
-          formatter(value, context) {
-            if (!Number.isFinite(Number(value)) || Number(value) <= 0) return "";
-            const fullLabel = context.chart.data.labels[context.dataIndex];
-            const code = fullLabel.split(":")[0];
-
-            const percent = getDatasetPercentByLabel(context.chart, context?.dataset, context.dataIndex);
-            if (hasCompare) return `${code}`;
-            return `${code}\n${formatPercent(percent)}%`;
-          },
-          font(context) {
-            if (hasCompare) return { weight: "700", size: 10 };
-            return { weight: "700", size: 11 };
-          },
-          color: "#000",
-          anchor: hasCompare ? "end" : "center",
-          align(context) {
-            if (!hasCompare) return "center";
-            const meta = context?.chart?.getDatasetMeta(context.datasetIndex);
-            const arcElement = meta?.data?.[context.dataIndex];
-            const props = arcElement?.getProps?.(["startAngle", "endAngle"], true);
-            const angle = props ? ((Number(props.startAngle) + Number(props.endAngle)) / 2) : 0;
-            return Math.cos(angle) >= 0 ? "right" : "left";
-          },
-          offset: hasCompare ? 16 : 0,
-          textAlign(context) {
-            if (!hasCompare) return "center";
-            const meta = context?.chart?.getDatasetMeta(context.datasetIndex);
-            const arcElement = meta?.data?.[context.dataIndex];
-            const props = arcElement?.getProps?.(["startAngle", "endAngle"], true);
-            const angle = props ? ((Number(props.startAngle) + Number(props.endAngle)) / 2) : 0;
-            return Math.cos(angle) >= 0 ? "left" : "right";
-          },
-          clamp: !hasCompare,
-          clip: !hasCompare,
-          backgroundColor: hasCompare ? "rgba(255, 255, 255, 0.72)" : "rgba(255, 255, 255, 0.7)",
-          borderColor: "rgba(255, 255, 255, 0.9)",
-          borderWidth: hasCompare ? 1.2 : 1.4,
-          borderRadius: 4,
-          padding: hasCompare ? 4 : 3
-        },
-        outerRingLabelConnector: {
-          enabled: hasCompare,
-          datasetIndex: null,
-          minPercent: outerLabelThreshold,
-          lineColor: "rgba(52, 69, 90, 0.45)",
-          lineWidth: 1.1,
-          radialOffset: 13,
-          horizontalOffset: 12
+        tooltip: {
+          enabled: true,
+          displayColors: false,
+          backgroundColor: "rgba(24, 36, 52, 0.94)",
+          titleColor: "#ffffff",
+          bodyColor: "#ffffff",
+          borderColor: "rgba(255, 255, 255, 0.24)",
+          borderWidth: 1,
+          padding: 10,
+          caretPadding: 6,
+          callbacks: {
+            title(context) {
+              const code = String(context?.[0]?.label || "");
+              return `${code}: ${odsDefinitions[code] || code}`;
+            },
+            label(context) {
+              const code = String(context?.label || "");
+              const value = Number(context?.parsed?.r ?? context?.raw ?? 0);
+              const count = Number(context?.dataset?.countsMap?.[code] || 0);
+              const totalCourses = Number(context?.dataset?.totalCourses || 0);
+              return `${context?.dataset?.label || "Sèrie"}: ${formatPercent(value)}% (${formatCount(count)}/${formatCount(totalCourses)})`;
+            }
+          }
         }
       }
-    },
-    plugins: [ChartDataLabels, outerRingLabelConnectorPlugin]
+    }
   });
 
   state.charts.push(chart);
@@ -1011,35 +1001,58 @@ async function getProgrammeDetail(programmeKeyValue) {
   return detail;
 }
 
-function buildCentreSubtitle(centre, detailJson, distribution) {
-  const nCourses = resolveCourseCount(detailJson, centre?.n_courses);
-  const nHits = Number(distribution?.totalHits || 0);
-  return `${formatCount(nCourses)} cursos agregats · ${formatCount(nHits)} deteccions ODS`;
+async function getCentreCoursesFromProgrammes(centreCode) {
+  const key = String(centreCode || "");
+  if (!key) throw new Error("Centre no seleccionat");
+  if (state.centreCoursesCache.has(key)) return state.centreCoursesCache.get(key);
+
+  const programmes = state.programmesByCentreCode.get(key) || [];
+  if (!programmes.length) {
+    state.centreCoursesCache.set(key, []);
+    return [];
+  }
+
+  const programmeDetails = await Promise.all(
+    programmes.map(async (programme) => {
+      const pKey = programmeKey(programme?.centre_code, programme?.programme_code);
+      try {
+        return await getProgrammeDetail(pKey);
+      } catch (error) {
+        console.warn("No s'ha pogut carregar un ensenyament per al radar de centre:", pKey, error);
+        return null;
+      }
+    })
+  );
+
+  const mergedCourses = [];
+  const seenCourseKeys = new Set();
+  programmeDetails.forEach((detailJson, idx) => {
+    const programmeCode = String(programmes[idx]?.programme_code || "");
+    const programmeCourses = Array.isArray(detailJson?.courses) ? detailJson.courses : [];
+    programmeCourses.forEach((course, courseIdx) => {
+      const uniqueKey = normalizeWhitespace(
+        course?.centre_programme_course_code
+        || `${programmeCode}::${course?.course_code || course?.document_number || ""}::${course?.academic_year || ""}::${courseIdx}`
+      );
+      if (!uniqueKey || seenCourseKeys.has(uniqueKey)) return;
+      seenCourseKeys.add(uniqueKey);
+      mergedCourses.push(course);
+    });
+  });
+
+  state.centreCoursesCache.set(key, mergedCourses);
+  return mergedCourses;
 }
 
-function buildSunburstSubtitle(context) {
-  const centreCoverage = context?.centreCoverage || null;
-  const programmeCoverage = context?.programmeCoverage || null;
-  const centreDistribution = context?.centreDistribution || null;
-  const programmeDistribution = context?.programmeDistribution || null;
-  const centreDetail = context?.centreDetail || null;
-  const programmeDetail = context?.programmeDetail || null;
-  const centreFallbackCourses = context?.centreFallbackCourses;
-  const programmeFallbackCourses = context?.programmeFallbackCourses;
-
-  const centreCourses = Number(
-    (Number(centreCoverage?.totalCourses || 0) > 0
-      ? centreCoverage.totalCourses
-      : resolveCourseCount(centreDetail, centreFallbackCourses)) || 0
-  );
-  const programmeCourses = Number(
-    (Number(programmeCoverage?.totalCourses || 0) > 0
-      ? programmeCoverage.totalCourses
-      : resolveCourseCount(programmeDetail, programmeFallbackCourses)) || 0
-  );
-  const centreHits = Number(centreDistribution?.totalHits || 0);
-  const programmeHits = Number(programmeDistribution?.totalHits || 0);
-  return `Anell interior: centre (${formatCount(centreCourses)} cursos, ${formatCount(centreHits)} deteccions) · anell exterior: ensenyament (${formatCount(programmeCourses)} cursos, ${formatCount(programmeHits)} deteccions)`;
+function buildRadarSubtitle(detailJson, fallbackCourses, distribution) {
+  const totalCourses = Number(distribution?.totalCourses || 0) > 0
+    ? Number(distribution.totalCourses)
+    : resolveCourseCount(detailJson, fallbackCourses);
+  const coursesWithOds = Number(distribution?.coursesWithOds || 0);
+  const coveragePct = totalCourses > 0
+    ? Number(((coursesWithOds * 100) / totalCourses).toFixed(1))
+    : 0;
+  return `${formatCount(totalCourses)} assignatures · amb algun ODS: ${formatPercent(coveragePct)}%`;
 }
 
 function updateExplainerPanel(context) {
@@ -1052,11 +1065,11 @@ function updateExplainerPanel(context) {
 
   if (!context?.centreCode) {
     if (explainerTitleEl) {
-      explainerTitleEl.textContent = "Com interpretar el gràfic d'anell";
+      explainerTitleEl.textContent = "Com interpretar el gràfic radar";
     }
     setExplainerText(
       explainerScopeEl,
-      "Selecciona un centre i, opcionalment, un ensenyament per veure la distribució d'ODS."
+      "Selecciona un centre i, opcionalment, un ensenyament per veure el percentatge d'assignatures de cada ODS."
     );
     setExplainerText(explainerCoverageEl, "");
     setExplainerText(explainerSystemEl, "");
@@ -1068,15 +1081,13 @@ function updateExplainerPanel(context) {
   const compareMode = Boolean(context?.compareMode);
   const centreName = normalizeWhitespace(context?.centreName || "Centre");
   const programmeName = normalizeWhitespace(context?.programmeName || "Ensenyament");
-  const centreCoverage = context?.centreCoverage || null;
-  const programmeCoverage = context?.programmeCoverage || null;
-  const centreHits = Number(context?.centreHits || 0);
-  const programmeHits = Number(context?.programmeHits || 0);
+  const centreDistribution = context?.centreDistribution || null;
+  const programmeDistribution = context?.programmeDistribution || null;
 
   if (explainerTitleEl) {
     explainerTitleEl.textContent = compareMode
-      ? `Com interpretar la comparativa d'anell: ${centreName} vs ${programmeName}`
-      : `Com interpretar l'anell de ${centreName}`;
+      ? `Com interpretar la comparativa radar: ${centreName} vs ${programmeName}`
+      : `Com interpretar el radar de ${centreName}`;
   }
 
   if (compareMode) {
@@ -1084,27 +1095,30 @@ function updateExplainerPanel(context) {
       explainerScopeEl,
       `S'està comparant el centre "${centreName}" amb l'ensenyament "${programmeName}".`
     );
-    const centreCoverageText = centreCoverage
-      ? `${formatCount(centreCoverage.coursesWithOds)} de ${formatCount(centreCoverage.totalCourses)} (${formatPercent(centreCoverage.coveragePct)}%)`
+
+    const centreCoverageText = centreDistribution
+      ? `${formatCount(centreDistribution.coursesWithOds)} de ${formatCount(centreDistribution.totalCourses)} (${formatPercent(centreDistribution.coveragePct)}%)`
       : "n/d";
-    const programmeCoverageText = programmeCoverage
-      ? `${formatCount(programmeCoverage.coursesWithOds)} de ${formatCount(programmeCoverage.totalCourses)} (${formatPercent(programmeCoverage.coveragePct)}%)`
+    const programmeCoverageText = programmeDistribution
+      ? `${formatCount(programmeDistribution.coursesWithOds)} de ${formatCount(programmeDistribution.totalCourses)} (${formatPercent(programmeDistribution.coveragePct)}%)`
       : "n/d";
+
     setExplainerText(
       explainerCoverageEl,
-      `Cobertura ODS: centre ${centreCoverageText}; ensenyament ${programmeCoverageText}. Deteccions totals: centre ${formatCount(centreHits)}, ensenyament ${formatCount(programmeHits)}.`
+      `Cobertura global amb ODS: centre ${centreCoverageText}; ensenyament ${programmeCoverageText}.`
     );
   } else {
     const scopeText = context?.nProgrammes > 0
       ? `Has seleccionat "${centreName}". Aquesta vista agrega ${formatCount(context.nProgrammes)} ensenyaments del centre.`
       : `Has seleccionat "${centreName}".`;
     setExplainerText(explainerScopeEl, scopeText);
-    const coverageText = centreCoverage
-      ? `${formatCount(centreCoverage.coursesWithOds)} de ${formatCount(centreCoverage.totalCourses)} assignatures amb ODS (${formatPercent(centreCoverage.coveragePct)}%).`
+
+    const coverageText = centreDistribution
+      ? `${formatCount(centreDistribution.coursesWithOds)} de ${formatCount(centreDistribution.totalCourses)} assignatures amb ODS (${formatPercent(centreDistribution.coveragePct)}%).`
       : "No disponible per aquesta selecció.";
     setExplainerText(
       explainerCoverageEl,
-      `Cobertura del centre: ${coverageText} Deteccions totals: ${formatCount(centreHits)}.`
+      `Cobertura del centre: ${coverageText}`
     );
   }
 
@@ -1119,14 +1133,14 @@ function updateExplainerPanel(context) {
   setExplainerText(
     explainerNotesEl,
     compareMode
-      ? "Comparativa en format sunburst: l'anell interior representa el centre i l'anell exterior l'ensenyament; cada anell mostra el pes relatiu intern de cada ODS."
-      : "Cada segment de l'anell representa el pes relatiu de deteccions ODS dins la selecció activa."
+      ? "Es mostren dos radars: un per al centre i un per a l'ensenyament. Cada eix és un ODS, i el valor és el percentatge d'assignatures on apareix aquell ODS."
+      : "Cada eix del radar representa un ODS. La distància al centre indica el percentatge d'assignatures on s'ha detectat aquell ODS."
   );
 }
 
 function renderEmptyState(message) {
   chartContainer.innerHTML = `<p style="text-align:center;padding:20px;">${message}</p>`;
-  scheduleDoughnutChartHeaderHeightsSync();
+  scheduleRadarChartHeaderHeightsSync();
 }
 
 async function render() {
@@ -1138,8 +1152,9 @@ async function render() {
 
   chartContainer.innerHTML = "";
   clearCharts();
+
   if (!centreCode) {
-    renderEmptyState("Selecciona un centre per veure la distribució d'ODS.");
+    renderEmptyState("Selecciona un centre per veure el radar ODS.");
     setExplainerPanelVisible(false);
     updateExplainerPanel({
       centreCode: "",
@@ -1156,75 +1171,83 @@ async function render() {
 
   try {
     const centre = getCentreForRender(centreCode);
-    const centreDetail = await getCentreDetail(centreCode);
-    const programmeDetail = compareMode ? await getProgrammeDetail(programmeKeyValue) : null;
+    const centreDetailPromise = getCentreDetail(centreCode);
+    const centreCoursesPromise = getCentreCoursesFromProgrammes(centreCode);
+    const programmeDetailPromise = compareMode ? getProgrammeDetail(programmeKeyValue) : Promise.resolve(null);
+
+    const [centreDetail, centreCourses, programmeDetail] = await Promise.all([
+      centreDetailPromise,
+      centreCoursesPromise,
+      programmeDetailPromise
+    ]);
     if (token !== state.renderToken) return;
 
-    const centreRows = extractSdgRows(centreDetail, systemId, sectionId);
-    const centreDistribution = buildDistribution(centreRows);
-    const hasCentreData = centreDistribution.labels.length > 0;
-    const centreCoverage = computeCoverageFromCourses(centreDetail, systemId, sectionId);
+    const centreDistribution = buildRadarDistributionFromCourses(centreCourses, systemId, sectionId);
+    const hasCentreData = Number(centreDistribution.totalCourses || 0) > 0;
 
     let programmeDistribution = null;
     let hasProgrammeData = false;
-    let programmeCoverage = null;
     const programme = compareMode ? getProgrammeForRender(programmeKeyValue) : null;
+
     if (compareMode && programmeDetail) {
-      const rows = extractSdgRows(programmeDetail, systemId, sectionId);
-      programmeDistribution = buildDistribution(rows);
-      hasProgrammeData = programmeDistribution.labels.length > 0;
-      programmeCoverage = computeCoverageFromCourses(programmeDetail, systemId, sectionId);
+      programmeDistribution = buildRadarDistribution(programmeDetail, systemId, sectionId);
+      hasProgrammeData = Number(programmeDistribution.totalCourses || 0) > 0;
     }
 
+    const sharedRadarScale = buildSharedRadarScale([
+      hasCentreData ? centreDistribution : null,
+      compareMode && hasProgrammeData ? programmeDistribution : null
+    ]);
+
     chartContainer.innerHTML = "";
-    chartContainer.className = "chart-grid one";
+    chartContainer.className = compareMode && hasProgrammeData ? "chart-grid two" : "chart-grid one";
 
     if (hasCentreData) {
-      const useSunburstComparison = compareMode && hasProgrammeData;
-      makeChartCard(
+      makeRadarChartCard(
         {
-          title: useSunburstComparison
-            ? `${centre?.centre_name || String(centreCode)} · ${programme?.programme_name || "Ensenyament"}`
-            : (centre?.centre_name || String(centreCode)),
-          subtitle: useSunburstComparison
-            ? buildSunburstSubtitle({
-                centreCoverage,
-                programmeCoverage,
-                centreDistribution,
-                programmeDistribution,
-                centreDetail,
-                programmeDetail,
-                centreFallbackCourses: centre?.n_courses,
-                programmeFallbackCourses: programme?.n_courses
-              })
-            : buildCentreSubtitle(centre, centreDetail, centreDistribution),
+          title: centre?.centre_name || String(centreCode),
+          subtitle: buildRadarSubtitle(centreDetail, centre?.n_courses, centreDistribution),
           distribution: centreDistribution,
-          compareDistribution: useSunburstComparison ? programmeDistribution : null
+          seriesLabel: "Centre",
+          lineColor: "#314b66",
+          axisScale: sharedRadarScale
         },
         chartContainer
       );
     }
 
-    if (!hasCentreData && !hasProgrammeData) {
-      renderEmptyState("No hi ha dades ODS per aquesta combinació de sistema i secció.");
+    if (compareMode && hasProgrammeData && programmeDistribution) {
+      makeRadarChartCard(
+        {
+          title: programme?.programme_name || "Ensenyament",
+          subtitle: buildRadarSubtitle(programmeDetail, programme?.n_courses, programmeDistribution),
+          distribution: programmeDistribution,
+          seriesLabel: "Ensenyament",
+          lineColor: "#8c2f39",
+          axisScale: sharedRadarScale
+        },
+        chartContainer
+      );
     }
 
-    scheduleDoughnutChartHeaderHeightsSync();
+    if (!hasCentreData && !(compareMode && hasProgrammeData)) {
+      renderEmptyState("No hi ha dades d'assignatures per aquesta combinació de sistema i secció.");
+    }
+
+    scheduleRadarChartHeaderHeightsSync();
 
     updateExplainerPanel({
       centreCode,
       centreName: centre?.centre_name || String(centreCode),
       programmeName: programme?.programme_name || "",
-      compareMode,
+      compareMode: compareMode && hasProgrammeData,
       systemId,
       sectionId,
       systemLabel: getSelectedOptionLabel(systemSelect),
       sectionLabel: getSelectedOptionLabel(sectionSelect),
       nProgrammes: (state.programmesByCentreCode.get(String(centreCode || "")) || []).length,
-      centreCoverage,
-      programmeCoverage,
-      centreHits: centreDistribution?.totalHits || 0,
-      programmeHits: programmeDistribution?.totalHits || 0
+      centreDistribution,
+      programmeDistribution
     });
     setExplainerPanelVisible(true);
   } catch (err) {
@@ -1232,9 +1255,9 @@ async function render() {
     chartContainer.innerHTML = `
       <div class="w3-panel w3-red w3-round">
         <h3>Error</h3>
-        <p>No s'han pogut carregar les dades del gràfic d'anell des de l'API nova.</p>
+        <p>No s'han pogut carregar les dades del gràfic radar des de l'API nova.</p>
       </div>`;
-    scheduleDoughnutChartHeaderHeightsSync();
+    scheduleRadarChartHeaderHeightsSync();
     updateExplainerPanel({
       centreCode,
       compareMode,
@@ -1255,15 +1278,15 @@ function setControlsEnabled(enabled) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  setDoughnutIntroPanelExpanded(false);
-  if (doughnutIntroToggleBtn && doughnutIntroPanelEl) {
-    doughnutIntroToggleBtn.addEventListener("click", () => {
-      const expanded = doughnutIntroToggleBtn.getAttribute("aria-expanded") === "true";
-      setDoughnutIntroPanelExpanded(!expanded);
+  setRadarIntroPanelExpanded(false);
+  if (radarIntroToggleBtn && radarIntroPanelEl) {
+    radarIntroToggleBtn.addEventListener("click", () => {
+      const expanded = radarIntroToggleBtn.getAttribute("aria-expanded") === "true";
+      setRadarIntroPanelExpanded(!expanded);
     });
   }
 
-  observeDoughnutSidebarLayoutState();
+  observeRadarSidebarLayoutState();
   setControlsEnabled(false);
   renderEmptyState("Inicialitzant dades de l'API...");
   setExplainerPanelVisible(false);
@@ -1276,8 +1299,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     sectionLabel: SECTION_LABEL_OVERRIDES[DEFAULT_SECTION_ID]
   });
 
-  if (doughnutPanelToggleBtn) {
-    doughnutPanelToggleBtn.addEventListener("click", () => {
+  if (radarPanelToggleBtn) {
+    radarPanelToggleBtn.addEventListener("click", () => {
       setExplainerPanelCollapsed(!state.panelCollapsed);
     });
   }
@@ -1331,12 +1354,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     chartContainer.innerHTML = `
       <div class="w3-panel w3-red w3-round">
         <h3>Error</h3>
-        <p>No s'ha pogut inicialitzar el gràfic d'anell amb l'API nova.</p>
+        <p>No s'ha pogut inicialitzar el gràfic radar amb l'API nova.</p>
       </div>`;
     if (explainerTitleEl) {
-      explainerTitleEl.textContent = "Com interpretar el gràfic d'anell";
+      explainerTitleEl.textContent = "Com interpretar el gràfic radar";
     }
-    setExplainerText(explainerScopeEl, "No s'ha pogut inicialitzar el mòdul explicatiu del gràfic d'anell.");
+    setExplainerText(explainerScopeEl, "No s'ha pogut inicialitzar el mòdul explicatiu del gràfic radar.");
     setExplainerText(explainerCoverageEl, "");
     setExplainerText(explainerSystemEl, "");
     setExplainerText(explainerSectionEl, "");

@@ -1,0 +1,1305 @@
+<!--
+File: _includes/bubble/scripts.html
+Purpose: Bubble charts from the new URV SDGs API (centre/programme + system/section analysis).
+Related files:
+  - _includes/bubble/interactive_layout.html
+  - pages/bubble.html
+-->
+
+<script>
+const odsDefinitions = {
+  "ODS-01": "Fi de la pobresa",
+  "ODS-02": "Fam zero",
+  "ODS-03": "Salut i benestar",
+  "ODS-04": "Educació de qualitat",
+  "ODS-05": "Igualtat de gènere",
+  "ODS-06": "Aigua neta i sanejament",
+  "ODS-07": "Energia neta i assequible",
+  "ODS-08": "Treball digne i creixement econòmic",
+  "ODS-09": "Indústria, innovació i infraestructura",
+  "ODS-10": "Reducció de les desigualtats",
+  "ODS-11": "Ciutats i comunitats sostenibles",
+  "ODS-12": "Producció i consum responsables",
+  "ODS-13": "Acció climàtica",
+  "ODS-14": "Vida submarina",
+  "ODS-15": "Vida d'ecosistemes terrestres",
+  "ODS-16": "Pau, justícia i institucions sòlides",
+  "ODS-17": "Aliança per assolir els objectius"
+};
+
+const odsColors = {
+  "ODS-01": "#e5243b",
+  "ODS-02": "#dda63a",
+  "ODS-03": "#4c9f38",
+  "ODS-04": "#c5192d",
+  "ODS-05": "#ff3a21",
+  "ODS-06": "#26bde2",
+  "ODS-07": "#fcc30b",
+  "ODS-08": "#a21942",
+  "ODS-09": "#fd6925",
+  "ODS-10": "#dd1367",
+  "ODS-11": "#fd9d24",
+  "ODS-12": "#bf8b2e",
+  "ODS-13": "#3f7e44",
+  "ODS-14": "#0a97d9",
+  "ODS-15": "#56c02b",
+  "ODS-16": "#00689d",
+  "ODS-17": "#19486a"
+};
+
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
+      "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
+    ]
+      .map((v) => String(v || "").trim().replace(/\/+$/, ""))
+      .filter(Boolean)
+  )
+);
+
+const DEFAULT_SYSTEM_ID = "sys:any";
+const DEFAULT_SECTION_ID = "sec:any";
+const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
+const FACULTY_PLACEHOLDER_LABEL = "Centre (obligatori)";
+const PROGRAMME_PLACEHOLDER_LABEL = "Ensenyament (opcional)";
+
+const SYSTEM_LABEL_OVERRIDES = {
+  "sys:any": "Qualsevol sistema (Unió)",
+  "sys:all": "Tots els sistemes (Intersecció)",
+  "sys:auckland": "Auckland",
+  "sys:aurora": "Aurora",
+  "sys:elsevier": "Elsevier",
+  "ens:equal": "Ensemble equal",
+  "ens:third": "Ensemble third",
+  "ens:triple": "Ensemble triple",
+  "sys:sdgo": "SDGO",
+  "sys:sdsn": "SDSN",
+  "sys:siris": "SIRIS"
+};
+
+const SECTION_LABEL_OVERRIDES = {
+  "sec:any": "Totes les seccions (Unió)",
+  "sec:all": "Coincidència de totes les seccions (Intersecció)",
+  "sec:competences": "Competències",
+  "sec:course_info": "Informació de l'assignatura",
+  "sec:references": "Referències"
+};
+
+const SYSTEM_EXPLANATIONS = {
+  "sys:any": "un ODS compta si apareix en qualsevol sistema; és la lectura més inclusiva i també la més sensible a falsos positius.",
+  "sys:all": "un ODS només compta si coincideix en tots els sistemes; és més restrictiu i redueix falsos positius.",
+  "sys:ensemble_equal": "s'aplica un model ensemble de consens que equilibra cobertura i precisió.",
+  "sys:ensemble_third": "s'aplica un model ensemble amb balanç intermedi entre sensibilitat i especificitat.",
+  "sys:ensemble_triple": "s'aplica un model ensemble més prudent, amb menys deteccions límit.",
+  "sys:auckland": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat.",
+  "sys:aurora": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat.",
+  "sys:elsevier": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat.",
+  "sys:sdgo": "s'aplica un únic sistema basat en paraules clau, generalment més liberal.",
+  "sys:sdsn": "s'aplica un únic sistema basat en paraules clau, generalment més liberal.",
+  "sys:siris": "s'aplica un únic sistema de consultes booleanes, depenent del vocabulari detectat."
+};
+
+const SECTION_EXPLANATIONS = {
+  "sec:any": "es combinen totes les seccions de la guia docent; dona una visió global però més heterogènia.",
+  "sec:all": "només es mantenen deteccions comunes a totes les seccions; és un filtre més estricte.",
+  "sec:competences": "el focus és en competències i resultats d'aprenentatge; solen aparèixer termes transversals.",
+  "sec:course_info": "el focus és en títol, descripció i temari; acostuma a reflectir millor el contingut real del curs.",
+  "sec:references": "el focus és en bibliografia i referències; pot incorporar context documental no central."
+};
+
+const facultySelect = document.getElementById("faculty-select");
+const degreeSelect = document.getElementById("degree-select");
+const systemSelect = document.getElementById("bubble-system-select");
+const sectionSelect = document.getElementById("bubble-section-select");
+const bubbleShellEl = document.querySelector(".bubble-shell");
+const chartContainer = document.getElementById("chart-container");
+const explainerPanelEl = document.getElementById("bubble-explainer");
+const explainerBodyEl = document.getElementById("bubble-explainer-body");
+const explainerTitleEl = document.getElementById("bubble-explainer-title");
+const explainerScopeEl = document.getElementById("bubble-explainer-scope");
+const explainerCoverageEl = document.getElementById("bubble-explainer-coverage");
+const explainerSystemEl = document.getElementById("bubble-explainer-system");
+const explainerSectionEl = document.getElementById("bubble-explainer-section");
+const explainerNotesEl = document.getElementById("bubble-explainer-notes");
+const bubblePanelToggleBtn = document.getElementById("bubblePanelToggle");
+const bubblePanelToggleIconEl = document.getElementById("bubblePanelToggleIcon");
+const bubbleIntroToggleBtn = document.getElementById("bubbleIntroToggle");
+const bubbleIntroToggleIconEl = bubbleIntroToggleBtn
+  ? bubbleIntroToggleBtn.querySelector(".bubble-info-toggle-icon")
+  : null;
+const bubbleIntroPanelEl = document.getElementById("bubbleIntroPanel");
+
+const state = {
+  apiBase: "",
+  apiVersion: "",
+  centres: [],
+  centreByCode: new Map(),
+  programmesByCentreCode: new Map(),
+  programmeByKey: new Map(),
+  systemOptions: [],
+  sectionOptions: [],
+  programmeDetailCache: new Map(),
+  courseDetailCache: new Map(),
+  centreCoursesCache: new Map(),
+  charts: [],
+  renderToken: 0,
+  panelVisible: false,
+  panelCollapsed: false
+};
+
+let bubbleHeaderSyncRafId = null;
+let bubbleLayoutResizeTimer = null;
+let bubbleSidebarClassObserver = null;
+
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function formatCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "0";
+  return parsed.toLocaleString("ca-ES");
+}
+
+function formatPercent(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "0,0";
+  return parsed.toLocaleString("ca-ES", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+}
+
+function setExplainerText(element, text) {
+  if (!element) return;
+  const normalized = normalizeWhitespace(text);
+  element.textContent = normalized;
+  element.hidden = normalized.length === 0;
+}
+
+function normalizeSystemId(systemId) {
+  if (systemId === "ens:equal") return "sys:ensemble_equal";
+  if (systemId === "ens:third") return "sys:ensemble_third";
+  if (systemId === "ens:triple") return "sys:ensemble_triple";
+  return String(systemId || "");
+}
+
+function normalizeSdgCodeToOds(code) {
+  return String(code || "").replace(/^SDG-/, "ODS-");
+}
+
+function programmeKey(centreCode, programmeCode) {
+  return `${String(centreCode || "")}::${String(programmeCode || "")}`;
+}
+
+function readSharedFilters() {
+  const fallback = {
+    centreCode: "",
+    programmeKey: "",
+    systemId: DEFAULT_SYSTEM_ID,
+    sectionId: DEFAULT_SECTION_ID
+  };
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.read !== "function") return fallback;
+  const raw = store.read() || {};
+  return {
+    centreCode: String(raw.centreCode || ""),
+    programmeKey: String(raw.programmeKey || ""),
+    systemId: normalizeSystemId(String(raw.systemId || DEFAULT_SYSTEM_ID)) || DEFAULT_SYSTEM_ID,
+    sectionId: String(raw.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID
+  };
+}
+
+function writeSharedFilters(patch) {
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.write !== "function") return null;
+  const payload = { ...(patch || {}) };
+  if (Object.prototype.hasOwnProperty.call(payload, "systemId")) {
+    payload.systemId = normalizeSystemId(payload.systemId) || DEFAULT_SYSTEM_ID;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "sectionId")) {
+    payload.sectionId = String(payload.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID;
+  }
+  return store.write(payload);
+}
+
+function addOption(selectEl, value, label) {
+  const option = document.createElement("option");
+  option.value = String(value || "");
+  option.textContent = normalizeWhitespace(label);
+  selectEl.appendChild(option);
+}
+
+function joinUrl(...parts) {
+  return parts
+    .filter((part) => part != null && String(part).trim() !== "")
+    .map((part, idx) => {
+      const chunk = String(part).trim();
+      if (idx === 0) return chunk.replace(/\/+$/, "");
+      return chunk.replace(/^\/+/, "");
+    })
+    .join("/");
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url, { cache: "no-cache" });
+  if (!response.ok) throw new Error(`HTTP ${response.status} (${url})`);
+  return response.json();
+}
+
+async function fetchApiJson(relativePath) {
+  return fetchJson(joinUrl(state.apiBase, relativePath));
+}
+
+async function resolveApiBaseAndVersion() {
+  let lastError = null;
+  for (const base of API_BASE_CANDIDATES) {
+    try {
+      const versions = await fetchJson(joinUrl(base, "versions.json"));
+      const latest = normalizeWhitespace(versions?.latest);
+      if (!latest) throw new Error("versions.json sense camp latest");
+      state.apiBase = base;
+      state.apiVersion = latest;
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error("No s'ha pogut resoldre l'API.");
+}
+
+async function loadIndexes() {
+  const prefix = state.apiVersion;
+  const [centres, programmes, systemsJson, sectionsJson] = await Promise.all([
+    fetchApiJson(`${prefix}/index/centres.json`),
+    fetchApiJson(`${prefix}/index/programmes.json`),
+    fetchApiJson(`${prefix}/index/systems.json`),
+    fetchApiJson(`${prefix}/index/sections.json`)
+  ]);
+
+  state.centres = (Array.isArray(centres) ? centres : [])
+    .map((row) => ({
+      centre_code: String(row?.centre_code || ""),
+      centre_name: normalizeWhitespace(row?.centre_name),
+      json: String(row?.json || ""),
+      n_courses: Number(row?.n_courses || 0),
+      n_programmes: Number(row?.n_programmes || 0)
+    }))
+    .filter((row) => row.centre_code && row.centre_name)
+    .sort((a, b) => a.centre_name.localeCompare(b.centre_name, "ca"));
+  state.centreByCode = new Map(state.centres.map((row) => [row.centre_code, row]));
+
+  state.programmesByCentreCode = new Map();
+  state.programmeByKey = new Map();
+  (Array.isArray(programmes) ? programmes : []).forEach((row) => {
+    const programme = {
+      centre_code: String(row?.centre_code || ""),
+      programme_code: String(row?.programme_code || ""),
+      programme_name: normalizeWhitespace(row?.programme_name),
+      n_courses: Number(row?.n_courses || 0),
+      json: String(row?.json || "")
+    };
+    if (!programme.centre_code || !programme.programme_code || !programme.programme_name || !programme.json) return;
+
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    if (!state.programmesByCentreCode.has(programme.centre_code)) {
+      state.programmesByCentreCode.set(programme.centre_code, []);
+    }
+    state.programmesByCentreCode.get(programme.centre_code).push(programme);
+    state.programmeByKey.set(key, programme);
+  });
+
+  for (const [centreCode, items] of state.programmesByCentreCode.entries()) {
+    items.sort((a, b) => a.programme_name.localeCompare(b.programme_name, "ca"));
+    state.programmesByCentreCode.set(centreCode, items);
+  }
+
+  state.systemOptions = Array.isArray(systemsJson?.system_options) ? systemsJson.system_options : [];
+  state.sectionOptions = Array.isArray(sectionsJson?.section_options) ? sectionsJson.section_options : [];
+}
+
+function populateFacultySelect(selectedCentreCode) {
+  facultySelect.innerHTML = "";
+  addOption(facultySelect, "", FACULTY_PLACEHOLDER_LABEL);
+  state.centres.forEach((centre) => addOption(facultySelect, centre.centre_code, centre.centre_name));
+
+  const selected = String(selectedCentreCode || "");
+  facultySelect.value = state.centreByCode.has(selected) ? selected : "";
+}
+
+function populateDegreeSelect(centreCode, selectedProgrammeKey) {
+  degreeSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = PROGRAMME_PLACEHOLDER_LABEL;
+  placeholder.disabled = true;
+  degreeSelect.appendChild(placeholder);
+
+  const allOption = document.createElement("option");
+  allOption.value = "ALL";
+  allOption.textContent = "Tots";
+  degreeSelect.appendChild(allOption);
+
+  const centreKey = String(centreCode || "");
+  const programmes = state.programmesByCentreCode.get(centreKey) || [];
+  const validProgrammeKeys = new Set();
+
+  programmes.forEach((programme) => {
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    validProgrammeKeys.add(key);
+    addOption(degreeSelect, key, programme.programme_name);
+  });
+
+  degreeSelect.disabled = !centreKey;
+  if (!centreKey) {
+    degreeSelect.value = "";
+    return;
+  }
+
+  const selected = String(selectedProgrammeKey || "");
+  if (selected && (selected === "ALL" || validProgrammeKeys.has(selected))) {
+    degreeSelect.value = selected;
+  } else {
+    degreeSelect.value = "";
+  }
+}
+
+function populateSystemSelect(selectedSystemId) {
+  systemSelect.innerHTML = "";
+  state.systemOptions.forEach((row) => {
+    const id = String(row?.id || "");
+    const label = SYSTEM_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
+    addOption(systemSelect, id, label);
+  });
+
+  const selected = normalizeSystemId(selectedSystemId);
+  const resolvedOption = state.systemOptions.find((row) => normalizeSystemId(String(row?.id || "")) === selected);
+  const fallback = state.systemOptions[0] ? String(state.systemOptions[0].id || "") : "";
+  systemSelect.value = resolvedOption ? String(resolvedOption?.id || "") : fallback;
+}
+
+function populateSectionSelect(selectedSectionId) {
+  sectionSelect.innerHTML = "";
+  state.sectionOptions.forEach((row) => {
+    const id = String(row?.id || "");
+    const label = SECTION_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
+    addOption(sectionSelect, id, label);
+  });
+
+  const selected = String(selectedSectionId || "");
+  const fallback = state.sectionOptions[0] ? String(state.sectionOptions[0].id || "") : "";
+  const hasSelected = state.sectionOptions.some((row) => String(row?.id || "") === selected);
+  sectionSelect.value = hasSelected ? selected : fallback;
+}
+
+function clearCharts() {
+  state.charts.forEach((chart) => {
+    try {
+      chart.destroy();
+    } catch (_) {}
+  });
+  state.charts = [];
+}
+
+function syncBubbleChartHeaderHeights() {
+  if (!chartContainer) return;
+  const headerEls = Array.from(chartContainer.querySelectorAll(".bubble-chart-header"));
+  headerEls.forEach((element) => {
+    element.style.minHeight = "";
+  });
+  if (headerEls.length < 2) return;
+
+  const maxHeaderHeight = Math.max(
+    ...headerEls.map((element) => Math.ceil(element.getBoundingClientRect().height))
+  );
+  if (!Number.isFinite(maxHeaderHeight) || maxHeaderHeight <= 0) return;
+
+  headerEls.forEach((element) => {
+    element.style.minHeight = `${maxHeaderHeight}px`;
+  });
+}
+
+function scheduleBubbleChartHeaderHeightsSync() {
+  if (bubbleHeaderSyncRafId && typeof window.cancelAnimationFrame === "function") {
+    window.cancelAnimationFrame(bubbleHeaderSyncRafId);
+  }
+
+  if (typeof window.requestAnimationFrame === "function") {
+    bubbleHeaderSyncRafId = window.requestAnimationFrame(() => {
+      bubbleHeaderSyncRafId = null;
+      syncBubbleChartHeaderHeights();
+    });
+    return;
+  }
+
+  syncBubbleChartHeaderHeights();
+}
+
+function resizeBubbleChartsForLayoutChange() {
+  if (!Array.isArray(state.charts) || state.charts.length === 0) return;
+  state.charts.forEach((chart) => {
+    try {
+      chart.resize();
+      if (typeof chart.update === "function") {
+        chart.update("none");
+      }
+    } catch (_) {}
+  });
+}
+
+function scheduleBubbleChartResizeForLayoutChange() {
+  const runLayoutReflow = () => {
+    resizeBubbleChartsForLayoutChange();
+    scheduleBubbleChartHeaderHeightsSync();
+  };
+
+  if (typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(runLayoutReflow);
+    });
+  } else {
+    runLayoutReflow();
+  }
+
+  if (bubbleLayoutResizeTimer) {
+    clearTimeout(bubbleLayoutResizeTimer);
+  }
+  bubbleLayoutResizeTimer = setTimeout(() => {
+    bubbleLayoutResizeTimer = null;
+    runLayoutReflow();
+  }, 170);
+}
+
+function observeBubbleSidebarLayoutState() {
+  if (typeof MutationObserver === "undefined" || !document.body || bubbleSidebarClassObserver) return;
+
+  let lastBodyClassName = document.body.className;
+  bubbleSidebarClassObserver = new MutationObserver(() => {
+    const currentBodyClassName = document.body.className;
+    if (currentBodyClassName === lastBodyClassName) return;
+    lastBodyClassName = currentBodyClassName;
+    scheduleBubbleChartResizeForLayoutChange();
+  });
+  bubbleSidebarClassObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+}
+
+function isCompactBubbleLayout() {
+  return window.matchMedia("(max-width: 992px)").matches;
+}
+
+function applyBubbleExplainerPanelCollapseUi() {
+  const isCompact = isCompactBubbleLayout();
+  const panelVisible = Boolean(state.panelVisible);
+  const panelExpanded = panelVisible && !state.panelCollapsed;
+  const panelMinimized = panelVisible && state.panelCollapsed && !isCompact;
+  const hidePanelColumn = !panelVisible;
+
+  if (bubbleShellEl) {
+    bubbleShellEl.classList.toggle("bubble-shell--panel-collapsed", hidePanelColumn);
+    bubbleShellEl.classList.toggle("bubble-shell--panel-minimized", panelMinimized);
+  }
+  if (explainerPanelEl) {
+    explainerPanelEl.hidden = hidePanelColumn;
+    explainerPanelEl.classList.toggle("bubble-explainer--minimized", panelMinimized);
+  }
+  if (explainerBodyEl) {
+    explainerBodyEl.hidden = !panelExpanded;
+  }
+  if (bubblePanelToggleBtn) {
+    const label = panelExpanded ? "Oculta l'explicació" : "Mostra l'explicació";
+    bubblePanelToggleBtn.hidden = !panelVisible;
+    bubblePanelToggleBtn.setAttribute("aria-expanded", String(panelExpanded));
+    bubblePanelToggleBtn.setAttribute("aria-label", label);
+    bubblePanelToggleBtn.setAttribute("title", label);
+  }
+  if (bubblePanelToggleIconEl) {
+    bubblePanelToggleIconEl.className = panelExpanded
+      ? "fa fa-minus explainer-toggle-icon bubble-panel-toggle-icon"
+      : "fa fa-plus explainer-toggle-icon bubble-panel-toggle-icon";
+  }
+
+  scheduleBubbleChartResizeForLayoutChange();
+}
+
+function setBubbleExplainerPanelCollapsed(isCollapsed) {
+  state.panelCollapsed = Boolean(isCollapsed);
+  applyBubbleExplainerPanelCollapseUi();
+}
+
+function setBubbleExplainerPanelVisible(isVisible) {
+  state.panelVisible = Boolean(isVisible);
+  applyBubbleExplainerPanelCollapseUi();
+}
+
+function setBubbleIntroPanelExpanded(isExpanded) {
+  if (!bubbleIntroToggleBtn || !bubbleIntroPanelEl) return;
+  const expanded = Boolean(isExpanded);
+  bubbleIntroPanelEl.hidden = !expanded;
+  bubbleIntroToggleBtn.setAttribute("aria-expanded", String(expanded));
+  if (bubbleIntroToggleIconEl) {
+    bubbleIntroToggleIconEl.className = expanded
+      ? "fa fa-minus explainer-toggle-icon bubble-info-toggle-icon"
+      : "fa fa-plus explainer-toggle-icon bubble-info-toggle-icon";
+  }
+}
+
+function getCourseOdsSet(course, systemId, sectionId) {
+  const recognised = course?.sdg_compact?.[String(systemId || "")]?.[String(sectionId || "")];
+  const rawList = Array.isArray(recognised)
+    ? recognised
+    : (typeof recognised === "string" && normalizeWhitespace(recognised) ? [recognised] : []);
+
+  const normalized = rawList
+    .map((code) => normalizeSdgCodeToOds(code))
+    .filter((code) => Object.prototype.hasOwnProperty.call(odsDefinitions, code));
+
+  return new Set(normalized);
+}
+
+function extractCourseSdgHitRows(courseDetail, systemId, sectionId) {
+  const rows = courseDetail?.by_set?.sdg?.[String(systemId || "")]?.[String(sectionId || "")];
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row) => ({
+      odsCode: normalizeSdgCodeToOds(row?.sdg),
+      n_hits: Number(row?.n_hits || 0)
+    }))
+    .filter((row) => {
+      return Object.prototype.hasOwnProperty.call(odsDefinitions, row.odsCode) && Number.isFinite(row.n_hits) && row.n_hits > 0;
+    })
+    .sort((a, b) => b.n_hits - a.n_hits || a.odsCode.localeCompare(b.odsCode, "ca"));
+}
+
+function getCourseDisplayName(course) {
+  return normalizeWhitespace(course?.course_name || course?.name || course?.title || "Assignatura sense nom");
+}
+
+function getCourseDisplayCode(course) {
+  return normalizeWhitespace(course?.course_code || course?.document_number || course?.code || "");
+}
+
+function getBubbleRadiusForPoint(hitsTotal, maxHits, odsCount) {
+  const safeHits = Number(hitsTotal || 0);
+  const safeOds = Number(odsCount || 0);
+  const normalizedHits = maxHits > 0 ? Math.sqrt(Math.max(0, safeHits) / maxHits) : 0;
+  const odsBoost = Math.min(6, Math.max(0, safeOds) * 0.42);
+  return Math.round((4 + odsBoost + (normalizedHits * 12)) * 10) / 10;
+}
+
+function getNiceAxisStep(rawStep) {
+  const value = Number(rawStep);
+  if (!Number.isFinite(value) || value <= 0) return 1;
+  const exponent = Math.floor(Math.log10(value));
+  const base = value / (10 ** exponent);
+  let niceBase;
+  if (base <= 1) {
+    niceBase = 1;
+  } else if (base <= 2) {
+    niceBase = 2;
+  } else if (base <= 5) {
+    niceBase = 5;
+  } else {
+    niceBase = 10;
+  }
+  return niceBase * (10 ** exponent);
+}
+
+function buildBubbleYAxisScale(pointsInput) {
+  const points = Array.isArray(pointsInput) ? pointsInput : [];
+  const maxHits = points.reduce((maxValue, point) => {
+    const hits = Number(point?.hitsTotal || 0);
+    return Number.isFinite(hits) ? Math.max(maxValue, hits) : maxValue;
+  }, 0);
+
+  if (maxHits <= 0) {
+    return { min: 0, max: 10, stepSize: 2 };
+  }
+
+  const paddedTarget = maxHits * 1.2;
+  const stepSize = getNiceAxisStep(paddedTarget / 6);
+  const max = Math.max(stepSize, Math.ceil(paddedTarget / stepSize) * stepSize);
+  return { min: 0, max, stepSize };
+}
+
+function buildBubbleXAxisScale(pointsInput) {
+  const points = Array.isArray(pointsInput) ? pointsInput : [];
+  const maxOdsCount = points.reduce((maxValue, point) => {
+    const odsCount = Number(point?.odsCount || 0);
+    return Number.isFinite(odsCount) ? Math.max(maxValue, odsCount) : maxValue;
+  }, 0);
+  const axisDataMax = Math.max(1, maxOdsCount);
+  const labelStep = Math.max(1, Math.round(getNiceAxisStep(axisDataMax / 8)));
+  return {
+    min: 0,
+    max: axisDataMax + 1,
+    dataMax: axisDataMax,
+    stepSize: 1,
+    labelStep
+  };
+}
+
+function buildOdsHitsSummary(hitsRows, maxItems) {
+  const rows = Array.isArray(hitsRows) ? hitsRows : [];
+  if (!rows.length) return "No disponible per aquesta assignatura.";
+  const limit = Math.max(1, Number(maxItems || 6));
+  const preview = rows
+    .slice(0, limit)
+    .map((row) => `${row.odsCode} (${formatCount(row.n_hits)})`);
+  const remaining = rows.length - preview.length;
+  return remaining > 0
+    ? `${preview.join(", ")} · +${formatCount(remaining)} ODS`
+    : preview.join(", ");
+}
+
+async function buildDistributionFromCourses(coursesInput, systemId, sectionId) {
+  const courses = Array.isArray(coursesInput) ? coursesInput : [];
+  const totalCourses = courses.length;
+
+  const points = await Promise.all(
+    courses.map(async (course, index) => {
+      const compactSet = getCourseOdsSet(course, systemId, sectionId);
+      const detailPath = normalizeWhitespace(course?.detail_json);
+      let hasDetail = false;
+      let hitsRows = [];
+
+      if (detailPath) {
+        try {
+          const courseDetail = await getCourseDetail(detailPath);
+          hasDetail = true;
+          hitsRows = extractCourseSdgHitRows(courseDetail, systemId, sectionId);
+        } catch (error) {
+          console.warn("No s'ha pogut carregar el detall de l'assignatura per al bubble:", detailPath, error);
+        }
+      }
+
+      const hitSet = new Set(hitsRows.map((row) => row.odsCode));
+      const odsCodes = Array.from(new Set([...compactSet, ...hitSet]))
+        .sort((a, b) => a.localeCompare(b, "ca"));
+      const odsCount = odsCodes.length;
+      const hitsTotal = hitsRows.reduce((acc, row) => acc + Number(row.n_hits || 0), 0);
+      const dominantOdsCode = hitsRows[0]?.odsCode || odsCodes[0] || "";
+
+      return {
+        x: odsCount,
+        y: hitsTotal,
+        odsCodes,
+        odsCount,
+        hitsTotal,
+        hitsRows,
+        dominantOdsCode,
+        hasDetail,
+        detailPath,
+        courseName: getCourseDisplayName(course),
+        courseCode: getCourseDisplayCode(course),
+        academicYear: normalizeWhitespace(course?.academic_year),
+        index
+      };
+    })
+  );
+
+  const maxHits = points.reduce((maxValue, point) => Math.max(maxValue, Number(point?.hitsTotal || 0)), 0);
+  points.forEach((point) => {
+    point.r = getBubbleRadiusForPoint(point.hitsTotal, maxHits, point.odsCount);
+  });
+
+  const coursesWithOds = points.reduce((count, point) => count + (Number(point?.odsCount || 0) > 0 ? 1 : 0), 0);
+  const coursesWithHits = points.reduce((count, point) => count + (Number(point?.hitsTotal || 0) > 0 ? 1 : 0), 0);
+  const totalHits = points.reduce((sum, point) => sum + Number(point?.hitsTotal || 0), 0);
+  const coveragePct = totalCourses > 0 ? Number(((coursesWithOds * 100) / totalCourses).toFixed(1)) : 0;
+  const hitsCoveragePct = totalCourses > 0 ? Number(((coursesWithHits * 100) / totalCourses).toFixed(1)) : 0;
+  const missingDetailCount = points.reduce((count, point) => count + (point?.hasDetail ? 0 : 1), 0);
+
+  return {
+    points,
+    totalCourses,
+    coursesWithOds,
+    coursesWithHits,
+    totalHits,
+    coveragePct,
+    hitsCoveragePct,
+    missingDetailCount
+  };
+}
+
+function buildBubbleSubtitle(distribution) {
+  const total = Number(distribution?.totalCourses || 0);
+  const withOds = Number(distribution?.coursesWithOds || 0);
+  const totalHits = Number(distribution?.totalHits || 0);
+  const missingDetailCount = Number(distribution?.missingDetailCount || 0);
+  const missingText = missingDetailCount > 0 ? ` · sense detall: ${formatCount(missingDetailCount)}` : "";
+  return `${formatCount(total)} assignatures · amb ODS: ${formatCount(withOds)} (${formatPercent(distribution?.coveragePct || 0)}%) · hits totals: ${formatCount(totalHits)}${missingText}`;
+}
+
+function makeBubbleChartCard({ title, subtitle, distribution, seriesLabel }, mountEl) {
+  const card = document.createElement("div");
+  card.className = "chart-container";
+  const canvasId = `bubble-chart-${Math.random().toString(16).slice(2)}`;
+  card.innerHTML = `
+    <div class="bubble-chart-header">
+      <h3 class="bubble-chart-title">${title}</h3>
+      <p class="bubble-chart-subtitle">${subtitle}</p>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="${canvasId}"></canvas>
+    </div>
+  `;
+  mountEl.appendChild(card);
+
+  const points = Array.isArray(distribution?.points) ? distribution.points : [];
+  const totalCourses = Number(distribution?.totalCourses || 0);
+  const xAxisScale = buildBubbleXAxisScale(points);
+  const yAxisScale = buildBubbleYAxisScale(points);
+
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  const chart = new Chart(ctx, {
+    type: "bubble",
+    data: {
+      datasets: [
+        {
+          label: seriesLabel,
+          data: points,
+          totalCourses,
+          clip: false,
+          backgroundColor: points.map((point) => {
+            const color = odsColors[point?.dominantOdsCode] || (Number(point?.odsCount || 0) > 0 ? "#587f9f" : "#98a7b8");
+            return Number(point?.odsCount || 0) > 0 ? `${color}CC` : `${color}77`;
+          }),
+          borderColor: points.map((point) => odsColors[point?.dominantOdsCode] || "#587f9f"),
+          borderWidth: 1.6,
+          hoverBorderColor: "#1d2a37",
+          hoverBorderWidth: 2.2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          top: 14,
+          right: 18,
+          bottom: 8,
+          left: 14
+        }
+      },
+      scales: {
+        x: {
+          type: "linear",
+          min: xAxisScale.min,
+          max: xAxisScale.max,
+          ticks: {
+            stepSize: xAxisScale.stepSize,
+            color: "#273648",
+            callback(value) {
+              const parsed = Number(value);
+              if (!Number.isFinite(parsed)) return "";
+              const rounded = Math.round(parsed);
+              if (Math.abs(parsed - rounded) > 0.0001) return "";
+              if (rounded < 0 || rounded > Number(xAxisScale.max || 0)) return "";
+
+              const dataMax = Number(xAxisScale.dataMax || 0);
+              const step = Math.max(1, Number(xAxisScale.labelStep || 1));
+              if (
+                rounded !== 0
+                && rounded !== dataMax
+                && (rounded % step) !== 0
+              ) {
+                return "";
+              }
+              return String(rounded);
+            }
+          },
+          grid: {
+            color: "rgba(69, 89, 112, 0.12)"
+          },
+          title: {
+            display: true,
+            text: "ODS detectats per assignatura",
+            color: "#2f4155",
+            font: {
+              weight: "700",
+              size: 12
+            }
+          }
+        },
+        y: {
+          min: yAxisScale.min,
+          max: yAxisScale.max,
+          ticks: {
+            stepSize: yAxisScale.stepSize,
+            color: "#273648"
+          },
+          grid: {
+            color: "rgba(69, 89, 112, 0.18)"
+          },
+          title: {
+            display: true,
+            text: "Hits totals detectats per text2sdg",
+            color: "#2f4155",
+            font: {
+              weight: "700",
+              size: 12
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            title(context) {
+              const point = context?.[0]?.raw || {};
+              const courseName = normalizeWhitespace(point?.courseName || "Assignatura");
+              const courseCode = normalizeWhitespace(point?.courseCode || "");
+              return courseCode ? `${courseName} (${courseCode})` : courseName;
+            },
+            label(context) {
+              const point = context?.raw || {};
+              const odsCodes = Array.isArray(point?.odsCodes) ? point.odsCodes : [];
+              const labelLines = [
+                `ODS detectats: ${formatCount(point?.odsCount || 0)}`,
+                odsCodes.length ? `ODS: ${odsCodes.join(", ")}` : "ODS: cap detectat",
+                `Hits totals: ${formatCount(point?.hitsTotal || 0)}`
+              ];
+              const year = normalizeWhitespace(point?.academicYear || "");
+              if (year) {
+                labelLines.push(`Any acadèmic: ${year}`);
+              }
+              return labelLines;
+            },
+            afterLabel(context) {
+              const point = context?.raw || {};
+              return `Hits per ODS: ${buildOdsHitsSummary(point?.hitsRows, 6)}`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  state.charts.push(chart);
+}
+
+function getSelectedCentreCode() {
+  return String(facultySelect.value || "");
+}
+
+function getSelectedProgrammeKey() {
+  return String(degreeSelect.value || "");
+}
+
+function getSelectedSystemId() {
+  return normalizeSystemId(String(systemSelect.value || DEFAULT_SYSTEM_ID));
+}
+
+function getSelectedSectionId() {
+  return String(sectionSelect.value || DEFAULT_SECTION_ID);
+}
+
+function getSelectedOptionLabel(selectEl) {
+  if (!selectEl || selectEl.selectedIndex < 0) return "";
+  return normalizeWhitespace(selectEl.options[selectEl.selectedIndex]?.textContent || "");
+}
+
+function persistSharedFiltersFromControls() {
+  writeSharedFilters({
+    centreCode: getSelectedCentreCode(),
+    programmeKey: getSelectedProgrammeKey(),
+    systemId: getSelectedSystemId(),
+    sectionId: getSelectedSectionId()
+  });
+}
+
+function getCentreForRender(centreCode) {
+  return state.centreByCode.get(String(centreCode || ""));
+}
+
+function getProgrammeForRender(programmeKeyValue) {
+  return state.programmeByKey.get(String(programmeKeyValue || ""));
+}
+
+async function getProgrammeDetail(programmeKeyValue) {
+  const key = String(programmeKeyValue || "");
+  if (!key) throw new Error("Ensenyament no seleccionat");
+  if (state.programmeDetailCache.has(key)) return state.programmeDetailCache.get(key);
+
+  const programme = state.programmeByKey.get(key);
+  if (!programme?.json) throw new Error(`Ensenyament sense fitxer de detall: ${key}`);
+  const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
+  state.programmeDetailCache.set(key, detail);
+  return detail;
+}
+
+async function getCourseDetail(courseDetailPath) {
+  const key = String(courseDetailPath || "");
+  if (!key) throw new Error("Assignatura sense fitxer de detall");
+  if (state.courseDetailCache.has(key)) return state.courseDetailCache.get(key);
+
+  const detail = await fetchApiJson(`${state.apiVersion}/${key}`);
+  state.courseDetailCache.set(key, detail);
+  return detail;
+}
+
+async function getCentreCoursesFromProgrammes(centreCode) {
+  const key = String(centreCode || "");
+  if (!key) throw new Error("Centre no seleccionat");
+  if (state.centreCoursesCache.has(key)) return state.centreCoursesCache.get(key);
+
+  const programmes = state.programmesByCentreCode.get(key) || [];
+  if (!programmes.length) {
+    state.centreCoursesCache.set(key, []);
+    return [];
+  }
+
+  const programmeDetails = await Promise.all(
+    programmes.map(async (programme) => {
+      const pKey = programmeKey(programme?.centre_code, programme?.programme_code);
+      try {
+        return await getProgrammeDetail(pKey);
+      } catch (error) {
+        console.warn("No s'ha pogut carregar un ensenyament per al bubble de centre:", pKey, error);
+        return null;
+      }
+    })
+  );
+
+  const mergedCourses = [];
+  const seenCourseKeys = new Set();
+  programmeDetails.forEach((detailJson, idx) => {
+    const programmeCode = String(programmes[idx]?.programme_code || "");
+    const programmeCourses = Array.isArray(detailJson?.courses) ? detailJson.courses : [];
+    programmeCourses.forEach((course, courseIdx) => {
+      const uniqueKey = normalizeWhitespace(
+        course?.centre_programme_course_code
+        || `${programmeCode}::${course?.course_code || course?.document_number || ""}::${course?.academic_year || ""}::${courseIdx}`
+      );
+      if (!uniqueKey || seenCourseKeys.has(uniqueKey)) return;
+      seenCourseKeys.add(uniqueKey);
+      mergedCourses.push(course);
+    });
+  });
+
+  state.centreCoursesCache.set(key, mergedCourses);
+  return mergedCourses;
+}
+
+function updateExplainerPanel(context) {
+  const systemId = normalizeSystemId(context?.systemId || getSelectedSystemId());
+  const sectionId = String(context?.sectionId || getSelectedSectionId());
+  const systemLabel = context?.systemLabel || getSelectedOptionLabel(systemSelect) || SYSTEM_LABEL_OVERRIDES[systemId] || systemId;
+  const sectionLabel = context?.sectionLabel || getSelectedOptionLabel(sectionSelect) || SECTION_LABEL_OVERRIDES[sectionId] || sectionId;
+  const systemHelp = SYSTEM_EXPLANATIONS[systemId] || "s'aplica el criteri del sistema seleccionat.";
+  const sectionHelp = SECTION_EXPLANATIONS[sectionId] || "s'aplica el criteri de secció seleccionat.";
+
+  if (!context?.centreCode) {
+    if (explainerTitleEl) {
+      explainerTitleEl.textContent = "Com interpretar el gràfic de bombolles";
+    }
+    setExplainerText(
+      explainerScopeEl,
+      "Selecciona un centre i, opcionalment, un ensenyament per veure un punt per assignatura amb ODS detectats i n hits."
+    );
+    setExplainerText(explainerCoverageEl, "");
+    setExplainerText(explainerSystemEl, "");
+    setExplainerText(explainerSectionEl, "");
+    setExplainerText(explainerNotesEl, "");
+    return;
+  }
+
+  const compareMode = Boolean(context?.compareMode);
+  const centreName = normalizeWhitespace(context?.centreName || "Centre");
+  const programmeName = normalizeWhitespace(context?.programmeName || "Ensenyament");
+  const centreDistribution = context?.centreDistribution || null;
+  const programmeDistribution = context?.programmeDistribution || null;
+
+  if (explainerTitleEl) {
+    explainerTitleEl.textContent = compareMode
+      ? `Com interpretar la comparativa de bombolles: ${centreName} vs ${programmeName}`
+      : `Com interpretar el gràfic de bombolles de ${centreName}`;
+  }
+
+  if (compareMode) {
+    setExplainerText(
+      explainerScopeEl,
+      `S'està comparant el centre "${centreName}" amb l'ensenyament "${programmeName}".`
+    );
+
+    const centreCoverageText = centreDistribution
+      ? `${formatCount(centreDistribution.coursesWithOds)} de ${formatCount(centreDistribution.totalCourses)} (${formatPercent(centreDistribution.coveragePct)}%)`
+      : "n/d";
+    const programmeCoverageText = programmeDistribution
+      ? `${formatCount(programmeDistribution.coursesWithOds)} de ${formatCount(programmeDistribution.totalCourses)} (${formatPercent(programmeDistribution.coveragePct)}%)`
+      : "n/d";
+
+    setExplainerText(
+      explainerCoverageEl,
+      `Cobertura global amb ODS: centre ${centreCoverageText}; ensenyament ${programmeCoverageText}. Hits totals: centre ${formatCount(centreDistribution?.totalHits || 0)}; ensenyament ${formatCount(programmeDistribution?.totalHits || 0)}.`
+    );
+  } else {
+    const scopeText = context?.nProgrammes > 0
+      ? `Has seleccionat "${centreName}". Aquesta vista agrega ${formatCount(context.nProgrammes)} ensenyaments del centre.`
+      : `Has seleccionat "${centreName}".`;
+    setExplainerText(explainerScopeEl, scopeText);
+
+    const coverageText = centreDistribution
+      ? `${formatCount(centreDistribution.coursesWithOds)} de ${formatCount(centreDistribution.totalCourses)} assignatures amb ODS (${formatPercent(centreDistribution.coveragePct)}%), amb ${formatCount(centreDistribution.totalHits)} hits totals.`
+      : "No disponible per aquesta selecció.";
+    setExplainerText(
+      explainerCoverageEl,
+      `Cobertura del centre: ${coverageText}`
+    );
+  }
+
+  setExplainerText(
+    explainerSystemEl,
+    `Amb "${systemLabel}", ${systemHelp}`
+  );
+  setExplainerText(
+    explainerSectionEl,
+    `A la secció "${sectionLabel}", ${sectionHelp}`
+  );
+  setExplainerText(
+    explainerNotesEl,
+    compareMode
+      ? "Es mostren dos gràfics de bombolles: un del centre i un de l'ensenyament. Cada bombolla és una assignatura; l'eix horitzontal indica quants ODS s'hi detecten i l'eix vertical, els hits totals detectats. El color de la bombolla correspon a l'ODS amb més hits en aquella assignatura; si no hi ha detall de hits, s'usa un ODS detectat com a referència de color."
+      : "Cada bombolla és una assignatura. L'eix horitzontal indica ODS detectats i l'eix vertical mostra hits totals detectats per text2sdg. El color de la bombolla correspon a l'ODS amb més hits en aquella assignatura; si no hi ha detall de hits, s'usa un ODS detectat com a referència de color."
+  );
+}
+
+function renderEmptyState(message) {
+  chartContainer.innerHTML = `<p style="text-align:center;padding:20px;">${message}</p>`;
+  scheduleBubbleChartHeaderHeightsSync();
+}
+
+async function render() {
+  const centreCode = getSelectedCentreCode();
+  const programmeKeyValue = getSelectedProgrammeKey();
+  const systemId = getSelectedSystemId();
+  const sectionId = getSelectedSectionId();
+  const compareMode = Boolean(programmeKeyValue) && programmeKeyValue !== "ALL";
+
+  chartContainer.innerHTML = "";
+  clearCharts();
+
+  if (!centreCode) {
+    renderEmptyState("Selecciona un centre per veure el gràfic de bombolles per assignatura.");
+    setBubbleExplainerPanelVisible(false);
+    updateExplainerPanel({
+      centreCode: "",
+      systemId,
+      sectionId,
+      systemLabel: getSelectedOptionLabel(systemSelect),
+      sectionLabel: getSelectedOptionLabel(sectionSelect)
+    });
+    return;
+  }
+
+  const token = ++state.renderToken;
+  renderEmptyState("Carregant dades...");
+
+  try {
+    const centre = getCentreForRender(centreCode);
+    const centreCoursesPromise = getCentreCoursesFromProgrammes(centreCode);
+    const programmeDetailPromise = compareMode ? getProgrammeDetail(programmeKeyValue) : Promise.resolve(null);
+
+    const [centreCourses, programmeDetail] = await Promise.all([
+      centreCoursesPromise,
+      programmeDetailPromise
+    ]);
+    if (token !== state.renderToken) return;
+
+    const centreDistributionPromise = buildDistributionFromCourses(centreCourses, systemId, sectionId);
+
+    let programmeDistribution = null;
+    let hasProgrammeData = false;
+    const programme = compareMode ? getProgrammeForRender(programmeKeyValue) : null;
+    let programmeDistributionPromise = Promise.resolve(null);
+
+    if (compareMode && programmeDetail) {
+      const programmeCourses = Array.isArray(programmeDetail?.courses) ? programmeDetail.courses : [];
+      programmeDistributionPromise = buildDistributionFromCourses(programmeCourses, systemId, sectionId);
+    }
+
+    const [centreDistribution, resolvedProgrammeDistribution] = await Promise.all([
+      centreDistributionPromise,
+      programmeDistributionPromise
+    ]);
+    if (token !== state.renderToken) return;
+
+    const hasCentreData = Number(centreDistribution?.totalCourses || 0) > 0;
+    programmeDistribution = resolvedProgrammeDistribution;
+    hasProgrammeData = Number(programmeDistribution?.totalCourses || 0) > 0;
+
+    chartContainer.innerHTML = "";
+    chartContainer.className = compareMode && hasProgrammeData ? "chart-grid two" : "chart-grid one";
+
+    if (hasCentreData) {
+      makeBubbleChartCard(
+        {
+          title: centre?.centre_name || String(centreCode),
+          subtitle: buildBubbleSubtitle(centreDistribution),
+          distribution: centreDistribution,
+          seriesLabel: "Centre"
+        },
+        chartContainer
+      );
+    }
+
+    if (compareMode && hasProgrammeData && programmeDistribution) {
+      makeBubbleChartCard(
+        {
+          title: programme?.programme_name || "Ensenyament",
+          subtitle: buildBubbleSubtitle(programmeDistribution),
+          distribution: programmeDistribution,
+          seriesLabel: "Ensenyament"
+        },
+        chartContainer
+      );
+    }
+
+    if (!hasCentreData && !(compareMode && hasProgrammeData)) {
+      renderEmptyState("No hi ha dades d'assignatures per aquesta combinació de sistema i secció.");
+    }
+
+    scheduleBubbleChartHeaderHeightsSync();
+
+    updateExplainerPanel({
+      centreCode,
+      centreName: centre?.centre_name || String(centreCode),
+      programmeName: programme?.programme_name || "",
+      compareMode: compareMode && hasProgrammeData,
+      systemId,
+      sectionId,
+      systemLabel: getSelectedOptionLabel(systemSelect),
+      sectionLabel: getSelectedOptionLabel(sectionSelect),
+      nProgrammes: (state.programmesByCentreCode.get(String(centreCode || "")) || []).length,
+      centreDistribution,
+      programmeDistribution
+    });
+    setBubbleExplainerPanelVisible(true);
+  } catch (err) {
+    console.error(err);
+    chartContainer.innerHTML = `
+      <div class="w3-panel w3-red w3-round">
+        <h3>Error</h3>
+        <p>No s'han pogut carregar les dades del gràfic de bombolles des de l'API nova.</p>
+      </div>`;
+    scheduleBubbleChartHeaderHeightsSync();
+    updateExplainerPanel({
+      centreCode,
+      compareMode,
+      systemId,
+      sectionId,
+      systemLabel: getSelectedOptionLabel(systemSelect),
+      sectionLabel: getSelectedOptionLabel(sectionSelect)
+    });
+    setBubbleExplainerPanelVisible(Boolean(centreCode));
+  }
+}
+
+function setControlsEnabled(enabled) {
+  facultySelect.disabled = !enabled;
+  degreeSelect.disabled = !enabled || !facultySelect.value;
+  systemSelect.disabled = !enabled;
+  sectionSelect.disabled = !enabled;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  setBubbleIntroPanelExpanded(false);
+  if (bubbleIntroToggleBtn && bubbleIntroPanelEl) {
+    bubbleIntroToggleBtn.addEventListener("click", () => {
+      const expanded = bubbleIntroToggleBtn.getAttribute("aria-expanded") === "true";
+      setBubbleIntroPanelExpanded(!expanded);
+    });
+  }
+
+  observeBubbleSidebarLayoutState();
+  setControlsEnabled(false);
+  renderEmptyState("Inicialitzant dades de l'API...");
+  setBubbleExplainerPanelVisible(false);
+  setBubbleExplainerPanelCollapsed(false);
+  updateExplainerPanel({
+    centreCode: "",
+    systemId: DEFAULT_SYSTEM_ID,
+    sectionId: DEFAULT_SECTION_ID,
+    systemLabel: SYSTEM_LABEL_OVERRIDES[DEFAULT_SYSTEM_ID],
+    sectionLabel: SECTION_LABEL_OVERRIDES[DEFAULT_SECTION_ID]
+  });
+
+  if (bubblePanelToggleBtn) {
+    bubblePanelToggleBtn.addEventListener("click", () => {
+      setBubbleExplainerPanelCollapsed(!state.panelCollapsed);
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    applyBubbleExplainerPanelCollapseUi();
+  });
+
+  try {
+    await resolveApiBaseAndVersion();
+    await loadIndexes();
+
+    const sharedFilters = readSharedFilters();
+    const defaultCentre = state.centres.find((centre) => centre.centre_name === DEFAULT_FACULTY_NAME);
+    const defaultCentreCode = defaultCentre?.centre_code || state.centres[0]?.centre_code || "";
+    const initialCentreCode = state.centreByCode.has(sharedFilters.centreCode)
+      ? sharedFilters.centreCode
+      : defaultCentreCode;
+
+    populateFacultySelect(initialCentreCode);
+    populateDegreeSelect(initialCentreCode, sharedFilters.programmeKey);
+    populateSystemSelect(sharedFilters.systemId);
+    populateSectionSelect(sharedFilters.sectionId);
+    persistSharedFiltersFromControls();
+
+    setControlsEnabled(true);
+    await render();
+
+    facultySelect.addEventListener("change", async () => {
+      const centreCode = getSelectedCentreCode();
+      populateDegreeSelect(centreCode, "");
+      degreeSelect.disabled = !centreCode;
+      persistSharedFiltersFromControls();
+      await render();
+    });
+
+    degreeSelect.addEventListener("change", () => {
+      persistSharedFiltersFromControls();
+      render();
+    });
+    systemSelect.addEventListener("change", () => {
+      persistSharedFiltersFromControls();
+      render();
+    });
+    sectionSelect.addEventListener("change", () => {
+      persistSharedFiltersFromControls();
+      render();
+    });
+  } catch (err) {
+    console.error(err);
+    chartContainer.innerHTML = `
+      <div class="w3-panel w3-red w3-round">
+        <h3>Error</h3>
+        <p>No s'ha pogut inicialitzar el gràfic de bombolles amb l'API nova.</p>
+      </div>`;
+    if (explainerTitleEl) {
+      explainerTitleEl.textContent = "Com interpretar el gràfic de bombolles";
+    }
+    setExplainerText(explainerScopeEl, "No s'ha pogut inicialitzar el mòdul explicatiu del gràfic de bombolles.");
+    setExplainerText(explainerCoverageEl, "");
+    setExplainerText(explainerSystemEl, "");
+    setExplainerText(explainerSectionEl, "");
+    setExplainerText(explainerNotesEl, "");
+    setBubbleExplainerPanelVisible(false);
+    setControlsEnabled(false);
+  }
+});
+</script>

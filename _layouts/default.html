@@ -37,19 +37,19 @@ Safe edits:
     {{ page.head_inline }}
   {% endif %}
 </head>
-<body class="w3-light-grey">
+  <body class="w3-light-grey">
 
   {% include sidebar.html %}
 
   <button
     id="desktopSidebarToggle"
-    class="site-desktop-sidebar-toggle w3-button w3-hide-small w3-hide-medium"
+    class="site-desktop-sidebar-toggle w3-button w3-hide-medium w3-hide-small"
     type="button"
-    onclick="if(window.toggleDesktopSidebar){window.toggleDesktopSidebar();}else{var collapsed=document.body.classList.toggle('sidebar-collapsed');var icon=this.querySelector('i');if(icon){icon.className=collapsed?'fa fa-bars':'fa fa-angle-left';}var label=collapsed?'Mostra menú lateral':'Oculta menú lateral';this.setAttribute('aria-label',label);this.setAttribute('title',label);this.setAttribute('aria-expanded',String(!collapsed));try{localStorage.setItem('sidebar:desktopCollapsed',collapsed?'1':'0');}catch(_){}}return false;"
-    aria-label="Oculta menú lateral"
+    aria-label="Col·lapsar panell de navegació"
     aria-expanded="true"
-    title="Oculta menú lateral">
-    <i class="fa fa-angle-left" aria-hidden="true"></i>
+    title="Col·lapsar panell de navegació">
+    <i id="desktopSidebarToggleIcon" class="fa fa-chevron-left" aria-hidden="true"></i>
+    <span class="site-sr-only">Alternar panell de navegació</span>
   </button>
 
   <button id="mobileMenuBtn" class="site-mobile-menu w3-button w3-hide-large" onclick="w3_open();" aria-label="Obrir menú lateral">
@@ -63,6 +63,6 @@ Safe edits:
 
   {% include back_to_top.html %}
 
-  <script src="{{ '/assets/js/site.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/site.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
 </body>
 </html>

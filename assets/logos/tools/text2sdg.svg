@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">text2sdg</title>
+  <desc id="desc">Icona estilitzada de text2sdg</desc>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#0a7f48"/>
+  <rect x="12" y="16" width="40" height="32" rx="6" fill="#ffffff" opacity="0.18"/>
+  <path d="M18 27h28M18 33h20M18 39h16" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+  <text x="32" y="53" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">T2S</text>
+</svg>

@@ -1,0 +1,33 @@
+<!--
+File: _includes/bubble/page_intro.html
+Purpose: Intro text for the bubble chart page.
+Related files:
+  - pages/bubble.html
+-->
+
+<div class="w3-container">
+  <div class="bubble-title-row">
+    <h1>Una vista amb gràfics de bombolles</h1>
+    <div class="bubble-title-actions">
+      <button
+        id="bubbleIntroToggle"
+        type="button"
+        class="w3-button w3-small w3-round w3-border explainer-toggle-button bubble-info-toggle"
+        aria-controls="bubbleIntroPanel"
+        aria-expanded="false"
+        aria-label="Mostra o oculta la descripció de la visualització"
+        title="Mostra o oculta la descripció de la visualització">
+        <i class="fa fa-plus explainer-toggle-icon bubble-info-toggle-icon" aria-hidden="true"></i>
+        <span class="bubble-sr-only">Info</span>
+      </button>
+    </div>
+  </div>
+  <div id="bubbleIntroPanel" class="bubble-intro-panel" hidden>
+    <p>
+      Aquesta visualització mostra un punt per assignatura.
+      Cada punt combina el nombre d'ODS detectats i els hits totals identificats per text2sdg.
+      Pots veure el centre complet i, si tries un ensenyament, comparar-lo en un segon gràfic de bombolles.
+      El càlcul es recalcula segons el sistema de classificació i la secció analitzada.
+    </p>
+  </div>
+</div>

@@ -1,0 +1,87 @@
+<!--
+File: _includes/radar/interactive_layout.html
+Purpose: Interactive shell for the radar chart view.
+Related files:
+  - _includes/radar/scripts.html
+  - _includes/radar/styles.html
+-->
+
+<div class="w3-container">
+  <div class="interactive-chart-container radar-shell">
+    <aside class="radar-left">
+      <section class="radar-card">
+        <p class="radar-helper">Selecciona un centre i, opcionalment, un ensenyament per comparar el percentatge d'assignatures amb cada ODS.</p>
+
+        <label for="faculty-select" class="radar-field-label">Centre</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="faculty-select" class="w3-select w3-border">
+              <option value="">Centre (obligatori)</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="degree-select" class="radar-field-label">Ensenyament (opcional)</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="degree-select" class="w3-select w3-border" disabled>
+              <option value="" selected disabled>Ensenyament (opcional)</option>
+              <option value="ALL">Tots</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="radar-card">
+        <p class="radar-helper">Ajusta sistema i secció per recalcular el percentatge de cobertura per ODS.</p>
+
+        <label for="radar-system-select" class="radar-field-label">Sistema de classificació</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="radar-system-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant sistemes...</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="radar-section-select" class="radar-field-label">Secció analitzada</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="radar-section-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant seccions...</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="radar-main">
+      <div id="chart-container" class="chart-grid">
+        <!-- Dynamic chart cards -->
+      </div>
+    </section>
+
+    <aside id="radar-explainer" class="radar-explainer" aria-live="polite" hidden>
+      <div class="radar-explainer-header">
+        <h3 id="radar-explainer-title" class="radar-explainer-title">Com interpretar el gràfic radar</h3>
+        {% include shared/explainer_toggle_button.html
+          button_id="radarPanelToggle"
+          icon_id="radarPanelToggleIcon"
+          button_class="radar-info-toggle radar-panel-toggle"
+          icon_class="radar-panel-toggle-icon"
+          sr_class="radar-sr-only"
+          aria_controls="radar-explainer-body"
+          aria_label_show="Mostra l'explicació de l'anàlisi"
+          sr_text="Explicació"
+        %}
+      </div>
+      <div id="radar-explainer-body" class="radar-explainer-body">
+        <p id="radar-explainer-scope" class="radar-explainer-text"></p>
+        <p id="radar-explainer-coverage" class="radar-explainer-text"></p>
+        <p id="radar-explainer-system" class="radar-explainer-text"></p>
+        <p id="radar-explainer-section" class="radar-explainer-text"></p>
+        <p id="radar-explainer-notes" class="radar-explainer-text"></p>
+      </div>
+    </aside>
+  </div>
+</div>

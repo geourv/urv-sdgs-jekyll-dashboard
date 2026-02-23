@@ -1,0 +1,43 @@
+{% assign media_href = include.link_url | default: '#' %}
+{% assign media_is_external = false %}
+{% if media_href contains '://' %}
+  {% assign media_is_external = true %}
+{% endif %}
+
+{% if include.link_url %}
+  <a
+    class="media-text-card media-text-card--link"
+    href="{% if media_is_external %}{{ media_href }}{% else %}{{ media_href | relative_url }}{% endif %}">
+    <span class="media-text-card-media">
+      <img
+        src="{{ include.image_src | relative_url }}"
+        alt="{{ include.image_alt | default: include.title }}"
+        loading="lazy"
+        decoding="async">
+    </span>
+
+    <span class="media-text-card-body">
+      <span class="media-text-card-title">{{ include.title }}</span>
+      {% if include.text %}
+        <span class="media-text-card-text">{{ include.text }}</span>
+      {% endif %}
+    </span>
+  </a>
+{% else %}
+  <article class="media-text-card">
+    <span class="media-text-card-media">
+      <img
+        src="{{ include.image_src | relative_url }}"
+        alt="{{ include.image_alt | default: include.title }}"
+        loading="lazy"
+        decoding="async">
+    </span>
+
+    <div class="media-text-card-body">
+      <h3 class="media-text-card-title">{{ include.title }}</h3>
+      {% if include.text %}
+        <p class="media-text-card-text">{{ include.text }}</p>
+      {% endif %}
+    </div>
+  </article>
+{% endif %}

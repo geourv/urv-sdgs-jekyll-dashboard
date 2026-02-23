@@ -2,16 +2,31 @@
 File: _includes/doughnut/page_intro.html
 Purpose: Intro text for the doughnut chart page.
 Related files:
-  - pages/faculty-doughnut.html
+  - pages/doughnut.html
 -->
 
 <div class="w3-container">
   <div class="doughnut-title-row">
     <h1>Una vista amb gràfics d'anell</h1>
+    <div class="doughnut-title-actions">
+      <button
+        id="doughnutIntroToggle"
+        type="button"
+        class="w3-button w3-small w3-round w3-border explainer-toggle-button doughnut-info-toggle"
+        aria-controls="doughnutIntroPanel"
+        aria-expanded="false"
+        aria-label="Mostra o oculta la descripció de la visualització"
+        title="Mostra o oculta la descripció de la visualització">
+        <i class="fa fa-plus explainer-toggle-icon doughnut-info-toggle-icon" aria-hidden="true"></i>
+        <span class="doughnut-sr-only">Info</span>
+      </button>
+    </div>
   </div>
-  <p>
-    Aquesta visualització mostra la distribució d'ODS per centres i ensenyaments de la URV.
-    Pots comparar centre i ensenyament dins del mateix gràfic (dos anells concèntrics: centre interior i ensenyament exterior) i recalcular
-    el resultat segons el sistema de classificació i la secció analitzada.
-  </p>
+  <div id="doughnutIntroPanel" class="doughnut-intro-panel" hidden>
+    <p>
+      Aquesta visualització mostra la distribució d'ODS per centres i ensenyaments de la URV.
+      Pots comparar centre i ensenyament dins del mateix gràfic (dos anells concèntrics: centre interior i ensenyament exterior)
+      i recalcular el resultat segons el sistema de classificació i la secció analitzada.
+    </p>
+  </div>
 </div>

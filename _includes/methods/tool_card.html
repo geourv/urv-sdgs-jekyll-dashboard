@@ -1,0 +1,16 @@
+<li class="methods-tool-card">
+  {% assign card_href = include.info_url | default: "" | strip %}
+  {% if card_href != "" %}
+    <a class="methods-tool-card-link" href="{{ card_href }}" target="_blank" rel="noopener noreferrer" aria-label="Obrir {{ include.title }}">
+  {% endif %}
+      <div class="methods-tool-header">
+        <span class="methods-tool-logo">
+          <img src="{{ include.logo_src }}" alt="{{ include.logo_alt | default: include.title }}" loading="lazy" decoding="async">
+        </span>
+        <strong class="methods-tool-title">{{ include.title }}</strong>
+      </div>
+      <p class="methods-tool-description">{{ include.description }}</p>
+  {% if card_href != "" %}
+    </a>
+  {% endif %}
+</li>

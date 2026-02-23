@@ -32,6 +32,9 @@ const systemLoadingOptionEl = document.getElementById("wordcloudSystemLoadingOpt
 const sectionLoadingOptionEl = document.getElementById("wordcloudSectionLoadingOption");
 const cloudEmptyStateTextEl = document.getElementById("wordcloudEmptyStateText");
 const introToggleBtn = document.getElementById("wordcloudIntroToggle");
+const introToggleIconEl = introToggleBtn
+  ? introToggleBtn.querySelector(".wordcloud-info-toggle-icon")
+  : null;
 const introPanelEl = document.getElementById("wordcloudIntroPanel");
 const mobileCloudHintEl = document.getElementById("mobileCloudHint");
 const wordcloudLayoutEl = document.querySelector(".wordcloud-layout");
@@ -53,6 +56,13 @@ const MIN_WORDS_TO_RENDER = 20;
 const MAX_WORDS_TO_RENDER = 95;
 const MIN_WORD_SIZE = 11;
 const MAX_WORD_SIZE = 92;
+const WORDCLOUD_EDGE_CHECK_DELAY_MS = 120;
+const WORDCLOUD_MAX_EDGE_FIX_ATTEMPTS = 4;
+const WORDCLOUD_EDGE_SHRINK_FACTOR = 0.9;
+const WORDCLOUD_EDGE_MIN_SCALE = 0.6;
+const WORDCLOUD_EDGE_SCAN_PX = 2;
+const WORDCLOUD_EDGE_MIN_ALPHA = 20;
+const WORDCLOUD_EDGE_BG_CHANNEL_MIN = 248;
 const API_BASE_CANDIDATES = Array.from(new Set([
   "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
   "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
@@ -293,6 +303,8 @@ let sidebarLayoutDebounceTimer = null;
 let panelLayoutDebounceTimer = null;
 let cloudHeadingSyncRafId = null;
 let pendingMobileAutoScroll = false;
+let wordcloudRenderSequence = 0;
+const wordcloudCanvasRenderState = new WeakMap();
 
 function setStatus(message, isError) {
   const normalized = normalizeWhitespace(message);
@@ -632,8 +644,8 @@ function applySelectionPanelCollapseUi() {
   }
   if (selectionPanelToggleIconEl) {
     selectionPanelToggleIconEl.className = panelExpanded
-      ? "fa fa-times wordcloud-panel-toggle-icon"
-      : "fa fa-bars wordcloud-panel-toggle-icon";
+      ? "fa fa-minus explainer-toggle-icon wordcloud-panel-toggle-icon"
+      : "fa fa-plus explainer-toggle-icon wordcloud-panel-toggle-icon";
   }
 }
 
@@ -795,7 +807,13 @@ function updateMobileCloudHintVisibility() {
 function setIntroPanelExpanded(isExpanded) {
   if (!introToggleBtn || !introPanelEl) return;
   introPanelEl.hidden = !isExpanded;
-  introToggleBtn.setAttribute("aria-expanded", String(!!isExpanded));
+  const expanded = Boolean(isExpanded);
+  introToggleBtn.setAttribute("aria-expanded", String(expanded));
+  if (introToggleIconEl) {
+    introToggleIconEl.className = expanded
+      ? "fa fa-minus explainer-toggle-icon wordcloud-info-toggle-icon"
+      : "fa fa-plus explainer-toggle-icon wordcloud-info-toggle-icon";
+  }
 }
 
 function resolveCentreName(context) {
@@ -1270,6 +1288,89 @@ function getCanvasWrapper(targetCanvas) {
   return targetCanvas.closest(".wordcloud-wrapper");
 }
 
+function setWordcloudCanvasRenderState(targetCanvas, renderState) {
+  if (!targetCanvas) return;
+  if (!renderState) {
+    wordcloudCanvasRenderState.delete(targetCanvas);
+    return;
+  }
+  wordcloudCanvasRenderState.set(targetCanvas, renderState);
+}
+
+function getWordcloudCanvasRenderState(targetCanvas) {
+  if (!targetCanvas) return null;
+  return wordcloudCanvasRenderState.get(targetCanvas) || null;
+}
+
+function edgeStripHasInk(context, x, y, width, height) {
+  if (!context || width <= 0 || height <= 0) return false;
+  let imageData = null;
+  try {
+    imageData = context.getImageData(x, y, width, height);
+  } catch (error) {
+    return false;
+  }
+  const pixels = imageData && imageData.data ? imageData.data : null;
+  if (!pixels || !pixels.length) return false;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const alpha = Number(pixels[i + 3] || 0);
+    if (alpha < WORDCLOUD_EDGE_MIN_ALPHA) continue;
+    const red = Number(pixels[i] || 0);
+    const green = Number(pixels[i + 1] || 0);
+    const blue = Number(pixels[i + 2] || 0);
+    if (
+      red < WORDCLOUD_EDGE_BG_CHANNEL_MIN
+      || green < WORDCLOUD_EDGE_BG_CHANNEL_MIN
+      || blue < WORDCLOUD_EDGE_BG_CHANNEL_MIN
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasWordcloudEdgeInk(targetCanvas) {
+  if (!targetCanvas) return false;
+  const context = targetCanvas.getContext("2d");
+  if (!context) return false;
+
+  const width = Number(targetCanvas.width || 0);
+  const height = Number(targetCanvas.height || 0);
+  if (width <= 0 || height <= 0) return false;
+
+  const strip = Math.max(1, Math.min(WORDCLOUD_EDGE_SCAN_PX, Math.floor(Math.min(width, height) / 6)));
+  return (
+    edgeStripHasInk(context, 0, 0, width, strip)
+    || edgeStripHasInk(context, 0, height - strip, width, strip)
+    || edgeStripHasInk(context, 0, strip, strip, height - (strip * 2))
+    || edgeStripHasInk(context, width - strip, strip, strip, height - (strip * 2))
+  );
+}
+
+function scheduleWordcloudEdgeSafetyCheck(featureRows, targetCanvas, sharedColorConfig, renderState) {
+  if (!targetCanvas || !renderState) return;
+  window.setTimeout(() => {
+    const latestState = getWordcloudCanvasRenderState(targetCanvas);
+    if (!latestState || latestState.token !== renderState.token) return;
+
+    if (!hasWordcloudEdgeInk(targetCanvas)) return;
+
+    const currentAttempt = Number(latestState.edgeAttempt || 0);
+    if (currentAttempt >= WORDCLOUD_MAX_EDGE_FIX_ATTEMPTS) return;
+
+    const nextScale = Math.max(
+      WORDCLOUD_EDGE_MIN_SCALE,
+      Number(latestState.scaleMultiplier || 1) * WORDCLOUD_EDGE_SHRINK_FACTOR
+    );
+    if (!Number.isFinite(nextScale) || nextScale >= Number(latestState.scaleMultiplier || 1)) return;
+
+    drawWordCloud(featureRows, targetCanvas, sharedColorConfig, {
+      scaleMultiplier: nextScale,
+      edgeAttempt: currentAttempt + 1
+    });
+  }, WORDCLOUD_EDGE_CHECK_DELAY_MS);
+}
+
 function resizeCanvas(targetCanvas) {
   const activeCanvas = targetCanvas || canvas;
   const container = getCanvasWrapper(activeCanvas);
@@ -1277,9 +1378,19 @@ function resizeCanvas(targetCanvas) {
   const rect = container.getBoundingClientRect();
   const width = Math.max(300, Math.floor(container.clientWidth || rect.width));
   const height = Math.max(320, Math.floor(container.clientHeight || rect.height));
-  activeCanvas.width = width;
-  activeCanvas.height = height;
-  return { width, height };
+  const compareMode = Boolean(state.lastRenderData?.compareMode);
+
+  // Reserve an internal safe margin so long words do not end up clipped on canvas edges.
+  const renderPadding = compareMode
+    ? Math.round(clamp(width * 0.1, 24, 56))
+    : Math.round(clamp(width * 0.07, 20, 44));
+
+  activeCanvas.width = width + (renderPadding * 2);
+  activeCanvas.height = height + (renderPadding * 2);
+  activeCanvas.style.width = `${width}px`;
+  activeCanvas.style.height = `${height}px`;
+
+  return { width, height, renderPadding };
 }
 
 function syncWordcloudWrapperHeight() {
@@ -1289,11 +1400,11 @@ function syncWordcloudWrapperHeight() {
 
   if (compareMode) {
     const limitNorm = (clampWordLimit(state.wordLimit) - MIN_WORDS_TO_RENDER) / (MAX_WORDS_TO_RENDER - MIN_WORDS_TO_RENDER);
-    const heightRatio = 0.64 + clamp(limitNorm, 0, 1) * 0.16;
+    const heightRatio = 0.72 + clamp(limitNorm, 0, 1) * 0.2;
     wrappers.forEach((wordcloudWrapper) => {
       const rect = wordcloudWrapper.getBoundingClientRect();
       const availableWidth = Math.max(300, Math.floor(wordcloudWrapper.clientWidth || rect.width));
-      const targetHeight = Math.max(250, Math.min(Math.floor(availableWidth * heightRatio), 420));
+      const targetHeight = Math.max(280, Math.min(Math.floor(availableWidth * heightRatio), 500));
       wordcloudWrapper.style.width = "100%";
       wordcloudWrapper.style.maxWidth = "100%";
       wordcloudWrapper.style.margin = "0 auto";
@@ -1314,15 +1425,19 @@ function syncWordcloudWrapperHeight() {
 function clearWordCloud(targetCanvas) {
   const activeCanvas = targetCanvas || canvas;
   if (!activeCanvas) return;
+  setWordcloudCanvasRenderState(activeCanvas, null);
   const context = activeCanvas.getContext("2d");
   if (context) {
     context.clearRect(0, 0, activeCanvas.width, activeCanvas.height);
   }
 }
 
-function drawWordCloud(featureRows, targetCanvas, sharedColorConfig) {
+function drawWordCloud(featureRows, targetCanvas, sharedColorConfig, drawOptions) {
   const activeCanvas = targetCanvas || canvas;
   if (!activeCanvas) return 0;
+  const options = drawOptions && typeof drawOptions === "object" ? drawOptions : {};
+  const scaleMultiplier = clamp(Number(options.scaleMultiplier || 1), WORDCLOUD_EDGE_MIN_SCALE, 1);
+  const edgeAttempt = Math.max(0, Math.floor(Number(options.edgeAttempt || 0)));
 
   const rawWordList = buildRawWordList(featureRows);
   const currentWordLimit = clampWordLimit(state.wordLimit);
@@ -1361,7 +1476,7 @@ function drawWordCloud(featureRows, targetCanvas, sharedColorConfig) {
   const baseMaxWeight = Math.max(minWeight + 10, width * (compareMode ? 0.102 : 0.095));
   const spreadMultiplier = (isSparseCloud ? 1.35 : (isDenseCloud ? 1 : 1.18)) * (compareMode ? 1.05 : 1);
   const sliderBoost = 1 + (1 - clamp(limitNorm, 0, 1)) * (compareMode ? 0.32 : 0.45);
-  const maxWeight = Math.max(minWeight + 10, baseMaxWeight * spreadMultiplier * sliderBoost);
+  const maxWeight = Math.max(minWeight + 10, baseMaxWeight * spreadMultiplier * sliderBoost * scaleMultiplier);
   const exponent = compareMode
     ? (isSparseCloud ? 1.06 : (isDenseCloud ? 0.92 : 0.98))
     : (isSparseCloud ? 1.55 : (isDenseCloud ? 1.2 : 1.35));
@@ -1393,6 +1508,12 @@ function drawWordCloud(featureRows, targetCanvas, sharedColorConfig) {
   const targetRotationSteps = 1;
   const targetWait = compareMode ? 0 : 10;
   const targetAbortThreshold = compareMode ? 4500 : 1800;
+  const renderState = {
+    token: ++wordcloudRenderSequence,
+    scaleMultiplier,
+    edgeAttempt
+  };
+  setWordcloudCanvasRenderState(activeCanvas, renderState);
 
   WordCloud(activeCanvas, {
     list: placementWordList,
@@ -1430,6 +1551,7 @@ function drawWordCloud(featureRows, targetCanvas, sharedColorConfig) {
       console.warn("Word cloud render aborted due timeout.");
     }
   });
+  scheduleWordcloudEdgeSafetyCheck(featureRows, activeCanvas, sharedColorConfig, renderState);
 
   return placementWordList.length;
 }

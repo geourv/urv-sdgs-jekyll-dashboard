@@ -11,7 +11,39 @@
 layout: default
 title: "Informació"
 lang: ca
+head_scripts:
+  - https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js
+head_inline: |
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'default',
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: 'basis'
+        }
+      });
+    });
+  </script>
 ---
+
+<style>
+.info-methods-diagram {
+  grid-column: 1 / -1;
+  background: var(--site-widget-surface-soft);
+  border: 1px solid var(--site-widget-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.info-methods-diagram .mermaid {
+  width: 100%;
+  overflow-x: auto;
+}
+</style>
 
 <!-- Page Header -->
     <header class="w3-container" style="padding-top:22px">
@@ -19,7 +51,8 @@ lang: ca
     </header>
 
     <!-- Project Overview Section -->
-    <div class="w3-container readable-content">
+    <div class="w3-container text-columns text-columns--2">
+    <section class="readable-content text-column">
       <h2>Sobre aquest projecte</h2>
       <p>Aquest projecte, endegat pel Departament de Geografia de la Universitat Rovira i Virgili, 
         analitza l'alineació dels programes acadèmics de la Universitat Rovira i Virgili amb els 
@@ -51,10 +84,10 @@ lang: ca
            de Desenvolupament Sostenible 2030. Per tant, es fa essencial desenvolupar un mètode sistemàtic 
            per avaluar fins a quin punt els programes acadèmics de la URV s'alineen amb els ODS, garantint 
            que l'oferta educativa contribueixi efectivament a l'estratègia global de sostenibilitat.</p>
-        </div>
+        </section>
 
     <!-- Methodology Section -->
-    <div class="w3-container readable-content">
+    <section class="readable-content text-column">
       <h2>Metodologia</h2>
       <p>Amb l'objectiu d'avaluar la presència dels ODS als ensenyaments de la Universitat Rovira i Virgili, 
         s'ha emprat la següent metodologia: En primer lloc, s'han utilitzat tècniques de web scraping i 
@@ -260,10 +293,12 @@ lang: ca
           Aquest format permet una consulta ràpida i iterativa dels resultats, 
           facilitant la identificació de les facultats o escoles, ensenyaments i 
           assignatures més alineades amb els ODS.</p>
-        </div>
 
+    </section>
+
+<div class="info-methods-diagram">
 <div class="mermaid">
-flowchart TD
+flowchart LR
     %% Classes de colors
     classDef fase fill:#f9f,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
     classDef process fill:#ffeb99,stroke:#333,stroke-width:1px,color:#000;
@@ -293,3 +328,5 @@ flowchart TD
     %% Reduir espai: fer que els nodes de sortida estiguin horitzontals
     class JSON,Report,Web output
 </div>
+</div>
+    </div>

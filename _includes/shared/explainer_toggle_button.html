@@ -15,12 +15,12 @@ Params:
 <button
   id="{{ include.button_id }}"
   type="button"
-  class="w3-button w3-small w3-round w3-border {{ include.button_class }}"
+  class="w3-button w3-small w3-round w3-border explainer-toggle-button {{ include.button_class }}"
   aria-controls="{{ include.aria_controls }}"
   aria-expanded="false"
   aria-label="{{ include.aria_label_show }}"
   title="{{ include.aria_label_show }}"
   hidden>
-  <i id="{{ include.icon_id }}" class="fa fa-bars {{ include.icon_class }}" aria-hidden="true"></i>
+  <i id="{{ include.icon_id }}" class="fa fa-plus explainer-toggle-icon {{ include.icon_class }}" aria-hidden="true"></i>
   <span class="{{ include.sr_class }}">{{ include.sr_text | default: "Explicació" }}</span>
 </button>

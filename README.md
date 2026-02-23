@@ -26,6 +26,12 @@ Aquest repositori és una versió **Jekyll** del dashboard (HTML/CSS/JS), pensad
 - `assets/`: CSS/JS/imatges
 - `data/` i `downloads/`: fitxers servits com a estàtics
 
+## Govern de dades
+
+- Aquest repositori només conté la capa web de visualització.
+- El pipeline de dades (tracker, extracció, transformació i export) viu a `urv-sdgs-tracker`.
+- Si falta una dada per a una app, no s'ha d'inferir al frontend: s'ha de registrar a `TODO_API_DATA_GAPS.md` (vegeu també `AGENTS.md`).
+
 ## Desenvolupament en local amb Docker (recomanat)
 
 1) Arrenca el servidor:
@@ -83,3 +89,7 @@ url: ""
 - Per a **project pages** (ex. `https://usuari.github.io/nom-repo/`), el workflow ja construeix amb el `baseurl` correcte.
 - Per a **user/org pages** (ex. `https://usuari.github.io/`), el `baseurl` resultant serà `/`.
 
+## Pendents de l'API (metadades)
+
+- Registre viu de mancances: `TODO_API_DATA_GAPS.md`
+- Regles de comportament de la IA (quan falten dades, sense fallbacks artificials): `AGENTS.md`

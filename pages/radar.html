@@ -1,0 +1,21 @@
+---
+# File: pages/radar.html
+# Purpose: Radar plot page for ODS coverage by centre/programme.
+# Related files:
+#   - _layouts/visualization_app.html
+#   - _includes/radar/*.html
+layout: visualization_app
+title: "Una vista amb gràfics de radar"
+lang: ca
+app_nav_icon: eye
+app_nav_section: "Una primera ullada"
+app_nav_title: "Una vista amb gràfics de radar"
+app_header_padding_top: 10px
+head_scripts:
+  - https://cdn.jsdelivr.net/npm/chart.js
+---
+
+{% include radar/page_intro.html %}
+{% include radar/interactive_layout.html %}
+{% include radar/styles.html %}
+{% include radar/scripts.html %}

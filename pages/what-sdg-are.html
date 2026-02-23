@@ -22,6 +22,27 @@ lang: ca
   align-items: start;
 }
 
+.ods-about-layout > .text-column + .text-column {
+  position: relative;
+  padding-left: 26px;
+}
+
+.ods-about-layout > .text-column + .text-column::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(88, 112, 134, 0) 0%,
+    var(--site-column-divider) 14%,
+    var(--site-column-divider) 86%,
+    rgba(88, 112, 134, 0) 100%
+  );
+}
+
 .ods-about-text {
   grid-area: text;
   --reading-measure: 84ch;
@@ -79,13 +100,19 @@ lang: ca
   line-height: 1.22;
 }
 
-@media screen and (max-width: 1200px) {
+@media screen and (max-width: 1500px) {
+  .ods-about-gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 1250px) {
   .ods-about-gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media screen and (max-width: 992px) {
+@media screen and (max-width: 1024px) {
   .ods-about-layout {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -93,9 +120,27 @@ lang: ca
       "gallery";
     gap: 14px;
   }
+
+  .ods-about-layout > .text-column + .text-column {
+    padding-left: 0;
+  }
+
+  .ods-about-layout > .text-column + .text-column::before {
+    content: none;
+  }
+
+  .ods-about-gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 840px) {
+  .ods-about-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 560px) {
   .ods-about-gallery {
     grid-template-columns: 1fr;
   }
@@ -112,8 +157,8 @@ lang: ca
     </header>
 
     <!-- About ODS Section -->
-    <div class="w3-container ods-about-layout">
-      <section class="ods-about-text readable-content">
+    <div class="w3-container ods-about-layout text-columns text-columns--2">
+      <section class="ods-about-text readable-content text-column">
         <h1>Els Objectius de Desenvolupament Sostenible</h1>
         <p> El 2015, l'ONU va aprovar l'Agenda 2030 sobre el Desenvolupament Sostenible, una oportunitat perquè els països i
     les seves societats emprenguessin un nou camí per millorar la vida de totes les persones, sense deixar ningú enrere.
@@ -170,7 +215,7 @@ lang: ca
 
       </section>
 
-      <section class="ods-about-gallery">
+      <section class="ods-about-gallery text-column">
 
     <!-- ODS Cards - Row 1 -->
     <div class="w3-row-padding w3-margin-bottom">

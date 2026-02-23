@@ -12,71 +12,197 @@ title: "Docència i ODS a la URV"
 lang: ca
 ---
 
+<style>
+.home-showcase-intro {
+  margin-bottom: 0.8rem;
+}
+
+.home-showcase-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.media-text-card {
+  display: grid;
+  grid-template-columns: 175px minmax(0, 1fr);
+  align-items: stretch;
+  background: var(--site-widget-surface-soft);
+  border: 1px solid var(--site-widget-border);
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.media-text-card--link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, transform 0.18s ease, background-color 0.18s ease;
+}
+
+.w3-main a.media-text-card--link {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.media-text-card--link:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.media-text-card--link .media-text-card-title,
+.media-text-card--link .media-text-card-text {
+  color: inherit;
+  text-decoration: none;
+}
+
+.media-text-card--link:hover,
+.media-text-card--link:focus-visible {
+  border-color: var(--site-accent-dark);
+  box-shadow: 0 7px 18px rgba(43, 62, 85, 0.18);
+  transform: translateY(-1px);
+  background: #edf3fa;
+  outline: none;
+}
+
+.media-text-card--link:hover .media-text-card-title,
+.media-text-card--link:focus-visible .media-text-card-title {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.media-text-card-media {
+  display: block;
+  height: 100%;
+  border-right: 1px solid #c7d4e1;
+  background: #fff;
+}
+
+.media-text-card-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 122px;
+  aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center;
+}
+
+.media-text-card-body {
+  min-width: 0;
+  padding: 10px 12px 11px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.media-text-card-title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.media-text-card-text {
+  margin: 0;
+  font-size: 0.89rem;
+  line-height: 1.3;
+}
+
+@media (max-width: 980px) {
+  .media-text-card {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .media-text-card {
+    grid-template-columns: 130px minmax(0, 1fr);
+  }
+
+  .media-text-card-text {
+    font-size: 0.85rem;
+  }
+}
+
+/* Home: stack text + gallery earlier for better responsiveness with sidebar */
+@media (max-width: 1400px) {
+  .w3-container.info-columns {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .w3-container.info-columns > .info-column + .info-column {
+    padding-left: 0;
+  }
+
+  .w3-container.info-columns > .info-column + .info-column::before {
+    content: none;
+  }
+}
+
+</style>
+
 <!-- Page Header -->
     <header class="w3-container" style="padding-top:22px">
-        <h5><b><i class="fa fa-home"></i> Presentació </b></h5>
+        <h5><b><i class="fa fa-home"></i> Inici </b></h5>
     </header>
 
     <!-- Introduction Section -->
-    <div class="w3-container">
+    <div class="w3-container info-columns">
+      <section class="readable-content info-column">
         <h1>Benvingut a la web dels ODS als ensenyaments de la URV</h1>
-        <p>Aquesta pàgina web té com a objectiu principal mostrar
-            l'alineació dels programes acadèmics de la Universitat Rovira
-            i Virgili (URV) amb
-            els Objectius de Desenvolupament Sostenible (ODS). 
-            Per avaluar la presència dels ODS en els ensenyaments
-            de la URV, s'ha emprat una metodologia basada en tècniques de 
-            web scraping i mineria de textos per extreure els continguts de les
-            guies docents. Posteriorment, s'han traduït els textos a l'anglès 
-            per tal de poder realitzar l'anàlisi de dades en R per identificar
-            els termes relacionats amb els ODS i determinar-ne el nivell de 
-            presència en l'ensenyament impartit a la URV.
-        </p>
+        <p>Aquesta pàgina web té com a objectiu principal mostrar l'alineació dels programes acadèmics de la Universitat Rovira i Virgili (URV) amb els Objectius de Desenvolupament Sostenible (ODS). Per avaluar la presència dels ODS en els ensenyaments de la URV, s'ha emprat una metodologia basada en tècniques de web scraping i mineria de textos per extreure els continguts de les guies docents. Posteriorment, s'han traduït els textos a l'anglès per tal de poder realitzar l'anàlisi de dades en R per identificar els termes relacionats amb els ODS i determinar-ne el nivell de presència en l'ensenyament impartit a la URV.</p>
 
-        <h2>Estructura del lloc web</h2>
-        <p>El lloc web està organitzat en diverses seccions per facilitar la navegació. 
-            Per accedir a cadascuna d'elles, utilitzeu el menú lateral.
-
-        <p>L'estructura del lloc web és la següent:</p>
-
-
-        <ul>
-            <li><strong>Inici</strong> Explicació de l'objectiu de la pàgina i el seu caràcter interactiu.</li>
-
-            <li><strong>Què són els ODS?</strong> Informació general sobre els 17 Objectius de Desenvolupament Sostenible 
-                de l'Agenda 2030. Història, referències i accés individual a cada objectiu fent clic sobre la seva imatge.</li>
-            </li>
-
-            <li><strong>Per què monitoritzar-los?</strong> Imperatius i compromisos globals, 
-                qualitat en la docència i responsabilitat social i ambiental.
-            </li>
-
-            <li><strong>Què hem fet?</strong> Metodologia aplicada: extracció de dades de 
-                les guies docents, traducció, anàlisi en R i generació de visualitzacions interactives.</li>
-            </li>
-
-            <li><strong>Una primera ullada:</strong>
-                <ul>
-                    <li><strong>Termes ODS per centres:</strong> Núvol de paraules amb termes relacionats amb els ODS per Facultat i Escola. Permet filtrar per títol, descripció i continguts; competències i resultats d'aprenentatge; bibliografia; i guia docent completa.</li>
-                    <li><strong>Termes ODS per ensenyaments:</strong> Núvol de paraules amb termes ODS per cada ensenyament. Permet filtres similars.</li>
-                    <li><strong>Facultats i escoles:</strong> Gràfic d’anell amb l’alineació de cada Facultat i Escola amb els ODS. Permet filtres similars.</li>
-                    <li><strong>ODS per ensenyaments:</strong> Gràfics de barres que mostren la presència d’ODS per ensenyament. Permet filtres similars.</li>
-                    <li><strong>ODS per assignatura:</strong> Detalls de cada assignatura amb nombre i percentatge de presència d’ODS.</li>
-                </ul>
-            </li>
-
-            <li><strong>Dades, codi i recursos:</strong> Fitxers descarregables amb dades (JSON) i enllaços als repositoris de GitHub
-                amb el codi i la resta de recursos que han permès realitzar l'anàlisi i mostrar els resultats.
-            </li>
-
-            <li><strong>Sobre…</strong> Explicació de la iniciativa i antecedents del projecte i el seu per què.
-            </li>
-        </ul>
-    
-    <!-- About ODS Section -->
-    <div class="w3-container">
         <h3>Espai web en construcció</h3>
-        <p>Aquest lloc web és un prototip desenvolupat per explorar les possibilitats 
-        de visualització de l'anàlisi de les dades de les guies docents i els Objectius 
-        de Desenvolupament Sostenible (ODS) a la URV.</p>
+        <p>Aquest lloc web és un prototip desenvolupat per explorar les possibilitats de visualització de l'anàlisi de les dades de les guies docents i els Objectius de Desenvolupament Sostenible (ODS) a la URV. En les properes iteracions, s'estudiarà millorar les visualitzacions existents i afegir-ne de noves.</p>
+      </section>
+
+      <section class="readable-content info-column">
+        <h2>Galeria de visualitzacions</h2>
+        <p class="home-showcase-intro">Una mostra ràpida de les visualitzacions interactives del projecte. Cliqueu cada targeta per obrir la vista completa.</p>
+
+        <div class="home-showcase-grid">
+          {% include shared/media_text_card.html
+            title="Núvols de paraules"
+            text="Mapa visual dels termes ODS detectats segons freqüència."
+            image_src="assets/images/showcase/nuvol-paraules-focus.png"
+            image_alt="Captura de la visualització de núvols de paraules"
+            link_url="/pages/wordcloud.html"
+          %}
+
+          {% include shared/media_text_card.html
+            title="Gràfics d'anell"
+            text="Distribució i comparativa de deteccions ODS en un sol gràfic."
+            image_src="assets/images/showcase/grafic-anell-focus.png"
+            image_alt="Captura del gràfic d'anell d'ODS"
+            link_url="/pages/doughnut.html"
+          %}
+
+          {% include shared/media_text_card.html
+            title="Gràfics de radar"
+            text="Comparativa de percentatge d'assignatures amb ODS per centre i ensenyament."
+            image_src="assets/images/showcase/grafic-radar-focus.png"
+            image_alt="Captura del gràfic de radar d'ODS"
+            link_url="/pages/radar.html"
+          %}
+
+          {% include shared/media_text_card.html
+            title="Gràfics de bombolles"
+            text="Un punt per assignatura per comparar ODS detectats i hits totals."
+            image_src="assets/images/showcase/grafic-bombolles-focus.svg"
+            image_alt="Miniatura del gràfic de bombolles d'ODS"
+            link_url="/pages/bubble.html"
+          %}
+
+          {% include shared/media_text_card.html
+            title="ODS per assignatura"
+            text="Consulta de detall d'assignatures, ODS detectats i metadades acadèmiques."
+            image_src="assets/images/showcase/ods-assignatura-focus.png"
+            image_alt="Captura de la vista de detall per assignatura"
+            link_url="/pages/course-details.html"
+          %}
+        </div>
+      </section>
     </div>

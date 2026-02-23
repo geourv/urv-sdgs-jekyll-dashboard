@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">Miniatura gràfic de bombolles ODS</title>
+  <desc id="desc">Representació simplificada d'un gràfic de bombolles amb eixos i punts de diferents mides i colors.</desc>
+  <rect width="900" height="520" fill="#f7f9fc"/>
+
+  <g stroke="#d3dbe6" stroke-width="1">
+    <line x1="90" y1="440" x2="860" y2="440"/>
+    <line x1="90" y1="80" x2="90" y2="440"/>
+    <line x1="180" y1="440" x2="180" y2="90"/>
+    <line x1="270" y1="440" x2="270" y2="90"/>
+    <line x1="360" y1="440" x2="360" y2="90"/>
+    <line x1="450" y1="440" x2="450" y2="90"/>
+    <line x1="540" y1="440" x2="540" y2="90"/>
+    <line x1="630" y1="440" x2="630" y2="90"/>
+    <line x1="720" y1="440" x2="720" y2="90"/>
+    <line x1="810" y1="440" x2="810" y2="90"/>
+    <line x1="90" y1="350" x2="860" y2="350"/>
+    <line x1="90" y1="260" x2="860" y2="260"/>
+    <line x1="90" y1="170" x2="860" y2="170"/>
+  </g>
+
+  <g fill="none" stroke="#314b68" stroke-width="2">
+    <line x1="90" y1="440" x2="865" y2="440"/>
+    <line x1="90" y1="440" x2="90" y2="70"/>
+  </g>
+
+  <g fill-opacity="0.75" stroke-opacity="0.95" stroke-width="2">
+    <circle cx="190" cy="390" r="12" fill="#e71d36" stroke="#bc1429"/>
+    <circle cx="240" cy="360" r="16" fill="#ff9f1c" stroke="#d37f16"/>
+    <circle cx="295" cy="348" r="14" fill="#2ec4b6" stroke="#22a093"/>
+    <circle cx="332" cy="316" r="24" fill="#1982c4" stroke="#106ea7"/>
+    <circle cx="380" cy="300" r="20" fill="#8ac926" stroke="#6ca51b"/>
+    <circle cx="420" cy="288" r="13" fill="#e71d36" stroke="#bc1429"/>
+    <circle cx="470" cy="270" r="28" fill="#ff9f1c" stroke="#d37f16"/>
+    <circle cx="530" cy="242" r="22" fill="#2ec4b6" stroke="#22a093"/>
+    <circle cx="590" cy="226" r="30" fill="#1982c4" stroke="#106ea7"/>
+    <circle cx="640" cy="210" r="18" fill="#8ac926" stroke="#6ca51b"/>
+    <circle cx="700" cy="186" r="26" fill="#ff9f1c" stroke="#d37f16"/>
+    <circle cx="760" cy="164" r="34" fill="#e71d36" stroke="#bc1429"/>
+  </g>
+
+  <g fill="#30465f" font-family="Raleway, Arial, sans-serif" font-size="18" font-weight="700">
+    <text x="385" y="40">Gràfic de bombolles (ODS per assignatura)</text>
+  </g>
+</svg>

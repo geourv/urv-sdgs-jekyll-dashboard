@@ -1,0 +1,11 @@
+<li class="methods-step-card{% if include.tone %} methods-step-card--{{ include.tone }}{% endif %}">
+  <header class="methods-step-header">
+    <h4 class="methods-step-title">
+      <span class="methods-step-badge">Pas {{ include.step }}</span>
+      <span class="methods-step-title-text">{{ include.title }}</span>
+    </h4>
+  </header>
+  <div class="methods-step-body">
+    {{ include.body }}
+  </div>
+</li>

@@ -14,9 +14,19 @@ Notes:
 // assets/js/site.js
 (function () {
   const SIDEBAR_STATE_KEY = 'sidebar:state'; // 'open' | 'closed'
-  const DESKTOP_SIDEBAR_COLLAPSE_KEY = 'sidebar:desktopCollapsed'; // '1' | '0'
+  const DESKTOP_SIDEBAR_COLLAPSED_KEY = 'sidebar:desktop:collapsed'; // '1' | '0'
   const SHARED_FILTERS_KEY = 'sdgs:sharedFilters:v1';
-
+  const SHARED_FILTER_QUERY_KEYS = ['centreCode', 'programmeKey', 'systemId', 'sectionId'];
+  const SHARED_FILTER_TARGET_PATH_SUFFIXES = [
+    '/pages/wordcloud',
+    '/pages/doughnut',
+    '/pages/radar',
+    '/pages/bubble',
+    '/pages/course-details',
+    '/pages/degree-barchart',
+    '/pages/degree-wordcloud',
+    '/pages/degree2'
+  ];
   function normalizeSharedFilters(raw) {
     const source = raw && typeof raw === 'object' ? raw : {};
     return {
@@ -27,13 +37,46 @@ Notes:
     };
   }
 
+  function normalizeSharedFilterPath(pathname) {
+    let normalized = String(pathname || '');
+    normalized = normalized.replace(/\/+$/, '');
+    if (normalized.endsWith('.html')) {
+      normalized = normalized.slice(0, -5);
+    }
+    return normalized;
+  }
+
+  function isSharedFilterTargetUrl(url) {
+    if (!url || typeof url.pathname !== 'string') return false;
+    const normalizedPath = normalizeSharedFilterPath(url.pathname);
+    return SHARED_FILTER_TARGET_PATH_SUFFIXES.some((suffix) => {
+      return normalizedPath === suffix || normalizedPath.endsWith(suffix);
+    });
+  }
+
+  function readSharedFiltersFromUrl(urlLike) {
+    try {
+      const url = new URL(String(urlLike || ''), window.location.href);
+      const patch = {};
+      SHARED_FILTER_QUERY_KEYS.forEach((key) => {
+        if (url.searchParams.has(key)) {
+          patch[key] = String(url.searchParams.get(key) || '');
+        }
+      });
+      return patch;
+    } catch (_) {
+      return {};
+    }
+  }
+
   function readSharedFilters() {
+    const fromUrl = readSharedFiltersFromUrl(window.location.href);
     try {
       const raw = localStorage.getItem(SHARED_FILTERS_KEY);
-      if (!raw) return normalizeSharedFilters({});
-      return normalizeSharedFilters(JSON.parse(raw));
+      if (!raw) return normalizeSharedFilters(fromUrl);
+      return normalizeSharedFilters({ ...JSON.parse(raw), ...fromUrl });
     } catch (_) {
-      return normalizeSharedFilters({});
+      return normalizeSharedFilters(fromUrl);
     }
   }
 
@@ -57,6 +100,126 @@ Notes:
     write: writeSharedFilters,
     clear: clearSharedFilters
   };
+
+  const SHARED_FILTER_CONTROL_IDS = {
+    centreCode: ['faculty-select', 'facultySelect'],
+    programmeKey: ['degree-select', 'degreeSelect'],
+    systemId: ['doughnut-system-select', 'radar-system-select', 'bubble-system-select', 'barchart-system-select', 'course-system-select', 'systemSelect'],
+    sectionId: ['doughnut-section-select', 'radar-section-select', 'bubble-section-select', 'barchart-section-select', 'course-section-select', 'sectionSelect']
+  };
+
+  function firstExistingElementById(ids) {
+    const idList = Array.isArray(ids) ? ids : [];
+    for (let i = 0; i < idList.length; i += 1) {
+      const element = document.getElementById(String(idList[i] || ''));
+      if (element) return element;
+    }
+    return null;
+  }
+
+  function readFilterValueFromControl(controlEl) {
+    if (!controlEl) return { hasValue: false, value: '' };
+    const optionCount = Number(controlEl.options?.length || 0);
+    const value = String(controlEl.value || '').trim();
+
+    // Ignore not-yet-initialized selects that still have a single placeholder option.
+    if (!value && optionCount <= 1) return { hasValue: false, value: '' };
+    return { hasValue: true, value };
+  }
+
+  function captureSharedFiltersFromControls() {
+    const patch = {};
+    let hasAnyValue = false;
+
+    const centre = readFilterValueFromControl(firstExistingElementById(SHARED_FILTER_CONTROL_IDS.centreCode));
+    const programme = readFilterValueFromControl(firstExistingElementById(SHARED_FILTER_CONTROL_IDS.programmeKey));
+    const system = readFilterValueFromControl(firstExistingElementById(SHARED_FILTER_CONTROL_IDS.systemId));
+    const section = readFilterValueFromControl(firstExistingElementById(SHARED_FILTER_CONTROL_IDS.sectionId));
+
+    if (centre.hasValue) {
+      patch.centreCode = centre.value;
+      hasAnyValue = true;
+    }
+    if (programme.hasValue) {
+      patch.programmeKey = programme.value;
+      hasAnyValue = true;
+    }
+    if (system.hasValue) {
+      patch.systemId = system.value;
+      hasAnyValue = true;
+    }
+    if (section.hasValue) {
+      patch.sectionId = section.value;
+      hasAnyValue = true;
+    }
+
+    if (!hasAnyValue) return null;
+    return writeSharedFilters(patch);
+  }
+
+  function isSharedFilterControlElement(element) {
+    if (!(element instanceof Element)) return false;
+    const elementId = String(element.id || '');
+    if (!elementId) return false;
+    return Object.values(SHARED_FILTER_CONTROL_IDS).some((idList) => {
+      return Array.isArray(idList) && idList.includes(elementId);
+    });
+  }
+
+  function withSharedFiltersInUrl(url, filters) {
+    let target;
+    try {
+      target = new URL(String(url || ''), window.location.href);
+    } catch (_) {
+      return null;
+    }
+    if (!isSharedFilterTargetUrl(target)) return target;
+
+    const normalized = normalizeSharedFilters(filters);
+    SHARED_FILTER_QUERY_KEYS.forEach((key) => {
+      const value = String(normalized[key] || '');
+      if (value) target.searchParams.set(key, value);
+      else target.searchParams.delete(key);
+    });
+    return target;
+  }
+
+  function setupSharedFilterNavigationPersistence() {
+    const persistCurrentSharedFilters = () => {
+      return captureSharedFiltersFromControls();
+    };
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const link = target.closest('a[href]');
+      if (!link) return;
+
+      let url;
+      try {
+        url = new URL(link.href, window.location.href);
+      } catch (_) {
+        return;
+      }
+      if (url.origin !== window.location.origin) return;
+
+      const persistedFilters = persistCurrentSharedFilters() || readSharedFilters();
+      const urlWithFilters = withSharedFiltersInUrl(url, persistedFilters);
+      if (urlWithFilters) {
+        link.href = urlWithFilters.toString();
+      }
+    }, true);
+
+    document.addEventListener('change', (event) => {
+      if (isSharedFilterControlElement(event.target)) {
+        persistCurrentSharedFilters();
+      }
+    }, true);
+
+    window.addEventListener('pagehide', persistCurrentSharedFilters);
+    window.addEventListener('beforeunload', persistCurrentSharedFilters);
+  }
 
   function ensureOverlay() {
     let overlay = document.getElementById('myOverlay');
@@ -116,64 +279,57 @@ Notes:
     return (window.innerWidth || 0) >= 993;
   }
 
-  function updateDesktopSidebarToggleButton() {
-    const btn = document.getElementById('desktopSidebarToggle');
-    if (!btn) return;
-    const icon = btn.querySelector('i');
-    const isCollapsed = document.body.classList.contains('sidebar-collapsed');
-    const label = isCollapsed ? 'Mostra menú lateral' : 'Oculta menú lateral';
-    btn.setAttribute('aria-label', label);
-    btn.setAttribute('title', label);
-    btn.setAttribute('aria-expanded', String(!isCollapsed));
-    if (icon) {
-      icon.className = isCollapsed ? 'fa fa-bars' : 'fa fa-angle-left';
+  function readDesktopSidebarCollapsedPreference() {
+    try {
+      return localStorage.getItem(DESKTOP_SIDEBAR_COLLAPSED_KEY) === '1';
+    } catch (_) {
+      return false;
     }
   }
 
-  function setDesktopSidebarCollapsed(collapsed, persist = true) {
-    const shouldCollapse = Boolean(collapsed) && isDesktopViewport();
-    document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
-    updateDesktopSidebarToggleButton();
-    if (!persist) return;
+  function writeDesktopSidebarCollapsedPreference(isCollapsed) {
     try {
-      localStorage.setItem(DESKTOP_SIDEBAR_COLLAPSE_KEY, shouldCollapse ? '1' : '0');
+      localStorage.setItem(DESKTOP_SIDEBAR_COLLAPSED_KEY, isCollapsed ? '1' : '0');
     } catch (_) {}
   }
 
-  function setupDesktopSidebarToggle() {
-    const btn = document.getElementById('desktopSidebarToggle');
-    if (!btn) return;
+  function applyDesktopSidebarCollapsedState(isCollapsed, persist = true) {
+    const collapsed = Boolean(isCollapsed);
+    const shouldApplyCollapsed = collapsed && isDesktopViewport();
+    document.body.classList.toggle('site-sidebar-collapsed', shouldApplyCollapsed);
 
-    const mq = (typeof window.matchMedia === 'function')
-      ? window.matchMedia('(min-width: 993px)')
-      : null;
-    const sync = () => {
-      if (!isDesktopViewport()) {
-        setDesktopSidebarCollapsed(false, false);
-        return;
-      }
-      let stored = '0';
-      try {
-        stored = localStorage.getItem(DESKTOP_SIDEBAR_COLLAPSE_KEY) || '0';
-      } catch (_) {}
-      setDesktopSidebarCollapsed(stored === '1', false);
-    };
-
-    window.toggleDesktopSidebar = function () {
-      if (!isDesktopViewport()) return;
-      const isCollapsed = document.body.classList.contains('sidebar-collapsed');
-      setDesktopSidebarCollapsed(!isCollapsed, true);
-    };
-
-    if (mq && typeof mq.addEventListener === 'function') {
-      mq.addEventListener('change', sync);
-    } else if (mq && typeof mq.addListener === 'function') {
-      // Legacy fallback (older browsers).
-      mq.addListener(sync);
-    } else {
-      window.addEventListener('resize', sync);
+    const toggleBtn = document.getElementById('desktopSidebarToggle');
+    const toggleIcon = document.getElementById('desktopSidebarToggleIcon');
+    if (toggleBtn) {
+      const isExpanded = !shouldApplyCollapsed;
+      const label = isExpanded
+        ? 'Col·lapsar panell de navegació'
+        : 'Obrir panell de navegació';
+      toggleBtn.setAttribute('aria-expanded', String(isExpanded));
+      toggleBtn.setAttribute('aria-label', label);
+      toggleBtn.setAttribute('title', label);
     }
-    sync();
+    if (toggleIcon) {
+      toggleIcon.className = shouldApplyCollapsed ? 'fa fa-bars' : 'fa fa-chevron-left';
+    }
+
+    if (persist) {
+      writeDesktopSidebarCollapsedPreference(collapsed);
+    }
+  }
+
+  function setupDesktopSidebarToggle() {
+    const toggleBtn = document.getElementById('desktopSidebarToggle');
+    if (!toggleBtn) return;
+
+    toggleBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (!isDesktopViewport()) return;
+      const nextCollapsed = !document.body.classList.contains('site-sidebar-collapsed');
+      applyDesktopSidebarCollapsedState(nextCollapsed, true);
+    });
+
+    applyDesktopSidebarCollapsedState(readDesktopSidebarCollapsedPreference(), false);
   }
 
   function syncSidebarWithViewport() {
@@ -206,6 +362,8 @@ Notes:
           closeSidebar(false);
         }
       }
+
+      applyDesktopSidebarCollapsedState(readDesktopSidebarCollapsedPreference(), false);
     }
     if (mq && typeof mq.addEventListener === 'function') {
       mq.addEventListener('change', sync);
@@ -298,8 +456,9 @@ function setupFooterYear() {
     window.w3_open = toggleSidebar;
     window.w3_close = closeSidebar;
 
-    setupDesktopSidebarToggle();
+    setupSharedFilterNavigationPersistence();
     syncSidebarWithViewport();
+    setupDesktopSidebarToggle();
     setupDropdowns();
     restoreSidebarScroll();
     setupFooterYear();

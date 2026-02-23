@@ -1,0 +1,21 @@
+---
+# File: pages/bubble.html
+# Purpose: Bubble chart page for ODS coverage by centre/programme.
+# Related files:
+#   - _layouts/visualization_app.html
+#   - _includes/bubble/*.html
+layout: visualization_app
+title: "Una vista amb gràfics de bombolles"
+lang: ca
+app_nav_icon: eye
+app_nav_section: "Una primera ullada"
+app_nav_title: "Una vista amb gràfics de bombolles"
+app_header_padding_top: 10px
+head_scripts:
+  - https://cdn.jsdelivr.net/npm/chart.js
+---
+
+{% include bubble/page_intro.html %}
+{% include bubble/interactive_layout.html %}
+{% include bubble/styles.html %}
+{% include bubble/scripts.html %}

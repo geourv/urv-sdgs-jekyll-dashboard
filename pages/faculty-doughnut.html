@@ -1,26 +1,18 @@
 ---
 # File: pages/faculty-doughnut.html
-# Purpose: Unified doughnut page built from reusable Jekyll includes.
-# Related files:
-#   - _layouts/visualization_app.html
-#   - _includes/doughnut/*.html
-#   - _includes/doughnut/styles.html
-# Safe edits:
-#   - OK: text and include composition
-#   - Careful: keep ids/classes expected by _includes/doughnut/scripts.html
-layout: visualization_app
-title: "Una vista amb gràfics d'anell"
-lang: ca
-app_nav_icon: eye
-app_nav_section: "Una primera ullada"
-app_nav_title: "Una vista amb gràfics d'anell"
-app_header_padding_top: 10px
-head_scripts:
-  - https://cdn.jsdelivr.net/npm/chart.js
-  - https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2
+# Purpose: Legacy URL kept for backwards compatibility.
+layout: default
+title: "Gràfics d'anell"
 ---
 
-{% include doughnut/page_intro.html %}
-{% include doughnut/interactive_layout.html %}
-{% include doughnut/styles.html %}
-{% include doughnut/scripts.html %}
+<meta http-equiv="refresh" content="0; url={{ '/pages/doughnut.html' | relative_url }}">
+<script>
+  window.location.replace("{{ '/pages/doughnut.html' | relative_url }}");
+</script>
+<div class="w3-container" style="padding-top:22px">
+  <h1 class="w3-text-dark-grey">Gràfics d'anell</h1>
+  <p>
+    Aquesta vista s'ha unificat.
+    Ves a <a href="{{ '/pages/doughnut.html' | relative_url }}">Una vista amb gràfics d'anell</a>.
+  </p>
+</div>

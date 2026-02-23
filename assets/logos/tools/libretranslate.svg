@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">LibreTranslate</title>
+  <desc id="desc">Icona estilitzada de traduccio</desc>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#0f766e"/>
+  <rect x="11" y="16" width="21" height="16" rx="4" fill="#ffffff"/>
+  <rect x="32" y="32" width="21" height="16" rx="4" fill="#ffffff"/>
+  <path d="M28 24h8M36 24l-3 8M33 28h5M24 24l-2 6m-2-3h4" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M38 41h9M42.5 37v9" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M24 31l8 8" stroke="#c8f3ee" stroke-width="2" stroke-linecap="round"/>
+</svg>

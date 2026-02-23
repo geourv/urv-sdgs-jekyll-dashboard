@@ -1,0 +1,87 @@
+<!--
+File: _includes/bubble/interactive_layout.html
+Purpose: Interactive shell for the bubble chart view.
+Related files:
+  - _includes/bubble/scripts.html
+  - _includes/bubble/styles.html
+-->
+
+<div class="w3-container">
+  <div class="interactive-chart-container bubble-shell">
+    <aside class="bubble-left">
+      <section class="bubble-card">
+        <p class="bubble-helper">Selecciona un centre i, opcionalment, un ensenyament per comparar ODS detectats i hits per assignatura.</p>
+
+        <label for="faculty-select" class="bubble-field-label">Centre</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="faculty-select" class="w3-select w3-border">
+              <option value="">Centre (obligatori)</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="degree-select" class="bubble-field-label">Ensenyament (opcional)</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="degree-select" class="w3-select w3-border" disabled>
+              <option value="" selected disabled>Ensenyament (opcional)</option>
+              <option value="ALL">Tots</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="bubble-card">
+        <p class="bubble-helper">Ajusta sistema i secció per recalcular deteccions i hits del gràfic.</p>
+
+        <label for="bubble-system-select" class="bubble-field-label">Sistema de classificació</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="bubble-system-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant sistemes...</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="bubble-section-select" class="bubble-field-label">Secció analitzada</label>
+        <div class="selector-container">
+          <div class="selector-box">
+            <select id="bubble-section-select" class="w3-select w3-border" disabled>
+              <option value="">Carregant seccions...</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="bubble-main">
+      <div id="chart-container" class="chart-grid">
+        <!-- Dynamic chart cards -->
+      </div>
+    </section>
+
+    <aside id="bubble-explainer" class="bubble-explainer" aria-live="polite" hidden>
+      <div class="bubble-explainer-header">
+        <h3 id="bubble-explainer-title" class="bubble-explainer-title">Com interpretar el gràfic de bombolles</h3>
+        {% include shared/explainer_toggle_button.html
+          button_id="bubblePanelToggle"
+          icon_id="bubblePanelToggleIcon"
+          button_class="bubble-info-toggle bubble-panel-toggle"
+          icon_class="bubble-panel-toggle-icon"
+          sr_class="bubble-sr-only"
+          aria_controls="bubble-explainer-body"
+          aria_label_show="Mostra l'explicació de l'anàlisi"
+          sr_text="Explicació"
+        %}
+      </div>
+      <div id="bubble-explainer-body" class="bubble-explainer-body">
+        <p id="bubble-explainer-scope" class="bubble-explainer-text"></p>
+        <p id="bubble-explainer-coverage" class="bubble-explainer-text"></p>
+        <p id="bubble-explainer-system" class="bubble-explainer-text"></p>
+        <p id="bubble-explainer-section" class="bubble-explainer-text"></p>
+        <p id="bubble-explainer-notes" class="bubble-explainer-text"></p>
+      </div>
+    </aside>
+  </div>
+</div>

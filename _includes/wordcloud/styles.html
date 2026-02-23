@@ -13,8 +13,8 @@
   --wc-card-title: #1f2a36;
   --wc-select-bg: #fff;
   --wc-select-border: #c4d0dc;
-  --wc-postit-bg: #edf3fa;
-  --wc-postit-border: #cfdae6;
+  --wc-postit-bg: var(--wc-card-bg);
+  --wc-postit-border: var(--wc-card-border);
   --wc-postit-text: #243242;
 }
 
@@ -60,62 +60,7 @@
   gap: 8px;
 }
 
-.wordcloud-info-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  padding: 0;
-  border-radius: 999px !important;
-  border-color: var(--site-accent-dark, #334457) !important;
-  color: #fff !important;
-  background: var(--site-accent, #3f536b);
-  font-weight: 600;
-}
-
-.wordcloud-info-toggle:hover,
-.wordcloud-info-toggle:focus {
-  background: var(--site-accent-dark, #334457) !important;
-  border-color: var(--site-accent-dark, #334457) !important;
-  color: #fff !important;
-}
-
-.wordcloud-info-toggle-icon {
-  font-size: 1.4em;
-  line-height: 1;
-  transition: transform 0.2s ease;
-}
-
-.wordcloud-info-toggle[aria-expanded="true"] {
-  background: #fff !important;
-  color: var(--site-accent-dark, #334457) !important;
-  border-color: var(--site-accent, #3f536b) !important;
-}
-
-.wordcloud-info-toggle[aria-expanded="true"]:hover,
-.wordcloud-info-toggle[aria-expanded="true"]:focus {
-  background: #edf3fa !important;
-  color: var(--site-accent-dark, #334457) !important;
-  border-color: var(--site-accent-dark, #334457) !important;
-}
-
-.wordcloud-info-toggle[aria-expanded="true"] .wordcloud-info-toggle-icon {
-  transform: rotate(45deg);
-}
-
-.wordcloud-panel-toggle {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  padding: 0;
-}
-
-.wordcloud-panel-toggle-icon {
-  font-size: 1.28em;
-  line-height: 1;
-}
+/* Shared + / - toggle visuals are centralized in assets/css/styles.css (.explainer-toggle-button). */
 
 .wordcloud-sr-only {
   position: absolute;
@@ -231,11 +176,16 @@
 
 .wordcloud-primary-item .selector-container,
 .wordcloud-config-col .selector-container {
+  display: block;
+  width: 100% !important;
   margin-bottom: 0;
   gap: 8px;
 }
 
 .wordcloud-layout .selector-box {
+  display: block;
+  width: 100% !important;
+  max-width: none !important;
   margin-bottom: 0;
 }
 
@@ -345,8 +295,11 @@
   width: 52px;
   min-width: 52px;
   height: 52px;
-  padding: 6px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -446,15 +399,18 @@
   border-color: #c8d2de !important;
 }
 
-#wordcloud {
+#wordcloud,
+#wordcloudSecondary {
   display: block;
   width: 100%;
   height: 100%;
 }
 
 .wordcloud-layout .w3-select {
-  width: 100%;
+  display: block;
+  width: 100% !important;
   min-width: 0;
+  max-width: none !important;
   background-color: var(--wc-select-bg);
   color: #111;
   border: 1px solid var(--wc-select-border) !important;
