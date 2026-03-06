@@ -34,6 +34,8 @@ app_header_padding_top: 10px
 
 .example-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
   border: 1px solid #d8e1eb;
   border-radius: 10px;
   background: #fff;
@@ -41,8 +43,8 @@ app_header_padding_top: 10px
 }
 
 .example-matrix {
-  width: 100%;
-  min-width: 1080px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
 }
 
@@ -53,17 +55,30 @@ app_header_padding_top: 10px
   font-size: 0.89rem;
   text-align: center;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .example-matrix th {
   background: #f2f6fb;
-  white-space: nowrap;
 }
 
 .example-matrix th.left,
 .example-matrix td.left {
   text-align: left;
   white-space: nowrap;
+  position: sticky;
+  left: 0;
+}
+
+.example-matrix th.left {
+  z-index: 3;
+  background: #eaf1f8;
+}
+
+.example-matrix td.left {
+  z-index: 2;
+  background: #fff;
+  box-shadow: 1px 0 0 #e2e8f0;
 }
 
 .example-matrix abbr[title] {
@@ -99,6 +114,22 @@ app_header_padding_top: 10px
 .example-guide {
   margin: 0.2rem 0 0.8rem;
   font-size: 0.95rem;
+}
+
+@media (max-width: 900px) {
+  .example-matrix th,
+  .example-matrix td {
+    font-size: 0.82rem;
+    padding: 0.36rem 0.42rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .example-matrix th,
+  .example-matrix td {
+    font-size: 0.78rem;
+    padding: 0.32rem 0.36rem;
+  }
 }
 </style>
 
