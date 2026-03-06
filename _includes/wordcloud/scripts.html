@@ -39,6 +39,7 @@ const introPanelEl = document.getElementById("wordcloudIntroPanel");
 const mobileCloudHintEl = document.getElementById("mobileCloudHint");
 const wordcloudLayoutEl = document.querySelector(".wordcloud-layout");
 const cloudZoneEl = document.getElementById("wordcloudCloudZone");
+const infoBannerEl = document.getElementById("wordcloudInfoBanner");
 const cloudEmptyStateEl = document.getElementById("wordcloudEmptyState");
 const primaryCloudTitleEl = document.getElementById("wordcloudPrimaryTitle");
 const primaryCloudSubtitleEl = document.getElementById("wordcloudPrimarySubtitle");
@@ -63,6 +64,7 @@ const WORDCLOUD_EDGE_MIN_SCALE = 0.6;
 const WORDCLOUD_EDGE_SCAN_PX = 2;
 const WORDCLOUD_EDGE_MIN_ALPHA = 20;
 const WORDCLOUD_EDGE_BG_CHANNEL_MIN = 248;
+const MISSING_PROGRAMME_INLINE_NOTICE = "Hem detectat que alguns ensenyaments tenen les guies docents fora dels portals URV (GUIDO/DOCnet). En aquest cas es mostra la vista del centre.";
 const API_BASE_CANDIDATES = Array.from(new Set([
   "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
   "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
@@ -116,8 +118,8 @@ const DEFAULT_UI_STRINGS = {
     title: "Com interpretar l'anàlisi del núvol",
     paragraph_methods: "text2sdg combina dos enfocaments: sistemes de consulta (Aurora, Elsevier, Auckland, SIRIS, SDSN i SDGO) i models ensemble que integren tots els sistemes i la longitud del text.",
     paragraph_tradeoff: "Segons la documentació de text2sdg, Aurora/Elsevier/Auckland/SIRIS acostumen a ser menys liberals que SDSN/SDGO. Les validacions comparatives encara són limitades, així que convé interpretar els resultats amb cautela.",
-    paragraph_sections: "La secció triada canvia el tipus de llenguatge analitzat: competències tendeix a termes transversals, informació de l'assignatura descriu millor el temari i referències reflecteix sobretot el marc bibliogràfic.",
-    paragraph_course_info: "Per reduir falsos positius, prova criteris més restrictius (intersecció de sistemes o seccions) i contrasta sempre amb la guia docent completa.",
+    paragraph_sections: "Les eleccions de sistema i secció defineixen el criteri de detecció: el sistema combina motors (unió, intersecció o ensemble) i la secció delimita quin bloc de la guia docent s'analitza.",
+    paragraph_course_info: "Per comparatives consistents, mantén fixos sistema i secció. Canvia'ls només per explorar sensibilitat i contrasta sempre amb la guia docent completa.",
     paragraph_current: "",
     aggregate_templates: {
       centre: "Centre seleccionat: \"{centre}\" ({n_programmes} ensenyaments, {n_courses_centre} cursos).",
@@ -142,7 +144,7 @@ const DEFAULT_UI_STRINGS = {
     },
     feature_templates: {
       single: "Els termes del núvol són \"features\" detectades en els textos analitzats. La mida indica freqüència relativa de detecció.",
-      compare: "A cada núvol, els termes són \"features\" detectades en els textos analitzats. Si un terme apareix als dos núvols, manté el mateix color per facilitar la comparació.",
+      compare: "En comparativa, fixa't en termes compartits i termes exclusius per identificar diferències de perfil entre centre i ensenyament.",
       default: "Els \"features\" són termes detectats automàticament a partir dels textos analitzats."
     },
     coverage_programme: "Per a l'ensenyament, s'ha calculat la cobertura per a totes les combinacions de sistema i secció. Amb \"{system_label}\" i \"{section_label}\": {with_sdg} de {total_courses} assignatures ({coverage_pct}%).",
@@ -294,6 +296,7 @@ const state = {
   wordLimit: DEFAULT_WORDS_TO_RENDER,
   panelCollapsed: false,
   panelVisible: false,
+  missingProgrammeData: false,
   uiStrings: DEFAULT_UI_STRINGS
 };
 
@@ -311,6 +314,21 @@ function setStatus(message, isError) {
   statusEl.textContent = normalized;
   statusEl.hidden = normalized.length === 0;
   statusEl.style.color = (isError && normalized) ? "#c0392b" : "";
+}
+
+function setMissingProgrammeNotice(isVisible, message) {
+  const normalized = normalizeWhitespace(message);
+  const shouldShow = Boolean(isVisible) && normalized.length > 0;
+
+  if (infoBannerEl) {
+    infoBannerEl.hidden = !shouldShow;
+    infoBannerEl.textContent = shouldShow ? normalized : "";
+  }
+
+  if (degreeSelect) {
+    degreeSelect.classList.toggle("wordcloud-select--missing-data", shouldShow);
+    degreeSelect.setAttribute("title", shouldShow ? normalized : "");
+  }
 }
 
 function mergeDeepObjects(base, override) {
@@ -594,6 +612,27 @@ function renderSelectionPanelError() {
   setPanelText(selectionPanelTitleEl, panelStrings.error_title || DEFAULT_UI_STRINGS.panel.error_title);
   setPanelText(selectionPanelScopeEl, panelStrings.error_scope || DEFAULT_UI_STRINGS.panel.error_scope);
   setPanelText(selectionPanelCoursesEl, analysisStrings.paragraph_methods);
+  setPanelText(selectionPanelSystemEl, analysisStrings.paragraph_sections);
+  setPanelText(selectionPanelSectionEl, analysisStrings.paragraph_course_info);
+  setPanelText(selectionPanelFeaturesEl, featureTemplate);
+}
+
+function renderSelectionPanelMissingProgramme() {
+  const analysisStrings = getAnalysisPanelStrings();
+  const featureTemplate = getMappedTemplate(
+    analysisStrings.feature_templates,
+    "default",
+    "Els \"features\" són termes detectats automàticament a partir dels textos analitzats."
+  );
+  setPanelText(selectionPanelTitleEl, analysisStrings.title);
+  setPanelText(
+    selectionPanelScopeEl,
+    "Aquest ensenyament no té dades específiques a l'API."
+  );
+  setPanelText(
+    selectionPanelCoursesEl,
+    "Hem detectat que alguns ensenyaments tenen les guies fora dels portals URV (GUIDO/DOCnet). Per això aquí es mostra la vista agregada del centre."
+  );
   setPanelText(selectionPanelSystemEl, analysisStrings.paragraph_sections);
   setPanelText(selectionPanelSectionEl, analysisStrings.paragraph_course_info);
   setPanelText(selectionPanelFeaturesEl, featureTemplate);
@@ -892,6 +931,12 @@ function updateCloudSubtitles(context, renderResult) {
 }
 
 function updateSelectionPanel(context) {
+  if (state.missingProgrammeData) {
+    setSelectionPanelVisible(true);
+    renderSelectionPanelMissingProgramme();
+    return;
+  }
+
   if (!context?.centreCode) {
     setSelectionPanelVisible(false);
     renderSelectionPanelEmpty();
@@ -1592,6 +1637,13 @@ function programmeKey(centreCode, programmeCode) {
   return `${String(centreCode)}::${String(programmeCode)}`;
 }
 
+function isLikelyMissingProgrammeDataError(error) {
+  if (String(error?.code || "") === "MISSING_PROGRAMME_DATA") return true;
+  const message = normalizeWhitespace(error?.message || "");
+  return message.includes("Ensenyament sense fitxer de detall")
+    || /\b404\b/.test(message);
+}
+
 function populateFacultySelect(selectedCentreCode) {
   facultySelect.innerHTML = "";
 
@@ -1916,11 +1968,22 @@ async function getProgrammeDetail(programmeId) {
   if (state.programmeCache.has(key)) return state.programmeCache.get(key);
 
   const programme = state.programmeByKey.get(key);
-  if (!programme?.json) throw new Error(`Ensenyament sense fitxer de detall: ${key}`);
+  if (!programme?.json) {
+    const missingErr = new Error(`Ensenyament sense fitxer de detall: ${key}`);
+    missingErr.code = "MISSING_PROGRAMME_DATA";
+    throw missingErr;
+  }
 
-  const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
-  state.programmeCache.set(key, detail);
-  return detail;
+  try {
+    const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
+    state.programmeCache.set(key, detail);
+    return detail;
+  } catch (error) {
+    if (/\b404\b/.test(normalizeWhitespace(error?.message || ""))) {
+      error.code = "MISSING_PROGRAMME_DATA";
+    }
+    throw error;
+  }
 }
 
 function renderCloudsFromRenderData(renderData) {
@@ -1960,9 +2023,15 @@ function renderCloudsFromRenderData(renderData) {
 
 async function renderCurrentSelection() {
   const centreCode = String(facultySelect.value || "");
+  const selectedSystem = normalizeSystemId(String(systemSelect.value || DEFAULT_SYSTEM_ID));
+  const selectedSection = String(sectionSelect.value || DEFAULT_SECTION_ID);
+  const selectedDegree = String(degreeSelect.value || "");
+  const compareMode = isCompareSelection(selectedDegree);
   updateMobileCloudHintVisibility();
 
   if (!centreCode) {
+    state.missingProgrammeData = false;
+    setMissingProgrammeNotice(false, "");
     state.lastRenderData = null;
     state.lastRenderContext = null;
     setComparisonViewEnabled(false);
@@ -1980,16 +2049,13 @@ async function renderCurrentSelection() {
   }
 
   const token = ++state.renderToken;
+  state.missingProgrammeData = false;
+  setMissingProgrammeNotice(false, "");
   setCloudEmptyStateVisible(false);
   setSelectionPanelVisible(true);
   setStatus("Carregant dades...");
 
   try {
-    const selectedSystem = normalizeSystemId(String(systemSelect.value || DEFAULT_SYSTEM_ID));
-    const selectedSection = String(sectionSelect.value || DEFAULT_SECTION_ID);
-    const selectedDegree = String(degreeSelect.value || "");
-    const compareMode = isCompareSelection(selectedDegree);
-
     const [centreDetail, programmeDetail] = compareMode
       ? await Promise.all([
         getCentreDetail(centreCode),
@@ -1998,6 +2064,8 @@ async function renderCurrentSelection() {
       : [await getCentreDetail(centreCode), null];
 
     if (token !== state.renderToken) return;
+    state.missingProgrammeData = false;
+    setMissingProgrammeNotice(false, "");
 
     const centreRows = getFeatureRows(centreDetail, selectedSystem, selectedSection);
     const programmeRows = compareMode
@@ -2042,6 +2110,49 @@ async function renderCurrentSelection() {
   } catch (err) {
     if (token !== state.renderToken) return;
     console.error(err);
+
+    if (compareMode && isLikelyMissingProgrammeDataError(err)) {
+      try {
+        const centreDetail = await getCentreDetail(centreCode);
+        if (token !== state.renderToken) return;
+
+        const centreRows = getFeatureRows(centreDetail, selectedSystem, selectedSection);
+        state.lastRenderData = {
+          compareMode: false,
+          centreRows,
+          programmeRows: []
+        };
+        state.lastRenderContext = {
+          detail: centreDetail,
+          centreDetail,
+          programmeDetail: null,
+          compareMode: false,
+          showCentre: true,
+          centreCode,
+          selectedDegree: "ALL",
+          selectedSystem,
+          selectedSection
+        };
+        state.missingProgrammeData = true;
+        setMissingProgrammeNotice(true, MISSING_PROGRAMME_INLINE_NOTICE);
+
+        updateCloudTitles(state.lastRenderContext);
+        const renderResult = renderCloudsFromRenderData(state.lastRenderData);
+        updateCloudSubtitles(state.lastRenderContext, renderResult);
+        renderSelectionPanelMissingProgramme();
+        setSelectionPanelVisible(true);
+
+        const hasRows = renderResult.totalCentre > 0;
+        setRecolorButtonEnabled(hasRows);
+        setStatus("", false);
+        return;
+      } catch (fallbackErr) {
+        console.error(fallbackErr);
+      }
+    }
+
+    state.missingProgrammeData = false;
+    setMissingProgrammeNotice(false, "");
     state.lastRenderData = null;
     state.lastRenderContext = null;
     setComparisonViewEnabled(false);
@@ -2077,6 +2188,8 @@ function setFatalErrorState() {
   );
   state.lastRenderData = null;
   state.lastRenderContext = null;
+  state.missingProgrammeData = false;
+  setMissingProgrammeNotice(false, "");
   setComparisonViewEnabled(false);
   setCloudEmptyStateVisible(true);
   setSelectionPanelVisible(false);
@@ -2106,6 +2219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   syncWordcloudWrapperHeight();
   state.paletteIndex = randomIndex(WORDCLOUD_PALETTES.length);
   syncWordLimitUi();
+  setMissingProgrammeNotice(false, "");
   setSelectionPanelVisible(false);
   setSelectionPanelCollapsed(false);
   renderSelectionPanelEmpty();
@@ -2180,7 +2294,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       updateCloudSubtitles(state.lastRenderContext, renderResult);
     }
     if (state.lastRenderContext) updateSelectionPanel(state.lastRenderContext);
-    setStatus("", false);
+    if (!state.missingProgrammeData) {
+      setStatus("", false);
+    }
   });
 
   wordLimitRange.addEventListener("input", () => {
@@ -2196,7 +2312,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateCloudSubtitles(state.lastRenderContext, renderResult);
         updateSelectionPanel(state.lastRenderContext);
       }
-      setStatus("", false);
+      if (!state.missingProgrammeData) {
+        setStatus("", false);
+      }
     }, 120);
   });
 

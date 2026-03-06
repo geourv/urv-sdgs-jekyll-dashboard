@@ -65,6 +65,7 @@ const DEFAULT_SECTION_ID = "sec:any";
 const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
 const FACULTY_PLACEHOLDER_LABEL = "Centre (obligatori)";
 const PROGRAMME_PLACEHOLDER_LABEL = "Ensenyament (opcional)";
+const MISSING_PROGRAMME_NOTICE = "Hem detectat que alguns ensenyaments tenen les guies docents fora dels portals URV (GUIDO/DOCnet). En aquest cas es mostra la vista del centre.";
 
 const SYSTEM_LABEL_OVERRIDES = {
   "sys:any": "Qualsevol sistema (Unió)",
@@ -220,6 +221,12 @@ function normalizeSdgCodeToOds(code) {
 
 function programmeKey(centreCode, programmeCode) {
   return `${String(centreCode || "")}::${String(programmeCode || "")}`;
+}
+
+function isLikelyMissingProgrammeDataError(error) {
+  const message = normalizeWhitespace(error?.message || "");
+  return message.includes("Ensenyament sense fitxer de detall")
+    || message.includes("HTTP 404");
 }
 
 function readSharedFilters() {
@@ -689,6 +696,33 @@ function getRadarPointLabelBoxes(chart) {
   const labels = Array.isArray(chart?.data?.labels) ? chart.data.labels : [];
   if (!scale || !labels.length) return [];
 
+  const pointLabelItems = Array.isArray(scale?._pointLabelItems) ? scale._pointLabelItems : [];
+  if (pointLabelItems.length) {
+    const boxesFromScale = pointLabelItems
+      .map((item, idx) => {
+        const left = Number(item?.left);
+        const right = Number(item?.right);
+        const top = Number(item?.top);
+        const bottom = Number(item?.bottom);
+        if (
+          Number.isFinite(left)
+          && Number.isFinite(right)
+          && Number.isFinite(top)
+          && Number.isFinite(bottom)
+          && right >= left
+          && bottom >= top
+        ) {
+          return { index: idx, left, right, top, bottom };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    if (boxesFromScale.length) {
+      return boxesFromScale;
+    }
+  }
+
   const boxes = [];
   const ctx = chart?.ctx;
   if (!ctx) return [];
@@ -707,7 +741,7 @@ function getRadarPointLabelBoxes(chart) {
     const descent = Number(metrics.actualBoundingBoxDescent || fontSize * 0.28);
     const boxHeight = Math.max(fontSize + 8, ascent + descent + 8);
     const boxWidth = Math.max(46, textWidth + 18);
-    const radialDistance = Number(scale.drawingArea || 0) + padding + 6;
+    const radialDistance = Number(scale.drawingArea || 0) + padding + 10;
     const anchor = typeof scale.getPointPosition === "function"
       ? scale.getPointPosition(idx, radialDistance)
       : null;
@@ -767,20 +801,23 @@ const radarPointLabelTooltipPlugin = {
 
     const labelIndex = eventType === "mouseout"
       ? -1
-      : findRadarPointLabelIndexAtEvent(chart, event, 12);
+      : findRadarPointLabelIndexAtEvent(chart, event, 22);
 
     if (labelIndex >= 0 && labelIndex < points.length) {
-      if (!hoverState.forced || hoverState.index !== labelIndex) {
-        const pointEl = points[labelIndex];
-        const anchor = {
-          x: Number(event?.x || pointEl?.x || 0),
-          y: Number(event?.y || pointEl?.y || 0)
-        };
-        const active = [{ datasetIndex: 0, index: labelIndex }];
-        chart.setActiveElements(active);
-        chart.tooltip.setActiveElements(active, anchor);
-        hoverState.forced = true;
-        hoverState.index = labelIndex;
+      const pointEl = points[labelIndex];
+      const pointProps = pointEl?.getProps?.(["x", "y"], true) || pointEl;
+      const anchor = {
+        x: Number(pointProps?.x || event?.x || 0),
+        y: Number(pointProps?.y || event?.y || 0)
+      };
+      const active = [{ datasetIndex: 0, index: labelIndex }];
+      chart.setActiveElements(active);
+      chart.tooltip.setActiveElements(active, anchor);
+
+      const changedLabel = !hoverState.forced || hoverState.index !== labelIndex;
+      hoverState.forced = true;
+      hoverState.index = labelIndex;
+      if (changedLabel || eventType === "mousemove" || eventType === "touchmove") {
         args.changed = true;
       }
       return;
@@ -1085,9 +1122,7 @@ function updateExplainerPanel(context) {
   const programmeDistribution = context?.programmeDistribution || null;
 
   if (explainerTitleEl) {
-    explainerTitleEl.textContent = compareMode
-      ? `Com interpretar la comparativa radar: ${centreName} vs ${programmeName}`
-      : `Com interpretar el radar de ${centreName}`;
+    explainerTitleEl.textContent = "Com interpretar el gràfic radar";
   }
 
   if (compareMode) {
@@ -1124,23 +1159,39 @@ function updateExplainerPanel(context) {
 
   setExplainerText(
     explainerSystemEl,
-    `Amb "${systemLabel}", ${systemHelp}`
+    `Sistema seleccionat ("${systemLabel}"): ${systemHelp}`
   );
   setExplainerText(
     explainerSectionEl,
-    `A la secció "${sectionLabel}", ${sectionHelp}`
+    `Secció seleccionada ("${sectionLabel}"): ${sectionHelp}`
   );
   setExplainerText(
     explainerNotesEl,
     compareMode
-      ? "Es mostren dos radars: un per al centre i un per a l'ensenyament. Cada eix és un ODS, i el valor és el percentatge d'assignatures on apareix aquell ODS."
-      : "Cada eix del radar representa un ODS. La distància al centre indica el percentatge d'assignatures on s'ha detectat aquell ODS."
+      ? "Per comparar centre i ensenyament de manera consistent, mantén fixos sistema i secció. Si canvies aquests criteris, els percentatges deixen de ser directament comparables."
+      : "Interpreta els valors com a cobertura relativa dins la selecció activa. Per comparar amb altres vistes, mantén el mateix sistema i la mateixa secció."
   );
 }
 
 function renderEmptyState(message) {
   chartContainer.innerHTML = `<p style="text-align:center;padding:20px;">${message}</p>`;
   scheduleRadarChartHeaderHeightsSync();
+}
+
+function appendInlineInfoBanner(container, message) {
+  if (!container) return;
+  const banner = document.createElement("div");
+  banner.className = "w3-round w3-border";
+  banner.style.margin = "0 0 10px";
+  banner.style.padding = "8px 12px";
+  banner.style.background = "#fff6e8";
+  banner.style.borderColor = "#e2b36d";
+  banner.style.color = "#6f4e1f";
+  banner.style.fontWeight = "400";
+  banner.style.fontSize = "0.9rem";
+  banner.style.gridColumn = "1 / -1";
+  banner.textContent = normalizeWhitespace(message);
+  container.appendChild(banner);
 }
 
 async function render() {
@@ -1252,6 +1303,61 @@ async function render() {
     setExplainerPanelVisible(true);
   } catch (err) {
     console.error(err);
+    const missingProgrammeData = compareMode && isLikelyMissingProgrammeDataError(err);
+    if (missingProgrammeData) {
+      try {
+        const centre = getCentreForRender(centreCode);
+        const [centreDetail, centreCourses] = await Promise.all([
+          getCentreDetail(centreCode),
+          getCentreCoursesFromProgrammes(centreCode)
+        ]);
+        if (token !== state.renderToken) return;
+
+        const centreDistribution = buildRadarDistributionFromCourses(centreCourses, systemId, sectionId);
+        const hasCentreData = Number(centreDistribution.totalCourses || 0) > 0;
+
+        chartContainer.innerHTML = "";
+        chartContainer.className = "chart-grid one";
+        appendInlineInfoBanner(chartContainer, MISSING_PROGRAMME_NOTICE);
+
+        if (hasCentreData) {
+          const sharedRadarScale = buildSharedRadarScale([centreDistribution]);
+          makeRadarChartCard(
+            {
+              title: centre?.centre_name || String(centreCode),
+              subtitle: buildRadarSubtitle(centreDetail, centre?.n_courses, centreDistribution),
+              distribution: centreDistribution,
+              seriesLabel: "Centre",
+              lineColor: "#314b66",
+              axisScale: sharedRadarScale
+            },
+            chartContainer
+          );
+        } else {
+          renderEmptyState("No hi ha dades d'assignatures per aquesta combinació de sistema i secció.");
+          return;
+        }
+
+        scheduleRadarChartHeaderHeightsSync();
+        updateExplainerPanel({
+          centreCode,
+          centreName: centre?.centre_name || String(centreCode),
+          compareMode: false,
+          systemId,
+          sectionId,
+          systemLabel: getSelectedOptionLabel(systemSelect),
+          sectionLabel: getSelectedOptionLabel(sectionSelect),
+          nProgrammes: (state.programmesByCentreCode.get(String(centreCode || "")) || []).length,
+          centreDistribution,
+          programmeDistribution: null
+        });
+        setExplainerPanelVisible(true);
+        return;
+      } catch (fallbackErr) {
+        console.error(fallbackErr);
+      }
+    }
+
     chartContainer.innerHTML = `
       <div class="w3-panel w3-red w3-round">
         <h3>Error</h3>

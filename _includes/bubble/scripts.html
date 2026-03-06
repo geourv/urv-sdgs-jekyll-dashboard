@@ -63,6 +63,7 @@ const DEFAULT_SECTION_ID = "sec:any";
 const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
 const FACULTY_PLACEHOLDER_LABEL = "Centre (obligatori)";
 const PROGRAMME_PLACEHOLDER_LABEL = "Ensenyament (opcional)";
+const MISSING_PROGRAMME_NOTICE = "Hem detectat que alguns ensenyaments tenen les guies docents fora dels portals URV (GUIDO/DOCnet). En aquest cas es mostra la vista del centre.";
 
 const SYSTEM_LABEL_OVERRIDES = {
   "sys:any": "Qualsevol sistema (Unió)",
@@ -191,6 +192,12 @@ function normalizeSdgCodeToOds(code) {
 
 function programmeKey(centreCode, programmeCode) {
   return `${String(centreCode || "")}::${String(programmeCode || "")}`;
+}
+
+function isLikelyMissingProgrammeDataError(error) {
+  const message = normalizeWhitespace(error?.message || "");
+  return message.includes("Ensenyament sense fitxer de detall")
+    || message.includes("HTTP 404");
 }
 
 function readSharedFilters() {
@@ -1020,9 +1027,7 @@ function updateExplainerPanel(context) {
   const programmeDistribution = context?.programmeDistribution || null;
 
   if (explainerTitleEl) {
-    explainerTitleEl.textContent = compareMode
-      ? `Com interpretar la comparativa de bombolles: ${centreName} vs ${programmeName}`
-      : `Com interpretar el gràfic de bombolles de ${centreName}`;
+    explainerTitleEl.textContent = "Com interpretar el gràfic de bombolles";
   }
 
   if (compareMode) {
@@ -1059,23 +1064,39 @@ function updateExplainerPanel(context) {
 
   setExplainerText(
     explainerSystemEl,
-    `Amb "${systemLabel}", ${systemHelp}`
+    `Sistema seleccionat ("${systemLabel}"): ${systemHelp}`
   );
   setExplainerText(
     explainerSectionEl,
-    `A la secció "${sectionLabel}", ${sectionHelp}`
+    `Secció seleccionada ("${sectionLabel}"): ${sectionHelp}`
   );
   setExplainerText(
     explainerNotesEl,
     compareMode
-      ? "Es mostren dos gràfics de bombolles: un del centre i un de l'ensenyament. Cada bombolla és una assignatura; l'eix horitzontal indica quants ODS s'hi detecten i l'eix vertical, els hits totals detectats. El color de la bombolla correspon a l'ODS amb més hits en aquella assignatura; si no hi ha detall de hits, s'usa un ODS detectat com a referència de color."
-      : "Cada bombolla és una assignatura. L'eix horitzontal indica ODS detectats i l'eix vertical mostra hits totals detectats per text2sdg. El color de la bombolla correspon a l'ODS amb més hits en aquella assignatura; si no hi ha detall de hits, s'usa un ODS detectat com a referència de color."
+      ? "Compara sobretot patrons globals (dispersió, agrupaments i valors extrems) mantenint sistema i secció constants. Canviar aquests filtres modifica alhora ODS detectats i hits."
+      : "Llegeix el gràfic com una distribució d'assignatures dins la selecció activa. Mantén sistema i secció fixos si vols comparar amb altres centres o ensenyaments."
   );
 }
 
 function renderEmptyState(message) {
   chartContainer.innerHTML = `<p style="text-align:center;padding:20px;">${message}</p>`;
   scheduleBubbleChartHeaderHeightsSync();
+}
+
+function appendInlineInfoBanner(container, message) {
+  if (!container) return;
+  const banner = document.createElement("div");
+  banner.className = "w3-round w3-border";
+  banner.style.margin = "0 0 10px";
+  banner.style.padding = "8px 12px";
+  banner.style.background = "#fff6e8";
+  banner.style.borderColor = "#e2b36d";
+  banner.style.color = "#6f4e1f";
+  banner.style.fontWeight = "400";
+  banner.style.fontSize = "0.9rem";
+  banner.style.gridColumn = "1 / -1";
+  banner.textContent = normalizeWhitespace(message);
+  container.appendChild(banner);
 }
 
 async function render() {
@@ -1186,6 +1207,55 @@ async function render() {
     setBubbleExplainerPanelVisible(true);
   } catch (err) {
     console.error(err);
+    const missingProgrammeData = compareMode && isLikelyMissingProgrammeDataError(err);
+    if (missingProgrammeData) {
+      try {
+        const centre = getCentreForRender(centreCode);
+        const centreCourses = await getCentreCoursesFromProgrammes(centreCode);
+        if (token !== state.renderToken) return;
+
+        const centreDistribution = await buildDistributionFromCourses(centreCourses, systemId, sectionId);
+        const hasCentreData = Number(centreDistribution?.totalCourses || 0) > 0;
+
+        chartContainer.innerHTML = "";
+        chartContainer.className = "chart-grid one";
+        appendInlineInfoBanner(chartContainer, MISSING_PROGRAMME_NOTICE);
+
+        if (hasCentreData) {
+          makeBubbleChartCard(
+            {
+              title: centre?.centre_name || String(centreCode),
+              subtitle: buildBubbleSubtitle(centreDistribution),
+              distribution: centreDistribution,
+              seriesLabel: "Centre"
+            },
+            chartContainer
+          );
+        } else {
+          renderEmptyState("No hi ha dades d'assignatures per aquesta combinació de sistema i secció.");
+          return;
+        }
+
+        scheduleBubbleChartHeaderHeightsSync();
+        updateExplainerPanel({
+          centreCode,
+          centreName: centre?.centre_name || String(centreCode),
+          compareMode: false,
+          systemId,
+          sectionId,
+          systemLabel: getSelectedOptionLabel(systemSelect),
+          sectionLabel: getSelectedOptionLabel(sectionSelect),
+          nProgrammes: (state.programmesByCentreCode.get(String(centreCode || "")) || []).length,
+          centreDistribution,
+          programmeDistribution: null
+        });
+        setBubbleExplainerPanelVisible(true);
+        return;
+      } catch (fallbackErr) {
+        console.error(fallbackErr);
+      }
+    }
+
     chartContainer.innerHTML = `
       <div class="w3-panel w3-red w3-round">
         <h3>Error</h3>

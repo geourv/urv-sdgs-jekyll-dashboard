@@ -1,0 +1,285 @@
+---
+# File: pages/example-course.html
+# Purpose: Human-readable worked example with two courses and SDG/system matrices.
+layout: visualization_app
+title: "Assignatures d'exemple"
+lang: ca
+app_nav_icon: eye
+app_nav_section: "Una primera ullada"
+app_nav_title: "Assignatures d'exemple"
+app_header_padding_top: 10px
+---
+
+<style>
+.example-post {
+  max-width: 1240px;
+}
+
+.example-post .lead {
+  margin: 0.45rem 0 0.95rem;
+}
+
+.example-post p {
+  margin: 0 0 0.85rem;
+}
+
+.example-note {
+  margin: 0.65rem 0 0.95rem;
+  background: #eef4fb;
+  border: 1px solid #cad8e7;
+  border-left: 4px solid var(--site-accent-dark, #334457);
+  border-radius: 10px;
+  padding: 0.72rem 0.88rem;
+}
+
+.example-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #d8e1eb;
+  border-radius: 10px;
+  background: #fff;
+  margin: 0.8rem 0 1rem;
+}
+
+.example-matrix {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+}
+
+.example-matrix th,
+.example-matrix td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.46rem 0.5rem;
+  font-size: 0.89rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.example-matrix th {
+  background: #f2f6fb;
+  white-space: nowrap;
+}
+
+.example-matrix th.left,
+.example-matrix td.left {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.example-matrix abbr[title] {
+  text-decoration: none;
+  border-bottom: 1px dotted #7a8798;
+  cursor: help;
+}
+
+.matrix-hit {
+  background: #e5f4e8;
+  color: #205f34;
+  font-weight: 800;
+}
+
+.matrix-miss {
+  color: #b5c0cd;
+}
+
+.matrix-total {
+  background: #f8fbff;
+  font-weight: 700;
+}
+
+.systems-list {
+  margin: 0.15rem 0 0.95rem;
+  padding-left: 1.1rem;
+}
+
+.systems-list li {
+  margin-bottom: 0.22rem;
+}
+
+.example-guide {
+  margin: 0.2rem 0 0.8rem;
+  font-size: 0.95rem;
+}
+</style>
+
+<div class="horizontal-container example-post">
+  <h1>Assignatures d'exemple</h1>
+
+  <p class="lead">Aquesta lectura mostra com canvia la detecció d'ODS quan apliquem sistemes diferents a una mateixa guia docent. La idea no és substituir la revisió experta, sinó aportar una mirada comparativa útil per interpretar millor els resultats.</p>
+
+  <h2>Teledetecció aplicada a l'anàlisi territorial</h2>
+  <p class="example-guide">Guia docent: <a href="https://guiadocent.urv.cat/docnet/guia_docent/assignatures/print/?centre=21&amp;ensenyament=2123&amp;assignatura=21234109&amp;any_academic=2024_25&amp;idioma=cat&amp;modalitat=p" target="_blank" rel="noopener noreferrer">Obrir la guia docent d'aquesta assignatura</a>.</p>
+
+  <p>En aquest cas, la lectura més inclusiva detecta set ODS. Quan passem a criteris més estrictes, la detecció baixa de manera clara, cosa que encaixa amb una assignatura de base metodològica i tècnica, on la relació amb ODS pot aparèixer de forma més indirecta. En particular, l'anàlisi de les competències i dels objectius d'aprenentatge pot retornar l'ODS-04 en diversos sistemes, perquè aquests són sensibles a la terminologia educativa present en aquestes seccions.</p>
+
+  <div class="example-table-wrap">
+    <table class="example-matrix" aria-label="Matriu de detecció per sistema i ODS: Teledetecció aplicada a l'anàlisi territorial">
+      <thead>
+        <tr>
+          <th class="left">Sistema</th>
+          <th><abbr title="Fi de la pobresa">ODS-01</abbr></th>
+          <th><abbr title="Fam zero">ODS-02</abbr></th>
+          <th><abbr title="Salut i benestar">ODS-03</abbr></th>
+          <th><abbr title="Educació de qualitat">ODS-04</abbr></th>
+          <th><abbr title="Treball digne i creixement econòmic">ODS-08</abbr></th>
+          <th><abbr title="Indústria, innovació i infraestructura">ODS-09</abbr></th>
+          <th><abbr title="Vida d'ecosistemes terrestres">ODS-15</abbr></th>
+          <th>Total ODS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="left">Unió</td>
+          <td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td>
+          <td class="matrix-total">7</td>
+        </tr>
+        <tr>
+          <td class="left">Intersecció</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">0</td>
+        </tr>
+        <tr>
+          <td class="left">Auckland</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+        <tr>
+          <td class="left">Aurora</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">0</td>
+        </tr>
+        <tr>
+          <td class="left">Elsevier</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">0</td>
+        </tr>
+        <tr>
+          <td class="left">Ensemble equal</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">0</td>
+        </tr>
+        <tr>
+          <td class="left">Ensemble third</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+        <tr>
+          <td class="left">Ensemble triple</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">0</td>
+        </tr>
+        <tr>
+          <td class="left">SDGO</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td>
+          <td class="matrix-total">5</td>
+        </tr>
+        <tr>
+          <td class="left">SDSN</td>
+          <td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">3</td>
+        </tr>
+        <tr>
+          <td class="left">SIRIS</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Per interpretar bé aquesta matriu, cal tenir present que els sistemes són els motors de detecció que aplica <code>text2sdg</code>, una llibreria d'R per identificar ODS en text.</p>
+  <ul class="systems-list">
+    <li><strong>Unió:</strong> agrega totes les deteccions disponibles i prioritza cobertura.</li>
+    <li><strong>Intersecció:</strong> només conserva ODS compartits; és el criteri més conservador per consens.</li>
+    <li><strong>Auckland, Aurora, Elsevier, SDGO, SDSN i SIRIS:</strong> motors de classificació amb vocabularis i regles diferents; poden divergir en sensibilitat i especificitat.</li>
+    <li><strong>Ensemble equal:</strong> combinació equilibrada de sistemes en un model conjunt.</li>
+    <li><strong>Ensemble third:</strong> combinació intermèdia, orientada a balanç entre cobertura i prudència.</li>
+    <li><strong>Ensemble triple:</strong> configuració més restrictiva dins la família ensemble.</li>
+  </ul>
+  <p>Per a més informació es pot consultar la <a href="https://www.text2sdg.io/reference/text2sdg.html" target="_blank" rel="noopener noreferrer">documentació de text2sdg</a>.</p>
+  <p>Aquesta comparativa permet veure de seguida quins ODS apareixen per sensibilitat d'algun sistema concret i quins, en canvi, es mantenen com a senyals més robustes quan exigim més acord.</p>
+
+  <h2>Variabilitat i canvi climàtic</h2>
+  <p class="example-guide">Guia docent: <a href="https://guiadocent.urv.cat/docnet/guia_docent/assignatures/print/?centre=21&amp;ensenyament=2123&amp;assignatura=21234122&amp;any_academic=2024_25&amp;idioma=cat&amp;modalitat=p" target="_blank" rel="noopener noreferrer">Obrir la guia docent d'aquesta assignatura</a>.</p>
+
+  <p>Aquí s'observa millor la lògica de la intersecció: en la mateixa lectura de secció global, l'ODS-13 (Acció climàtica) apareix de manera transversal i és l'únic que persisteix quan exigim coincidència entre sistemes. Aquest és el tipus de patró que ajuda a distingir un vincle fort d'un de més circumstancial.</p>
+
+  <div class="example-table-wrap">
+    <table class="example-matrix" aria-label="Matriu de detecció per sistema i ODS: Variabilitat i canvi climàtic">
+      <thead>
+        <tr>
+          <th class="left">Sistema</th>
+          <th><abbr title="Fi de la pobresa">ODS-01</abbr></th>
+          <th><abbr title="Fam zero">ODS-02</abbr></th>
+          <th><abbr title="Salut i benestar">ODS-03</abbr></th>
+          <th><abbr title="Educació de qualitat">ODS-04</abbr></th>
+          <th><abbr title="Treball digne i creixement econòmic">ODS-08</abbr></th>
+          <th><abbr title="Ciutats i comunitats sostenibles">ODS-11</abbr></th>
+          <th><abbr title="Acció climàtica">ODS-13</abbr></th>
+          <th><abbr title="Vida submarina">ODS-14</abbr></th>
+          <th><abbr title="Vida d'ecosistemes terrestres">ODS-15</abbr></th>
+          <th>Total ODS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="left">Unió</td>
+          <td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td>
+          <td class="matrix-total">9</td>
+        </tr>
+        <tr>
+          <td class="left">Intersecció</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+        <tr>
+          <td class="left">Auckland</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">3</td>
+        </tr>
+        <tr>
+          <td class="left">Aurora</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+        <tr>
+          <td class="left">Elsevier</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+        <tr>
+          <td class="left">Ensemble equal</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+        <tr>
+          <td class="left">Ensemble third</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">4</td>
+        </tr>
+        <tr>
+          <td class="left">Ensemble triple</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+        <tr>
+          <td class="left">SDGO</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td>
+          <td class="matrix-total">6</td>
+        </tr>
+        <tr>
+          <td class="left">SDSN</td>
+          <td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">6</td>
+        </tr>
+        <tr>
+          <td class="left">SIRIS</td>
+          <td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td><td class="matrix-hit">●</td><td class="matrix-miss">·</td><td class="matrix-miss">·</td>
+          <td class="matrix-total">1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>En aquesta assignatura, l'ODS-13 és el que es manté en la intersecció, i per això es veu com el punt de consens entre sistemes.</p>
+</div>

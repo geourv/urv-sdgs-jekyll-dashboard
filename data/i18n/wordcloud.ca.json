@@ -9,8 +9,8 @@
     "title": "Com interpretar l'anàlisi del núvol",
     "paragraph_methods": "text2sdg combina dos enfocaments: sistemes de consulta (Aurora, Elsevier, Auckland, SIRIS, SDSN i SDGO) i models ensemble que integren tots els sistemes i la longitud del text.",
     "paragraph_tradeoff": "Segons la documentació de text2sdg, Aurora/Elsevier/Auckland/SIRIS acostumen a ser menys liberals que SDSN/SDGO. Les validacions comparatives encara són limitades, així que convé interpretar els resultats amb cautela.",
-    "paragraph_sections": "La secció triada canvia el tipus de llenguatge analitzat: competències tendeix a termes transversals, informació de l'assignatura descriu millor el temari i referències reflecteix sobretot el marc bibliogràfic.",
-    "paragraph_course_info": "Per reduir falsos positius, prova criteris més restrictius (intersecció de sistemes o seccions) i contrasta sempre amb la guia docent completa.",
+    "paragraph_sections": "Les eleccions de sistema i secció defineixen el criteri de detecció: el sistema combina motors (unió, intersecció o ensemble) i la secció delimita quin bloc de la guia docent s'analitza.",
+    "paragraph_course_info": "Per comparatives consistents, mantén fixos sistema i secció. Canvia'ls només per explorar sensibilitat i contrasta sempre amb la guia docent completa.",
     "paragraph_current": "",
     "aggregate_templates": {
       "centre": "Centre seleccionat: \"{centre}\" ({n_programmes} ensenyaments, {n_courses_centre} cursos).",
@@ -35,7 +35,7 @@
     },
     "feature_templates": {
       "single": "Els termes del núvol són \"features\" detectades en els textos analitzats. La mida indica freqüència relativa de detecció.",
-      "compare": "A cada núvol, els termes són \"features\" detectades en els textos analitzats. Si un terme apareix als dos núvols, manté el mateix color per facilitar la comparació.",
+      "compare": "En comparativa, fixa't en termes compartits i termes exclusius per identificar diferències de perfil entre centre i ensenyament.",
       "default": "Els \"features\" són termes detectats automàticament a partir dels textos analitzats."
     },
     "coverage_programme": "Per a l'ensenyament, s'ha calculat la cobertura per a totes les combinacions de sistema i secció. Amb \"{system_label}\" i \"{section_label}\": {with_sdg} de {total_courses} assignatures ({coverage_pct}%).",

@@ -484,7 +484,8 @@ html, body {
       align-items: center;
       justify-content: center;
       position: fixed;
-      top: 8px;
+      top: 50%;
+      transform: translateY(-50%);
       left: calc(var(--site-sidebar-width) - 20px);
       z-index: 1003;
       width: 42px;

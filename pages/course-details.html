@@ -792,17 +792,35 @@ function populateSectionSelect(selectedSectionId) {
   sectionSelect.value = exists ? selected : fallback;
 }
 
+function isLikelyMissingProgrammeDataError(error) {
+  if (String(error?.code || "") === "MISSING_PROGRAMME_DATA") return true;
+  const message = normalizeWhitespace(error?.message || "");
+  return message.includes("Ensenyament sense fitxer de detall")
+    || message.includes("HTTP 404");
+}
+
 async function getProgrammeDetail(programmeKeyValue) {
   const key = String(programmeKeyValue || "");
   if (!key) throw new Error("Ensenyament no seleccionat");
   if (state.programmeCache.has(key)) return state.programmeCache.get(key);
 
   const programme = state.programmeByKey.get(key);
-  if (!programme?.json) throw new Error(`Ensenyament sense fitxer de detall: ${key}`);
+  if (!programme?.json) {
+    const missingErr = new Error(`Ensenyament sense fitxer de detall: ${key}`);
+    missingErr.code = "MISSING_PROGRAMME_DATA";
+    throw missingErr;
+  }
 
-  const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
-  state.programmeCache.set(key, detail);
-  return detail;
+  try {
+    const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
+    state.programmeCache.set(key, detail);
+    return detail;
+  } catch (error) {
+    if (normalizeWhitespace(error?.message || "").includes("HTTP 404")) {
+      error.code = "MISSING_PROGRAMME_DATA";
+    }
+    throw error;
+  }
 }
 
 async function getCourseDetail(courseDetailPath) {
@@ -1267,6 +1285,12 @@ async function renderCurrentSelection() {
     setStatus("", false);
   } catch (err) {
     console.error(err);
+    if (isLikelyMissingProgrammeDataError(err)) {
+      resetUI("Hem detectat que alguns ensenyaments tenen les guies docents fora dels portals URV (GUIDO/DOCnet), i per això no hi ha dades específiques en aquesta vista.");
+      setStatus("", false);
+      return;
+    }
+
     resetUI("No s'han pogut carregar les assignatures d'aquest ensenyament.");
     setStatus("Error carregant dades des de l'API.", true);
   }

@@ -107,6 +107,17 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
       <i class="fa fa-cogs fa-fw"></i> Què hem fet?
     </a>
 
+    {% assign link = '/pages/example-course.html' %}
+    {% assign link_nohtml = link | remove: '.html' %}
+    {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+    {% assign is_active = false %}
+    {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+      {% assign is_active = true %}
+    {% endif %}
+    <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" aria-label="Assignatures d'exemple"{% if is_active %} aria-current="page"{% endif %}>
+      <i class="fa fa-lightbulb-o fa-fw"></i> Assignatures d'exemple
+    </a>
+
     <div class="w3-dropdown-clicker w3-bar-item w3-button w3-padding{% if explore_active %} nav-active{% endif %}" role="button" aria-haspopup="true" aria-expanded="{% if explore_active %}true{% else %}false{% endif %}" title="Explora resultats" data-dropdown-id="explore" data-default-open="{% if explore_active %}true{% else %}false{% endif %}">
       <i class="fa fa-eye fa-fw"></i> Una primera ullada <i class="fa fa-caret-down w3-margin-left"></i>
 

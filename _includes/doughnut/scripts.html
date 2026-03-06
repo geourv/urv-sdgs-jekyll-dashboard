@@ -63,6 +63,7 @@ const DEFAULT_SECTION_ID = "sec:any";
 const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
 const FACULTY_PLACEHOLDER_LABEL = "Centre (obligatori)";
 const PROGRAMME_PLACEHOLDER_LABEL = "Ensenyament (opcional)";
+const MISSING_PROGRAMME_NOTICE = "Hem detectat que alguns ensenyaments tenen les guies docents fora dels portals URV (GUIDO/DOCnet). En aquest cas es mostra la vista del centre.";
 
 const SYSTEM_LABEL_OVERRIDES = {
   "sys:any": "Qualsevol sistema (Unió)",
@@ -221,6 +222,12 @@ function normalizeSdgCodeToOds(code) {
 
 function programmeKey(centreCode, programmeCode) {
   return `${String(centreCode || "")}::${String(programmeCode || "")}`;
+}
+
+function isLikelyMissingProgrammeDataError(error) {
+  const message = normalizeWhitespace(error?.message || "");
+  return message.includes("Ensenyament sense fitxer de detall")
+    || message.includes("HTTP 404");
 }
 
 function readSharedFilters() {
@@ -857,7 +864,7 @@ function makeChartCard({ title, subtitle, distribution, compareDistribution }, m
       maintainAspectRatio: false,
       layout: hasCompare
         ? {
-            padding: { top: 30, right: 88, bottom: 30, left: 88 }
+            padding: { top: 36, right: 108, bottom: 36, left: 108 }
           }
         : {
             padding: { top: 12, right: 12, bottom: 12, left: 12 }
@@ -915,7 +922,7 @@ function makeChartCard({ title, subtitle, distribution, compareDistribution }, m
             const angle = props ? ((Number(props.startAngle) + Number(props.endAngle)) / 2) : 0;
             return Math.cos(angle) >= 0 ? "right" : "left";
           },
-          offset: hasCompare ? 16 : 0,
+          offset: hasCompare ? 24 : 0,
           textAlign(context) {
             if (!hasCompare) return "center";
             const meta = context?.chart?.getDatasetMeta(context.datasetIndex);
@@ -930,7 +937,7 @@ function makeChartCard({ title, subtitle, distribution, compareDistribution }, m
           borderColor: "rgba(255, 255, 255, 0.9)",
           borderWidth: hasCompare ? 1.2 : 1.4,
           borderRadius: 4,
-          padding: hasCompare ? 4 : 3
+          padding: hasCompare ? 5 : 3
         },
         outerRingLabelConnector: {
           enabled: hasCompare,
@@ -938,8 +945,8 @@ function makeChartCard({ title, subtitle, distribution, compareDistribution }, m
           minPercent: outerLabelThreshold,
           lineColor: "rgba(52, 69, 90, 0.45)",
           lineWidth: 1.1,
-          radialOffset: 13,
-          horizontalOffset: 12
+          radialOffset: 20,
+          horizontalOffset: 18
         }
       }
     },
@@ -1074,9 +1081,7 @@ function updateExplainerPanel(context) {
   const programmeHits = Number(context?.programmeHits || 0);
 
   if (explainerTitleEl) {
-    explainerTitleEl.textContent = compareMode
-      ? `Com interpretar la comparativa d'anell: ${centreName} vs ${programmeName}`
-      : `Com interpretar l'anell de ${centreName}`;
+    explainerTitleEl.textContent = "Com interpretar el gràfic d'anell";
   }
 
   if (compareMode) {
@@ -1110,23 +1115,39 @@ function updateExplainerPanel(context) {
 
   setExplainerText(
     explainerSystemEl,
-    `Amb "${systemLabel}", ${systemHelp}`
+    `Sistema seleccionat ("${systemLabel}"): ${systemHelp}`
   );
   setExplainerText(
     explainerSectionEl,
-    `A la secció "${sectionLabel}", ${sectionHelp}`
+    `Secció seleccionada ("${sectionLabel}"): ${sectionHelp}`
   );
   setExplainerText(
     explainerNotesEl,
     compareMode
-      ? "Comparativa en format sunburst: l'anell interior representa el centre i l'anell exterior l'ensenyament; cada anell mostra el pes relatiu intern de cada ODS."
-      : "Cada segment de l'anell representa el pes relatiu de deteccions ODS dins la selecció activa."
+      ? "L'anell interior i l'exterior mostren pesos relatius interns (no magnituds absolutes entre anells). Mantén sistema i secció fixos per comparar centre i ensenyament."
+      : "Cada segment expressa pes relatiu dins la selecció activa. Per comparatives fiables entre centres o ensenyaments, usa el mateix sistema i la mateixa secció."
   );
 }
 
 function renderEmptyState(message) {
   chartContainer.innerHTML = `<p style="text-align:center;padding:20px;">${message}</p>`;
   scheduleDoughnutChartHeaderHeightsSync();
+}
+
+function appendInlineInfoBanner(container, message) {
+  if (!container) return;
+  const banner = document.createElement("div");
+  banner.className = "w3-round w3-border";
+  banner.style.margin = "0 0 10px";
+  banner.style.padding = "8px 12px";
+  banner.style.background = "#fff6e8";
+  banner.style.borderColor = "#e2b36d";
+  banner.style.color = "#6f4e1f";
+  banner.style.fontWeight = "400";
+  banner.style.fontSize = "0.9rem";
+  banner.style.gridColumn = "1 / -1";
+  banner.textContent = normalizeWhitespace(message);
+  container.appendChild(banner);
 }
 
 async function render() {
@@ -1229,6 +1250,59 @@ async function render() {
     setExplainerPanelVisible(true);
   } catch (err) {
     console.error(err);
+    const missingProgrammeData = compareMode && isLikelyMissingProgrammeDataError(err);
+    if (missingProgrammeData) {
+      try {
+        const centre = getCentreForRender(centreCode);
+        const centreDetail = await getCentreDetail(centreCode);
+        if (token !== state.renderToken) return;
+
+        const centreRows = extractSdgRows(centreDetail, systemId, sectionId);
+        const centreDistribution = buildDistribution(centreRows);
+        const hasCentreData = centreDistribution.labels.length > 0;
+        const centreCoverage = computeCoverageFromCourses(centreDetail, systemId, sectionId);
+
+        chartContainer.innerHTML = "";
+        chartContainer.className = "chart-grid one";
+        appendInlineInfoBanner(chartContainer, MISSING_PROGRAMME_NOTICE);
+
+        if (hasCentreData) {
+          makeChartCard(
+            {
+              title: centre?.centre_name || String(centreCode),
+              subtitle: buildCentreSubtitle(centre, centreDetail, centreDistribution),
+              distribution: centreDistribution,
+              compareDistribution: null
+            },
+            chartContainer
+          );
+        } else {
+          renderEmptyState("No hi ha dades ODS per aquesta combinació de sistema i secció.");
+          return;
+        }
+
+        scheduleDoughnutChartHeaderHeightsSync();
+        updateExplainerPanel({
+          centreCode,
+          centreName: centre?.centre_name || String(centreCode),
+          compareMode: false,
+          systemId,
+          sectionId,
+          systemLabel: getSelectedOptionLabel(systemSelect),
+          sectionLabel: getSelectedOptionLabel(sectionSelect),
+          nProgrammes: (state.programmesByCentreCode.get(String(centreCode || "")) || []).length,
+          centreCoverage,
+          programmeCoverage: null,
+          centreHits: centreDistribution?.totalHits || 0,
+          programmeHits: 0
+        });
+        setExplainerPanelVisible(true);
+        return;
+      } catch (fallbackErr) {
+        console.error(fallbackErr);
+      }
+    }
+
     chartContainer.innerHTML = `
       <div class="w3-panel w3-red w3-round">
         <h3>Error</h3>

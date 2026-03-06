@@ -33,6 +33,15 @@ Llista de mancances de dades detectades al dashboard que s'han d'afegir al pipel
 - Proposta API tracker: afegir `n_words` per secció (competències, informació curs, referències, etc.) a nivell assignatura i agregats.
 - Estat: `pendent`
 
+### 3) Disponibilitat d'ensenyament per falta d'scraping
+
+- Data: 2026-03-06
+- Pàgina/app: selectors d'ensenyament de `wordcloud`, `anell`, `radar`, `bombolles` i `pages/course-details.html`
+- Camp que falta: indicador explícit de disponibilitat d'anàlisi per ensenyament (p. ex. `scraping_available`) i motiu (`external_source`, `other_university`, `pending`, etc.)
+- Impacte: alguns ensenyaments apareixen als combos però no tenen detall analitzable; això provoca errors o missatges confusos.
+- Proposta API tracker: incloure al catàleg d'ensenyaments un camp booleà de disponibilitat i un camp de motiu/nota per mostrar missatges contextuals de forma fiable.
+- Estat: `pendent`
+
 ---
 
 ## Nota operativa per a IA
