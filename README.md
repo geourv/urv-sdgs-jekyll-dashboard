@@ -12,7 +12,7 @@ Safe edits:
   - Careful: Changing baseurl guidance without updating workflow can break asset paths
 -->
 
-# urv-sdgs-dashboard (jekyll)
+# urv-sdgs-dashboard
 
 Aquest repositori és una versió **Jekyll** del dashboard (HTML/CSS/JS), pensada per:
 

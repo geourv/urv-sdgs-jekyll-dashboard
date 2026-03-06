@@ -2,7 +2,7 @@
 
 ## Objectiu
 
-Aquest repositori (`urv-sdgs-jekyll-dashboard`) conté la capa web (Jekyll + HTML/CSS/JS) de visualització.
+Aquest repositori (`urv-sdgs-dashboard`) conté la capa web (Jekyll + HTML/CSS/JS) de visualització.
 
 La generació de dades (pipeline d'extracció, neteja, anàlisi i export) **no** es fa aquí: es fa al repositori **tracker** (`urv-sdgs-tracker`).
 

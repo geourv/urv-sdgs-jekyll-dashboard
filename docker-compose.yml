@@ -13,12 +13,12 @@
 #   - OK: ports, environment, add volumes
 #   - Careful: container paths /srv/jekyll and /usr/local/bundle (breaks mounts or gem cache)
 
-name: urv-sdgs-jekyll-dashboard
+name: urv-sdgs-dashboard
 
 services:
   jekyll:
     build: .
-    image: urv-sdgs-jekyll-dashboard:local
+    image: urv-sdgs-dashboard:local
     ports:
       - "4000:4000"
       - "35729:35729"
