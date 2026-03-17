@@ -25,12 +25,14 @@ lang: ca
 
       <h2>Dades recopilades pel gratat web (web-scraping)</h2>
       <p>Les dades del gratat web es publicaran periòdicament, cada cop que es repeteixi el procés, al repositori Zenodo. També hi ha la intenció de repetir el gratat de manera sistemàtica a l'inici de cada curs acadèmic per mantenir la sèrie de seguiment actualitzada. Consulta:</p>
-      <p>Zaragozí, B., Saladié, Ò., & Salvat-Garcia, L. (2025). <em>Web-scraped corpus of URV teaching guides for SDG-oriented text mining</em> (0.y.z) [Data set]. Zenodo. <a href="https://doi.org/10.5281/zenodo.17652177" target="_blank" rel="noopener noreferrer">https://doi.org/10.5281/zenodo.17652177</a></p>
+      <p>El punt d'arxiu actual del corpus és el registre Zenodo <em>Web-scraped corpus of URV teaching guides for SDG-oriented text mining</em>: <a href="https://doi.org/10.5281/zenodo.17652177" target="_blank" rel="noopener noreferrer">https://doi.org/10.5281/zenodo.17652177</a></p>
+      <p>Per a l'explotació pública al web, aquestes dades no es consumeixen directament des de Zenodo, sinó a través d'una API JSON estàtica que prepara els fitxers i metadades que alimenten les visualitzacions. API pública: <a href="{{ site.sdgs_api_base_url }}/" target="_blank" rel="noopener noreferrer">{{ site.sdgs_api_base_url }}/</a>. Repositori de l'API: <a href="https://github.com/geourv/urv-sdgs-api" target="_blank" rel="noopener noreferrer">geourv/urv-sdgs-api</a>.</p>
     </section>
 
     <section class="readable-content text-column">
       <h2>Codi</h2>
       <p>El codi d'anàlisi del projecte (<em>urv-sdgs-tracker</em>) encara no és públic, però es preveu publicar-lo aviat. Mentrestant, per a més detalls metodològics o tècnics, la persona de contacte és <strong>Benito Zaragozí</strong> (<a href="mailto:benito.zaragozi@urv.cat">benito.zaragozi@urv.cat</a>).</p>
       <p>La capa web de visualització (<em>urv-sdgs-dashboard</em>) també es manté en evolució contínua.</p>
+      <p>Entre el tracker i aquest dashboard hi ha una capa intermèdia de publicació, <em>urv-sdgs-api</em>, que serveix les dades i metadades ja preparades per al frontend: <a href="{{ site.sdgs_api_base_url }}/" target="_blank" rel="noopener noreferrer">{{ site.sdgs_api_base_url }}/</a>.</p>
     </section>
   </div>

@@ -30,6 +30,8 @@ Aquest repositori és una versió **Jekyll** del dashboard (HTML/CSS/JS), pensad
 
 - Aquest repositori només conté la capa web de visualització.
 - El pipeline de dades (tracker, extracció, transformació i export) viu a `urv-sdgs-tracker`.
+- Les visualitzacions consumeixen l'API estàtica publicada a `https://geourv.github.io/urv-sdgs-api/`.
+- Zenodo és el canal d'arxiu dels paquets de dades de web-scraping.
 - Si falta una dada per a una app, no s'ha d'inferir al frontend: s'ha de registrar a `TODO_API_DATA_GAPS.md` (vegeu també `AGENTS.md`).
 
 ## Desenvolupament en local amb Docker (recomanat)
