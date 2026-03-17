@@ -1,0 +1,1270 @@
+---
+# File: pages/sdg-matrix.html
+# Purpose: Interactive heatmap table for SDG-system matrices across centre, programme, and course scopes.
+layout: visualization_app
+title: "Matriu ODS x sistemes"
+lang: ca
+app_nav_icon: table
+app_nav_section: "Una primera ullada"
+app_nav_title: "Matriu ODS x sistemes"
+app_header_padding_top: 10px
+---
+
+<style>
+.matrix-page {
+  width: min(100%, 1380px);
+  margin-inline: auto;
+  align-items: stretch;
+}
+
+.matrix-page .lead {
+  margin: 0.45rem 0 0.9rem;
+}
+
+.matrix-page p {
+  margin: 0 0 0.8rem;
+}
+
+.matrix-page > h1,
+.matrix-page > p,
+.matrix-page > .matrix-controls,
+.matrix-page > .matrix-status,
+.matrix-page > .matrix-view {
+  width: 100%;
+}
+
+.matrix-controls {
+  display: block;
+  margin: 0.6rem 0 0.9rem;
+}
+
+.matrix-card {
+  background: var(--site-surface-2, #e8eff7);
+  border: 1px solid var(--site-widget-border, #d8e1eb);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(33, 52, 75, 0.1);
+  padding: 15px 16px 14px;
+}
+
+.matrix-control-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.matrix-control-item {
+  min-width: 0;
+}
+
+.matrix-field-label {
+  display: block;
+  margin: 0 0 0.28rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--site-text, #1f2a36);
+}
+
+.matrix-control-item .selector-container {
+  display: block;
+  width: 100% !important;
+  margin: 0;
+}
+
+.matrix-control-item .selector-box {
+  display: block;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0;
+}
+
+.matrix-control-item .w3-select {
+  display: block;
+  width: 100% !important;
+  min-width: 0;
+  max-width: none !important;
+  background-color: #fff;
+  color: #111;
+  border: 1px solid #c4d0dc !important;
+  border-radius: 8px;
+  padding: 10px 36px 10px 12px;
+  min-height: 42px;
+  font-size: 1rem;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.matrix-control-item .w3-select:focus {
+  background-color: #f7fbff;
+  border-color: var(--site-accent, #5f7898) !important;
+  box-shadow: 0 0 0 2px rgba(95, 120, 152, 0.22);
+}
+
+.matrix-control-item .w3-select:disabled {
+  background-color: #eef2f7;
+  color: #7b8a9d;
+}
+
+.matrix-status {
+  min-height: 1.35rem;
+  margin: 0.1rem 0 0.7rem;
+  color: #4f6075;
+}
+
+.matrix-view {
+  display: none;
+  background: #fff;
+}
+
+.matrix-toolbar {
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.matrix-toolbar-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.matrix-toolbar-title {
+  display: block;
+}
+
+.matrix-toolbar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.matrix-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.34rem 0.72rem;
+  background: var(--site-accent-dark, #334457);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+.matrix-toolbar h3 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.2;
+}
+
+.matrix-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.matrix-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  background: #f8fbff;
+  border: 1px solid #d8e1eb;
+  border-radius: 999px;
+  padding: 0.42rem 0.76rem;
+}
+
+.matrix-metric-value {
+  color: #1f2a36;
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.matrix-metric-label {
+  color: #5c6f82;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.matrix-caption {
+  margin: 0;
+  color: #526476;
+  font-size: 0.95rem;
+}
+
+.matrix-caption-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+}
+
+.matrix-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #516477;
+  font-size: 0.9rem;
+}
+
+.matrix-legend-label {
+  font-weight: 700;
+  color: #2c3f52;
+}
+
+.matrix-legend-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(51, 68, 87, 0.16);
+}
+
+.matrix-legend-swatch--low {
+  background: #fff7bc;
+}
+
+.matrix-legend-swatch--mid {
+  background: #fc8d59;
+}
+
+.matrix-legend-swatch--high {
+  background: #bd0026;
+}
+
+.matrix-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+  border: 1px solid #d8e1eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sdg-matrix-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.sdg-matrix-table th,
+.sdg-matrix-table td {
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.sdg-matrix-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #eff5fb;
+}
+
+.sdg-matrix-table thead th:first-child {
+  z-index: 5;
+}
+
+.sdg-matrix-table th.matrix-axis {
+  min-width: 122px;
+  text-align: left;
+  padding: 0.62rem 0.7rem;
+  background: #e6eef7;
+  font-size: 0.84rem;
+}
+
+.sdg-matrix-table th.matrix-ods {
+  min-width: 52px;
+  padding: 0.45rem 0.18rem;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  color: #24364a;
+}
+
+.matrix-ods-code {
+  display: inline-block;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.sdg-matrix-table th.matrix-axis,
+.sdg-matrix-table td.matrix-system-label {
+  position: sticky;
+  left: 0;
+}
+
+.sdg-matrix-table td.matrix-system-label {
+  z-index: 3;
+  background: #fff;
+  box-shadow: 1px 0 0 #e2e8f0;
+  min-width: 122px;
+  padding: 0.58rem 0.7rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #24364a;
+}
+
+.matrix-cell {
+  min-width: 52px;
+  height: 34px;
+}
+
+.matrix-cell-button {
+  width: 100%;
+  height: 100%;
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.68rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  cursor: help;
+  padding: 0.14rem 0.1rem;
+}
+
+.matrix-cell-button:focus-visible {
+  outline: 2px solid rgba(63, 83, 107, 0.45);
+  outline-offset: -2px;
+}
+
+.matrix-cell--empty .matrix-cell-button {
+  color: transparent !important;
+}
+
+.matrix-empty-state {
+  padding: 2.2rem 1rem;
+  text-align: center;
+  color: #546576;
+}
+
+.matrix-note {
+  margin: 0.78rem 0 0;
+  color: #5b6d7f;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 1120px) {
+  .matrix-control-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .matrix-control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .matrix-toolbar-meta,
+  .matrix-caption-row {
+    align-items: flex-start;
+  }
+
+  .matrix-toolbar h3 {
+    font-size: 1.32rem;
+  }
+
+  .sdg-matrix-table th.matrix-axis,
+  .sdg-matrix-table td.matrix-system-label {
+    min-width: 110px;
+  }
+
+  .sdg-matrix-table th.matrix-ods,
+  .matrix-cell {
+    min-width: 46px;
+  }
+
+  .matrix-cell,
+  .matrix-cell-button {
+    min-height: 30px;
+    height: 30px;
+    font-size: 0.62rem;
+  }
+
+  .matrix-metric {
+    padding: 0.38rem 0.68rem;
+  }
+}
+</style>
+
+<div class="horizontal-container matrix-page">
+  <h1>Matriu ODS x sistemes</h1>
+
+  <p class="lead">Aquesta vista resumeix, en una sola matriu, com es distribueixen els <em>hits</em> detectats per <code>text2sdg</code> per a cada sistema i cada ODS. Pots moure't entre l'abast de centre, ensenyament o assignatura concreta sense canviar de pàgina.</p>
+  <p>Les cel·les mostren el nombre de deteccions (<code>n_hits</code>) per parella sistema-ODS. El color s'ajusta a l'escala relativa de la selecció activa per ajudar a localitzar de seguida on es concentra més intensitat.</p>
+
+  <div class="matrix-controls">
+    <section class="matrix-card" aria-label="Filtres de la matriu ODS x sistemes">
+      <div class="matrix-control-grid">
+        <div class="matrix-control-item">
+          <label for="faculty-select" class="matrix-field-label">Centre</label>
+          <div class="selector-container">
+            <div class="selector-box">
+              <select id="faculty-select" class="w3-select w3-border">
+                <option value="">Centre (obligatori)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="matrix-control-item">
+          <label for="degree-select" class="matrix-field-label">Ensenyament</label>
+          <div class="selector-container">
+            <div class="selector-box">
+              <select id="degree-select" class="w3-select w3-border" disabled>
+                <option value="">Ensenyament (opcional)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="matrix-control-item">
+          <label for="matrix-course-select" class="matrix-field-label">Assignatura</label>
+          <div class="selector-container">
+            <div class="selector-box">
+              <select id="matrix-course-select" class="w3-select w3-border" disabled>
+                <option value="">Assignatura (opcional)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="matrix-control-item">
+          <label for="matrix-section-select" class="matrix-field-label">Secció analitzada</label>
+          <div class="selector-container">
+            <div class="selector-box">
+              <select id="matrix-section-select" class="w3-select w3-border" disabled>
+                <option value="">Carregant seccions...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p id="sdg-matrix-status" class="matrix-status w3-small" hidden></p>
+
+  <section id="matrix-view" class="matrix-card matrix-view" aria-live="polite">
+    <div class="matrix-toolbar">
+      <div class="matrix-toolbar-main">
+        <div class="matrix-toolbar-title">
+          <h3 id="matrix-selection-title">Matriu sistema x ODS</h3>
+        </div>
+        <div class="matrix-toolbar-meta">
+          <span id="matrix-scope-chip" class="matrix-scope-chip">Centre</span>
+          <div id="matrix-metrics" class="matrix-metrics"></div>
+        </div>
+        <div class="matrix-caption-row">
+          <p id="matrix-caption" class="matrix-caption"></p>
+          <div class="matrix-legend" aria-label="Llegenda d'intensitat">
+            <span class="matrix-legend-label">Escala relativa</span>
+            <span class="matrix-legend-swatch matrix-legend-swatch--low" aria-hidden="true"></span>
+            <span>Baix</span>
+            <span class="matrix-legend-swatch matrix-legend-swatch--mid" aria-hidden="true"></span>
+            <span>Mitjà</span>
+            <span class="matrix-legend-swatch matrix-legend-swatch--high" aria-hidden="true"></span>
+            <span>Alt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="matrix-table-wrap" class="matrix-table-wrap">
+      <div class="matrix-empty-state">Inicialitzant matriu...</div>
+    </div>
+
+    <p class="matrix-note">Els colors es recalculen per a cada selecció visible. Això facilita comparar patrons interns dins de la mateixa matriu, però no equival a una escala absoluta comuna entre centres o ensenyaments diferents. Les cel·les grises indiquen 0 hits.</p>
+  </section>
+</div>
+
+<script>
+const ODS_ORDER = [
+  "ODS-01", "ODS-02", "ODS-03", "ODS-04", "ODS-05", "ODS-06",
+  "ODS-07", "ODS-08", "ODS-09", "ODS-10", "ODS-11", "ODS-12",
+  "ODS-13", "ODS-14", "ODS-15", "ODS-16", "ODS-17"
+];
+
+const sdgDefinitions = {
+  "ODS-01": "Fi de la pobresa",
+  "ODS-02": "Fam zero",
+  "ODS-03": "Salut i benestar",
+  "ODS-04": "Educació de qualitat",
+  "ODS-05": "Igualtat de gènere",
+  "ODS-06": "Aigua neta i sanejament",
+  "ODS-07": "Energia neta i assequible",
+  "ODS-08": "Treball digne i creixement econòmic",
+  "ODS-09": "Indústria, innovació i infraestructura",
+  "ODS-10": "Reducció de les desigualtats",
+  "ODS-11": "Ciutats i comunitats sostenibles",
+  "ODS-12": "Producció i consum responsables",
+  "ODS-13": "Acció climàtica",
+  "ODS-14": "Vida submarina",
+  "ODS-15": "Vida d'ecosistemes terrestres",
+  "ODS-16": "Pau, justícia i institucions sòlides",
+  "ODS-17": "Aliança per assolir els objectius"
+};
+
+const SYSTEM_LABEL_OVERRIDES = {
+  "sys:any": "Qualsevol sistema (Unió)",
+  "sys:all": "Tots els sistemes (Intersecció)",
+  "sys:auckland": "Auckland",
+  "sys:aurora": "Aurora",
+  "sys:elsevier": "Elsevier",
+  "ens:equal": "Ensemble equal",
+  "ens:third": "Ensemble third",
+  "ens:triple": "Ensemble triple",
+  "sys:ensemble_equal": "Ensemble equal",
+  "sys:ensemble_third": "Ensemble third",
+  "sys:ensemble_triple": "Ensemble triple",
+  "sys:sdgo": "SDGO",
+  "sys:sdsn": "SDSN",
+  "sys:siris": "SIRIS"
+};
+
+const SECTION_LABEL_OVERRIDES = {
+  "sec:any": "Totes les seccions (Unió)",
+  "sec:all": "Coincidència de totes les seccions (Intersecció)",
+  "sec:competences": "Competències",
+  "sec:course_info": "Informació de l'assignatura",
+  "sec:references": "Referències"
+};
+
+const DEFAULT_SECTION_ID = "sec:any";
+const DEFAULT_FACULTY_NAME = "Facultat de Turisme i Geografia";
+const FACULTY_PLACEHOLDER_LABEL = "Centre (obligatori)";
+const PROGRAMME_PLACEHOLDER_LABEL = "Ensenyament (opcional)";
+const COURSE_PLACEHOLDER_LABEL = "Assignatura (opcional)";
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      "{{ site.sdgs_api_base_url | default: 'https://geourv.github.io/urv-sdgs-api' }}",
+      "https://raw.githubusercontent.com/geourv/urv-sdgs-api/main"
+    ]
+      .map((value) => String(value || "").trim().replace(/\/+$/, ""))
+      .filter(Boolean)
+  )
+);
+
+const facultySelect = document.getElementById("faculty-select");
+const degreeSelect = document.getElementById("degree-select");
+const courseSelect = document.getElementById("matrix-course-select");
+const sectionSelect = document.getElementById("matrix-section-select");
+const statusEl = document.getElementById("sdg-matrix-status");
+const matrixTitleEl = document.getElementById("matrix-selection-title");
+const matrixScopeChipEl = document.getElementById("matrix-scope-chip");
+const matrixMetricsEl = document.getElementById("matrix-metrics");
+const matrixViewEl = document.getElementById("matrix-view");
+const matrixCaptionEl = document.getElementById("matrix-caption");
+const matrixTableWrapEl = document.getElementById("matrix-table-wrap");
+
+const state = {
+  apiBase: "",
+  apiVersion: "",
+  centres: [],
+  centreByCode: new Map(),
+  centreCache: new Map(),
+  programmesByCentreCode: new Map(),
+  programmeByKey: new Map(),
+  programmeCache: new Map(),
+  courseCache: new Map(),
+  systemOptions: [],
+  sectionOptions: [],
+  renderToken: 0
+};
+
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizeSystemId(systemId) {
+  if (systemId === "ens:equal") return "sys:ensemble_equal";
+  if (systemId === "ens:third") return "sys:ensemble_third";
+  if (systemId === "ens:triple") return "sys:ensemble_triple";
+  return String(systemId || "");
+}
+
+function normalizeSdgCodeToOds(code) {
+  return String(code || "").replace(/^SDG-/, "ODS-");
+}
+
+function programmeKey(centreCode, programmeCode) {
+  return `${String(centreCode || "")}::${String(programmeCode || "")}`;
+}
+
+function addOption(selectEl, value, label) {
+  const option = document.createElement("option");
+  option.value = String(value || "");
+  option.textContent = normalizeWhitespace(label);
+  selectEl.appendChild(option);
+}
+
+function joinUrl(...parts) {
+  return parts
+    .filter((part) => part != null && String(part).trim() !== "")
+    .map((part, index) => {
+      const chunk = String(part).trim();
+      if (index === 0) return chunk.replace(/\/+$/, "");
+      return chunk.replace(/^\/+/, "");
+    })
+    .join("/");
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url, { cache: "no-cache" });
+  if (!response.ok) throw new Error(`HTTP ${response.status} (${url})`);
+  return response.json();
+}
+
+async function fetchApiJson(relativePath) {
+  return fetchJson(joinUrl(state.apiBase, relativePath));
+}
+
+async function resolveApiBaseAndVersion() {
+  let lastError = null;
+  for (const base of API_BASE_CANDIDATES) {
+    try {
+      const versions = await fetchJson(joinUrl(base, "versions.json"));
+      const latest = normalizeWhitespace(versions?.latest);
+      if (!latest) throw new Error("versions.json sense camp latest");
+      state.apiBase = base;
+      state.apiVersion = latest;
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error("No s'ha pogut resoldre l'API.");
+}
+
+function readSharedFilters() {
+  const fallback = {
+    centreCode: "",
+    programmeKey: "",
+    sectionId: DEFAULT_SECTION_ID
+  };
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.read !== "function") return fallback;
+  const raw = store.read() || {};
+  return {
+    centreCode: String(raw.centreCode || ""),
+    programmeKey: String(raw.programmeKey || ""),
+    sectionId: String(raw.sectionId || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID
+  };
+}
+
+function writeSharedFilters(patch) {
+  const store = window.SDGFilterMemory;
+  if (!store || typeof store.write !== "function") return null;
+  return store.write({
+    ...(patch || {}),
+    sectionId: String((patch || {}).sectionId || getSelectedSectionId() || DEFAULT_SECTION_ID)
+  });
+}
+
+function setStatus(message, isError) {
+  const normalized = normalizeWhitespace(message);
+  statusEl.textContent = normalized;
+  statusEl.hidden = normalized.length === 0;
+  statusEl.style.color = (isError && normalized) ? "#c0392b" : "#4f5f70";
+}
+
+function setControlsEnabled(enabled) {
+  facultySelect.disabled = !enabled;
+  degreeSelect.disabled = !enabled || !facultySelect.value;
+  sectionSelect.disabled = !enabled;
+  if (!enabled) {
+    courseSelect.disabled = true;
+    return;
+  }
+  const hasCourseOptions = courseSelect.dataset.hasOptions === "true";
+  courseSelect.disabled = !degreeSelect.value || !hasCourseOptions;
+}
+
+function getSelectedCentreCode() {
+  return String(facultySelect.value || "");
+}
+
+function getSelectedProgrammeKey() {
+  return String(degreeSelect.value || "");
+}
+
+function getSelectedCourseDetailPath() {
+  return String(courseSelect.value || "");
+}
+
+function getSelectedSectionId() {
+  return String(sectionSelect.value || DEFAULT_SECTION_ID) || DEFAULT_SECTION_ID;
+}
+
+function persistSharedFiltersFromControls() {
+  writeSharedFilters({
+    centreCode: getSelectedCentreCode(),
+    programmeKey: getSelectedProgrammeKey(),
+    sectionId: getSelectedSectionId()
+  });
+}
+
+async function loadIndexes() {
+  const prefix = state.apiVersion;
+  const [centres, programmes, systemsJson, sectionsJson] = await Promise.all([
+    fetchApiJson(`${prefix}/index/centres.json`),
+    fetchApiJson(`${prefix}/index/programmes.json`),
+    fetchApiJson(`${prefix}/index/systems.json`),
+    fetchApiJson(`${prefix}/index/sections.json`)
+  ]);
+
+  state.centres = (Array.isArray(centres) ? centres : [])
+    .map((row) => ({
+      centre_code: String(row?.centre_code || ""),
+      centre_name: normalizeWhitespace(row?.centre_name),
+      json: String(row?.json || "")
+    }))
+    .filter((row) => row.centre_code && row.centre_name)
+    .sort((a, b) => a.centre_name.localeCompare(b.centre_name, "ca"));
+  state.centreByCode = new Map(state.centres.map((row) => [row.centre_code, row]));
+
+  state.programmesByCentreCode = new Map();
+  state.programmeByKey = new Map();
+  (Array.isArray(programmes) ? programmes : []).forEach((row) => {
+    const programme = {
+      centre_code: String(row?.centre_code || ""),
+      programme_code: String(row?.programme_code || ""),
+      programme_name: normalizeWhitespace(row?.programme_name),
+      json: String(row?.json || "")
+    };
+    if (!programme.centre_code || !programme.programme_code || !programme.programme_name) return;
+
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    if (!state.programmesByCentreCode.has(programme.centre_code)) {
+      state.programmesByCentreCode.set(programme.centre_code, []);
+    }
+    state.programmesByCentreCode.get(programme.centre_code).push(programme);
+    state.programmeByKey.set(key, programme);
+  });
+
+  for (const [centreCode, items] of state.programmesByCentreCode.entries()) {
+    items.sort((a, b) => a.programme_name.localeCompare(b.programme_name, "ca"));
+    state.programmesByCentreCode.set(centreCode, items);
+  }
+
+  state.systemOptions = Array.isArray(systemsJson?.system_options) ? systemsJson.system_options : [];
+  state.sectionOptions = Array.isArray(sectionsJson?.section_options) ? sectionsJson.section_options : [];
+}
+
+function populateFacultySelect(selectedCentreCode) {
+  facultySelect.innerHTML = "";
+  addOption(facultySelect, "", FACULTY_PLACEHOLDER_LABEL);
+  state.centres.forEach((centre) => addOption(facultySelect, centre.centre_code, centre.centre_name));
+
+  const selected = String(selectedCentreCode || "");
+  facultySelect.value = state.centreByCode.has(selected) ? selected : "";
+}
+
+function populateDegreeSelect(centreCode, selectedProgrammeKey) {
+  degreeSelect.innerHTML = "";
+  addOption(degreeSelect, "", PROGRAMME_PLACEHOLDER_LABEL);
+
+  const centreKey = String(centreCode || "");
+  const programmes = state.programmesByCentreCode.get(centreKey) || [];
+  const validProgrammeKeys = new Set();
+
+  programmes.forEach((programme) => {
+    const key = programmeKey(programme.centre_code, programme.programme_code);
+    validProgrammeKeys.add(key);
+    addOption(degreeSelect, key, programme.programme_name);
+  });
+
+  degreeSelect.disabled = !centreKey;
+  if (!centreKey) {
+    degreeSelect.value = "";
+    return;
+  }
+
+  const selected = String(selectedProgrammeKey || "");
+  degreeSelect.value = validProgrammeKeys.has(selected) ? selected : "";
+}
+
+function populateCourseSelect(programmeDetail, selectedCourseDetailPath) {
+  courseSelect.innerHTML = "";
+  addOption(courseSelect, "", COURSE_PLACEHOLDER_LABEL);
+  courseSelect.dataset.hasOptions = "false";
+
+  const courses = Array.isArray(programmeDetail?.courses) ? programmeDetail.courses : [];
+  const eligibleCourses = courses
+    .filter((course) => normalizeWhitespace(course?.detail_json))
+    .map((course) => ({
+      detail_json: normalizeWhitespace(course.detail_json),
+      course_name: normalizeWhitespace(course?.course_name || "Assignatura"),
+      course_code: normalizeWhitespace(course?.course_code || ""),
+      academic_year: normalizeWhitespace(course?.academic_year || "")
+    }))
+    .sort((a, b) => {
+      const nameDiff = a.course_name.localeCompare(b.course_name, "ca");
+      if (nameDiff !== 0) return nameDiff;
+      return a.course_code.localeCompare(b.course_code, "ca");
+    });
+
+  eligibleCourses.forEach((course) => {
+    const labelParts = [course.course_name];
+    if (course.course_code) labelParts.push(course.course_code);
+    if (course.academic_year) labelParts.push(course.academic_year);
+    addOption(courseSelect, course.detail_json, labelParts.join(" · "));
+  });
+
+  const selected = String(selectedCourseDetailPath || "");
+  const hasMatch = eligibleCourses.some((course) => course.detail_json === selected);
+  courseSelect.value = hasMatch ? selected : "";
+  courseSelect.dataset.hasOptions = eligibleCourses.length > 0 ? "true" : "false";
+  courseSelect.disabled = !degreeSelect.value || eligibleCourses.length === 0;
+}
+
+function populateSectionSelect(selectedSectionId) {
+  sectionSelect.innerHTML = "";
+  state.sectionOptions.forEach((row) => {
+    const id = String(row?.id || "");
+    const label = SECTION_LABEL_OVERRIDES[id] || normalizeWhitespace(row?.label || id);
+    addOption(sectionSelect, id, label);
+  });
+
+  const selected = String(selectedSectionId || "");
+  const fallback = state.sectionOptions[0] ? String(state.sectionOptions[0].id || "") : "";
+  const exists = state.sectionOptions.some((row) => String(row?.id || "") === selected);
+  sectionSelect.value = exists ? selected : fallback;
+}
+
+function isLikelyMissingProgrammeDataError(error) {
+  if (String(error?.code || "") === "MISSING_PROGRAMME_DATA") return true;
+  const message = normalizeWhitespace(error?.message || "");
+  return message.includes("Ensenyament sense fitxer de detall")
+    || message.includes("HTTP 404");
+}
+
+async function getCentreDetail(centreCode) {
+  const key = String(centreCode || "");
+  if (!key) throw new Error("Centre no seleccionat");
+  if (state.centreCache.has(key)) return state.centreCache.get(key);
+
+  const centre = state.centreByCode.get(key);
+  if (!centre?.json) {
+    const missingErr = new Error(`Centre sense fitxer de detall: ${key}`);
+    missingErr.code = "MISSING_CENTRE_DATA";
+    throw missingErr;
+  }
+
+  const detail = await fetchApiJson(`${state.apiVersion}/${centre.json}`);
+  state.centreCache.set(key, detail);
+  return detail;
+}
+
+async function getProgrammeDetail(programmeKeyValue) {
+  const key = String(programmeKeyValue || "");
+  if (!key) throw new Error("Ensenyament no seleccionat");
+  if (state.programmeCache.has(key)) return state.programmeCache.get(key);
+
+  const programme = state.programmeByKey.get(key);
+  if (!programme?.json) {
+    const missingErr = new Error(`Ensenyament sense fitxer de detall: ${key}`);
+    missingErr.code = "MISSING_PROGRAMME_DATA";
+    throw missingErr;
+  }
+
+  try {
+    const detail = await fetchApiJson(`${state.apiVersion}/${programme.json}`);
+    state.programmeCache.set(key, detail);
+    return detail;
+  } catch (error) {
+    if (normalizeWhitespace(error?.message || "").includes("HTTP 404")) {
+      error.code = "MISSING_PROGRAMME_DATA";
+    }
+    throw error;
+  }
+}
+
+async function getCourseDetail(courseDetailPath) {
+  const key = String(courseDetailPath || "");
+  if (!key) throw new Error("Assignatura sense ruta de detall");
+  if (state.courseCache.has(key)) return state.courseCache.get(key);
+
+  const detail = await fetchApiJson(`${state.apiVersion}/${key}`);
+  state.courseCache.set(key, detail);
+  return detail;
+}
+
+function formatNumber(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "0";
+  return parsed.toLocaleString("ca-ES");
+}
+
+function formatCompactHits(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return "";
+  if (parsed < 1000) return formatNumber(parsed);
+
+  const compactValue = parsed / 1000;
+  const formatted = compactValue.toLocaleString("ca-ES", {
+    minimumFractionDigits: compactValue >= 10 ? 0 : 1,
+    maximumFractionDigits: 1
+  });
+  return `${formatted.replace(/\s+/g, "")}k`;
+}
+
+function createEmptyState(message) {
+  matrixViewEl.style.display = "block";
+  matrixTableWrapEl.innerHTML = `<div class="matrix-empty-state">${escapeHtml(message)}</div>`;
+}
+
+function resetHeader() {
+  matrixTitleEl.textContent = "Matriu sistema x ODS";
+  matrixScopeChipEl.textContent = "";
+  matrixMetricsEl.innerHTML = "";
+  matrixCaptionEl.textContent = "";
+}
+
+function resetUI(message) {
+  resetHeader();
+  createEmptyState(message);
+}
+
+function renderHeader(meta) {
+  matrixTitleEl.textContent = normalizeWhitespace(meta.title || "Matriu sistema x ODS");
+  matrixScopeChipEl.textContent = meta.scopeLabel;
+  matrixMetricsEl.innerHTML = (Array.isArray(meta.metrics) ? meta.metrics : []).map((item) => {
+    return `
+      <span class="matrix-metric">
+        <span class="matrix-metric-value">${escapeHtml(item.value)}</span>
+        <span class="matrix-metric-label">${escapeHtml(item.label)}</span>
+      </span>
+    `;
+  }).join("");
+}
+
+function buildMatrixModel(sdgRoot, sectionId) {
+  const matrixRows = [];
+  let maxHits = 0;
+
+  state.systemOptions.forEach((row) => {
+    const optionId = String(row?.id || "");
+    const lookupId = normalizeSystemId(optionId);
+    const systemLabel = SYSTEM_LABEL_OVERRIDES[optionId]
+      || SYSTEM_LABEL_OVERRIDES[lookupId]
+      || normalizeWhitespace(row?.label || optionId);
+    const rawEntries = Array.isArray(sdgRoot?.[lookupId]?.[sectionId]) ? sdgRoot[lookupId][sectionId] : [];
+    const byOds = new Map();
+
+    rawEntries.forEach((entry) => {
+      const ods = normalizeSdgCodeToOds(entry?.sdg);
+      if (!ODS_ORDER.includes(ods)) return;
+      const hits = Number(entry?.n_hits || 0);
+      const nSystemsHit = Number(entry?.n_systems_hit);
+      const nSystemsTotal = Number(entry?.n_systems_total);
+      const cell = {
+        ods,
+        hits: Number.isFinite(hits) ? hits : 0,
+        nSystemsHit: Number.isFinite(nSystemsHit) ? nSystemsHit : null,
+        nSystemsTotal: Number.isFinite(nSystemsTotal) ? nSystemsTotal : null
+      };
+      byOds.set(ods, cell);
+      if (cell.hits > maxHits) maxHits = cell.hits;
+    });
+
+    matrixRows.push({
+      id: lookupId,
+      label: systemLabel,
+      cells: ODS_ORDER.map((ods) => {
+        return byOds.get(ods) || {
+          ods,
+          hits: 0,
+          nSystemsHit: null,
+          nSystemsTotal: null
+        };
+      })
+    });
+  });
+
+  return { rows: matrixRows, maxHits };
+}
+
+function interpolateChannel(start, end, t) {
+  return Math.round(start + ((end - start) * t));
+}
+
+function interpolateColor(start, end, t) {
+  return [
+    interpolateChannel(start[0], end[0], t),
+    interpolateChannel(start[1], end[1], t),
+    interpolateChannel(start[2], end[2], t)
+  ];
+}
+
+function getCellPalette(hits, maxHits) {
+  if (!(hits > 0) || !(maxHits > 0)) {
+    return {
+      backgroundColor: "#f3f6fa",
+      color: "#7b8898"
+    };
+  }
+
+  const ratio = Math.max(0, Math.min(1, hits / maxHits));
+  const stops = [
+    [255, 247, 188],
+    [254, 196, 79],
+    [253, 141, 60],
+    [189, 0, 38]
+  ];
+  let color;
+
+  if (ratio <= 0.33) {
+    color = interpolateColor(stops[0], stops[1], ratio / 0.33);
+  } else if (ratio <= 0.66) {
+    color = interpolateColor(stops[1], stops[2], (ratio - 0.33) / 0.33);
+  } else {
+    color = interpolateColor(stops[2], stops[3], (ratio - 0.66) / 0.34);
+  }
+
+  return {
+    backgroundColor: `rgb(${color.join(", ")})`,
+    color: ratio >= 0.56 ? "#fffdf8" : "#4a2a00"
+  };
+}
+
+function buildCellTooltip(systemLabel, ods, sectionLabel, cell) {
+  const parts = [
+    `Sistema: ${systemLabel}`,
+    `ODS: ${ods} (${sdgDefinitions[ods] || ods})`,
+    `Secció: ${sectionLabel}`,
+    `n_hits: ${formatNumber(cell.hits)}`
+  ];
+  if (cell.nSystemsHit != null && cell.nSystemsTotal != null) {
+    parts.push(`Sistemes amb detecció: ${cell.nSystemsHit}/${cell.nSystemsTotal}`);
+  }
+  return parts.join(" · ");
+}
+
+function renderMatrix(sdgRoot, meta) {
+  const sectionId = getSelectedSectionId();
+  const sectionLabel = SECTION_LABEL_OVERRIDES[sectionId] || sectionId;
+  const model = buildMatrixModel(sdgRoot, sectionId);
+  const rowCount = model.rows.length;
+  const colCount = ODS_ORDER.length;
+
+  const tableHtml = `
+    <table class="sdg-matrix-table" aria-label="Matriu de hits ODS x sistemes">
+      <thead>
+        <tr>
+          <th class="matrix-axis" scope="col">Sistema \\ ODS</th>
+          ${ODS_ORDER.map((ods) => {
+            return `
+              <th class="matrix-ods" scope="col">
+                <abbr class="matrix-ods-code" title="${escapeHtml(`${ods}: ${sdgDefinitions[ods] || ods}`)}">${escapeHtml(ods.replace("ODS-", ""))}</abbr>
+              </th>
+            `;
+          }).join("")}
+        </tr>
+      </thead>
+      <tbody>
+        ${model.rows.map((row) => {
+          return `
+            <tr>
+              <td class="matrix-system-label">${escapeHtml(row.label)}</td>
+              ${row.cells.map((cell) => {
+                const palette = getCellPalette(cell.hits, model.maxHits);
+                const tooltip = buildCellTooltip(row.label, cell.ods, sectionLabel, cell);
+                const isEmpty = cell.hits === 0;
+                return `
+                  <td class="matrix-cell${isEmpty ? " matrix-cell--empty" : ""}">
+                    <button
+                      type="button"
+                      class="matrix-cell-button"
+                      style="background:${escapeHtml(palette.backgroundColor)}; color:${escapeHtml(palette.color)};"
+                      title="${escapeHtml(tooltip)}"
+                      aria-label="${escapeHtml(tooltip)}"
+                    >${escapeHtml(formatCompactHits(cell.hits))}</button>
+                  </td>
+                `;
+              }).join("")}
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+
+  matrixCaptionEl.textContent = `${rowCount} sistemes x ${colCount} ODS · passa el cursor per veure els n_hits exactes de cada cel·la.`;
+  matrixTableWrapEl.innerHTML = tableHtml;
+  matrixViewEl.style.display = "block";
+}
+
+async function renderCurrentSelection() {
+  const centreCode = getSelectedCentreCode();
+  const programmeKeyValue = getSelectedProgrammeKey();
+  const selectedCoursePath = getSelectedCourseDetailPath();
+
+  if (!centreCode) {
+    populateCourseSelect(null, "");
+    setControlsEnabled(true);
+    resetUI("Selecciona un centre per carregar la matriu.");
+    setStatus("", false);
+    return;
+  }
+
+  const token = ++state.renderToken;
+
+  try {
+    if (!programmeKeyValue) {
+      populateCourseSelect(null, "");
+      setControlsEnabled(true);
+      setStatus("Carregant dades del centre...");
+
+      const centreDetail = await getCentreDetail(centreCode);
+      if (token !== state.renderToken) return;
+
+      const centreName = normalizeWhitespace(centreDetail?.centre?.name || state.centreByCode.get(centreCode)?.centre_name || "Centre");
+      const nProgrammes = Number(centreDetail?.n_programmes || 0);
+      const nCourses = Number(centreDetail?.n_courses || 0);
+      const meta = {
+        title: centreName,
+        scopeLabel: "Centre",
+        metrics: [
+          { value: formatNumber(nProgrammes), label: "Ensenyaments" },
+          { value: formatNumber(nCourses), label: "Assignatures" }
+        ]
+      };
+
+      renderHeader(meta);
+      renderMatrix(centreDetail?.by_set?.sdg, meta);
+      setStatus("", false);
+      return;
+    }
+
+    setStatus("Carregant dades de l'ensenyament...");
+    const programmeDetail = await getProgrammeDetail(programmeKeyValue);
+    if (token !== state.renderToken) return;
+
+    populateCourseSelect(programmeDetail, selectedCoursePath);
+    setControlsEnabled(true);
+
+    const resolvedCoursePath = getSelectedCourseDetailPath();
+    const programmeName = normalizeWhitespace(programmeDetail?.programme?.name || "Ensenyament");
+    const nCourses = Array.isArray(programmeDetail?.courses) ? programmeDetail.courses.length : 0;
+
+    if (!resolvedCoursePath) {
+      const meta = {
+        title: programmeName,
+        scopeLabel: "Ensenyament",
+        metrics: [
+          { value: formatNumber(nCourses), label: "Assignatures" }
+        ]
+      };
+
+      renderHeader(meta);
+      renderMatrix(programmeDetail?.by_set?.sdg, meta);
+      setStatus("", false);
+      return;
+    }
+
+    setStatus("Carregant detall de l'assignatura...");
+    const courseDetail = await getCourseDetail(resolvedCoursePath);
+    if (token !== state.renderToken) return;
+
+    const courseName = normalizeWhitespace(courseDetail?.course_name || "Assignatura");
+    const meta = {
+      title: courseName,
+      scopeLabel: "Assignatura",
+      metrics: [
+        { value: "1", label: "Assignatura" }
+      ]
+    };
+
+    renderHeader(meta);
+    renderMatrix(courseDetail?.by_set?.sdg, meta);
+    setStatus("", false);
+  } catch (err) {
+    console.error(err);
+    populateCourseSelect(null, "");
+    setControlsEnabled(true);
+
+    if (isLikelyMissingProgrammeDataError(err)) {
+      resetUI("Aquest ensenyament apareix al catàleg, però no disposa encara de fitxer de detall analitzable per construir la matriu.");
+      setStatus("", false);
+      return;
+    }
+
+    resetUI("No s'ha pogut carregar la matriu per a aquesta selecció.");
+    setStatus("Error carregant dades des de l'API.", true);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  setControlsEnabled(false);
+  resetUI("Inicialitzant dades...");
+  setStatus("Inicialitzant dades de l'API...");
+
+  try {
+    await resolveApiBaseAndVersion();
+    await loadIndexes();
+
+    const sharedFilters = readSharedFilters();
+    const defaultCentre = state.centres.find((centre) => centre.centre_name === DEFAULT_FACULTY_NAME);
+    const defaultCentreCode = defaultCentre?.centre_code || state.centres[0]?.centre_code || "";
+    const initialCentreCode = state.centreByCode.has(sharedFilters.centreCode)
+      ? sharedFilters.centreCode
+      : defaultCentreCode;
+    const initialProgrammeKey = initialCentreCode ? sharedFilters.programmeKey : "";
+
+    populateFacultySelect(initialCentreCode);
+    populateDegreeSelect(initialCentreCode, initialProgrammeKey);
+    populateCourseSelect(null, "");
+    populateSectionSelect(sharedFilters.sectionId);
+
+    setControlsEnabled(true);
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  } catch (err) {
+    console.error(err);
+    setControlsEnabled(false);
+    resetUI("No s'ha pogut inicialitzar la nova vista de matriu.");
+    setStatus("Error inicialitzant l'API.", true);
+  }
+
+  facultySelect.addEventListener("change", async () => {
+    populateDegreeSelect(getSelectedCentreCode(), "");
+    populateCourseSelect(null, "");
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  });
+
+  degreeSelect.addEventListener("change", async () => {
+    populateCourseSelect(null, "");
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  });
+
+  courseSelect.addEventListener("change", async () => {
+    await renderCurrentSelection();
+  });
+
+  sectionSelect.addEventListener("change", async () => {
+    persistSharedFiltersFromControls();
+    await renderCurrentSelection();
+  });
+});
+</script>

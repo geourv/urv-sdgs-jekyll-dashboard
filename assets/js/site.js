@@ -23,6 +23,7 @@ Notes:
     '/pages/radar',
     '/pages/bubble',
     '/pages/course-details',
+    '/pages/sdg-matrix',
     '/pages/degree-barchart',
     '/pages/degree-wordcloud',
     '/pages/degree2'
@@ -105,7 +106,7 @@ Notes:
     centreCode: ['faculty-select', 'facultySelect'],
     programmeKey: ['degree-select', 'degreeSelect'],
     systemId: ['doughnut-system-select', 'radar-system-select', 'bubble-system-select', 'barchart-system-select', 'course-system-select', 'systemSelect'],
-    sectionId: ['doughnut-section-select', 'radar-section-select', 'bubble-section-select', 'barchart-section-select', 'course-section-select', 'sectionSelect']
+    sectionId: ['doughnut-section-select', 'radar-section-select', 'bubble-section-select', 'barchart-section-select', 'course-section-select', 'matrix-section-select', 'sectionSelect']
   };
 
   function firstExistingElementById(ids) {

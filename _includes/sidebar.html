@@ -28,7 +28,7 @@ We normalize by also building a "no .html" version.
 {%- comment -%}
 Dropdown group: include both variants (.html and trailing slash) to be safe.
 {%- endcomment -%}
-{% assign explore_urls = "/pages/wordcloud.html|/pages/wordcloud/|/pages/degree-wordcloud.html|/pages/degree-wordcloud/|/pages/doughnut.html|/pages/doughnut/|/pages/radar.html|/pages/radar/|/pages/bubble.html|/pages/bubble/|/pages/course-details.html|/pages/course-details/" | split: "|" %}
+{% assign explore_urls = "/pages/wordcloud.html|/pages/wordcloud/|/pages/degree-wordcloud.html|/pages/degree-wordcloud/|/pages/doughnut.html|/pages/doughnut/|/pages/radar.html|/pages/radar/|/pages/bubble.html|/pages/bubble/|/pages/course-details.html|/pages/course-details/|/pages/sdg-matrix.html|/pages/sdg-matrix/" | split: "|" %}
 {% assign explore_active = false %}
 {% if explore_urls contains current_url or explore_urls contains current_nohtml %}
   {% assign explore_active = true %}
@@ -186,6 +186,18 @@ Dropdown group: include both variants (.html and trailing slash) to be safe.
         <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
           <i class="fa fa-pencil fa-fw" aria-hidden="true" title="Detall per assignatura"></i>
           ODS per assignatura
+        </a>
+
+        {% assign link = '/pages/sdg-matrix.html' %}
+        {% assign link_nohtml = link | remove: '.html' %}
+        {% assign link_nohtml_slash = link_nohtml | append: '/' %}
+        {% assign is_active = false %}
+        {% if current_url == link or current_nohtml == link_nohtml or current_nohtml == link_nohtml_slash %}
+          {% assign is_active = true %}
+        {% endif %}
+        <a href="{{ link | relative_url }}" class="w3-bar-item w3-button w3-padding{% if is_active %} nav-active{% endif %}" role="menuitem"{% if is_active %} aria-current="page"{% endif %}>
+          <i class="fa fa-table fa-fw" aria-hidden="true" title="Matriu ODS x sistemes"></i>
+          Matriu ODS x sistemes
         </a>
       </div>
     </div>
